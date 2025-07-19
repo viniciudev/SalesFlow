@@ -1,0 +1,1 @@
+export const URL_Service = (`${process.env.REACT_APP_HOST}/serviceprovided`)

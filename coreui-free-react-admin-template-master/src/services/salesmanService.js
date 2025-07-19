@@ -1,0 +1,1 @@
+export const URL_Salesman = (`${process.env.REACT_APP_HOST}/salesman`)

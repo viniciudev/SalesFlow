@@ -1,0 +1,1 @@
+export const URL_CostCenter = (`${process.env.REACT_APP_HOST}/costcenter`)

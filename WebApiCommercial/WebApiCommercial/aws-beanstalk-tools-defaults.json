@@ -1,0 +1,20 @@
+
+{
+    "region" : "sa-east-1",
+    "configuration" : "Debug",
+    "framework"     : "net5.0",
+    "self-contained" : false,
+    "application"    : "WebApiCommercial",
+    "environment"    : "WebApiCommercial-prod",
+    "enable-xray"    : false,
+    "enhanced-health-type" : "basic",
+    "additional-options"   : "",
+    "solution-stack"       : "64bit Amazon Linux 2 v2.3.0 running .NET Core",
+    "environment-type"     : "SingleInstance",
+    "cname"                : "webapicommercial-prod",
+    "instance-type"        : "t3a.medium",
+    "key-pair"             : "",
+    "instance-profile"     : "aws-elasticbeanstalk-ec2-role",
+    "service-role"         : "aws-elasticbeanstalk-service-role",
+    "proxy-server"         : "nginx"
+}

@@ -1,0 +1,1 @@
+export const URL_Closures = (`${process.env.REACT_APP_HOST}/closures`)

@@ -1,0 +1,1 @@
+export const URL_Product = (`${process.env.REACT_APP_HOST}/product`)

@@ -1,0 +1,10 @@
+.bd-modal-dialog .modal-content {
+    display: table;
+    position: relative;
+    text-align: center;
+    margin: 0 auto;
+    top: calc(50% - 24px);
+    background-color: transparent;
+    border: none;
+    color: rgb(115, 209, 238);
+}
