@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Model;
+using Model.DTO;
 using Model.Registrations;
 using Repository;
 using Service;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -10,57 +12,68 @@ using System.Threading.Tasks;
 
 namespace WebApiCommercial.Controllers
 {
-  [Route("api/[controller]")]
-  [ApiController]
-  public class ProductController : ControllerBase
-  {
-
-    private readonly IProductService productServie;
-
-    public ProductController(IProductService productServie)
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ProductController : ControllerBase
     {
-      this.productServie = productServie;
-    }
 
-    // GET: api/<ProductController>
-    [HttpGet]
-    public async Task<ActionResult<PagedResult<Product>>> Get([FromQuery] Filters filter, [FromHeader] int tenantid)
-    {
-      filter.idCompany = tenantid;
-      var data = await productServie.GetAllPaged(filter);
-      return Ok(data);
-    }
+        private readonly IProductService productServie;
 
-    // GET api/<ProductController>/5
-    [HttpGet("GetListByName")]
-    public async Task<ActionResult<List<Product>>> GetListByName([FromQuery] Filters filter, [FromHeader] int tenantid)
-    {
-      filter.idCompany = tenantid;
-      var data = await productServie.GetListByName(filter);
-      return Ok(data);
-    }
+        public ProductController(IProductService productServie)
+        {
+            this.productServie = productServie;
+        }
 
-    // POST api/<ProductController>
-    [HttpPost]
-    public async Task<ActionResult<dynamic>> Post([FromBody] Product model, [FromHeader] int tenantid)
-    {
-      model.IdCompany = tenantid;
-      await productServie.Save(model);
-      return true;
-    }
+        // GET: api/<ProductController>
+        [HttpGet]
+        public async Task<ActionResult<PagedResult<Product>>> Get([FromQuery] Filters filter, [FromHeader] int tenantid)
+        {
+            filter.idCompany = tenantid;
+            var data = await productServie.GetAllPaged(filter);
+            return Ok(data);
+        }
 
-    // PUT api/<ProductController>/5
-    [HttpPut]
-    public async Task<ActionResult<dynamic>> Put([FromBody] Product model)
-    {
-      await productServie.Alter(model);
-      return true;
-    }
+        // GET api/<ProductController>/5
+        [HttpGet("GetListByName")]
+        public async Task<ActionResult<List<Product>>> GetListByName([FromQuery] Filters filter, [FromHeader] int tenantid)
+        {
+            filter.idCompany = tenantid;
+            var data = await productServie.GetListByName(filter);
+            return Ok(data);
+        }
 
-    // DELETE api/<ProductController>/5
-    [HttpDelete("{id}")]
-    public void Delete(int id)
-    {
+        // POST api/<ProductController>
+        [HttpPost]
+        public async Task<ActionResult<dynamic>> Post([FromForm] ProductCreateModelDto model, [FromHeader] int tenantid)
+        {
+
+            try
+            {
+
+
+                await productServie.SaveProduct(model, tenantid);
+  
+                return Ok(new { success = true, message = "Produto cadastrado com sucesso" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
+            return true;
+        }
+
+        // PUT api/<ProductController>/5
+        [HttpPut]
+        public async Task<ActionResult<dynamic>> Put([FromBody] Product model)
+        {
+            await productServie.Alter(model);
+            return true;
+        }
+
+        // DELETE api/<ProductController>/5
+        [HttpDelete("{id}")]
+        public void Delete(int id)
+        {
+        }
     }
-  }
 }

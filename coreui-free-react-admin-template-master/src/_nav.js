@@ -24,11 +24,11 @@ export default {
     //   url: '/register/file',
     //   icon: 'fa fa-image',
     // },
-    {
-      name: 'Prospect',
-      url: '/register/prospect',
-      icon: 'cui-dollar',
-    },
+    // {
+    //   name: 'Prospect',
+    //   url: '/register/prospect',
+    //   icon: 'cui-dollar',
+    // },
     {
       name: 'Clientes',
       url: '/register/client',
@@ -40,11 +40,11 @@ export default {
       url: '/register/salesman',
       icon: 'fa fa-handshake-o',
     },
-    {
-      name: 'Serviços',
-      url: '/register/service',
-      icon: 'icon-wrench',
-    },
+    // {
+    //   name: 'Serviços',
+    //   url: '/register/service',
+    //   icon: 'icon-wrench',
+    // },
 
     {
       name: 'Produtos',
@@ -72,16 +72,16 @@ export default {
       url: '/moves/sales',
       icon: 'fa fa-shopping-cart',
     },
-    {
-      name: 'Comissões',
-      url: '/register/commission',
-      icon: 'fa fa-percent',
-    },
-    {
-      name: 'Fechamentos',
-      url: '/moves/consultClosures',
-      icon: "fa fa-list-ul",
-    },
+    // {
+    //   name: 'Comissões',
+    //   url: '/register/commission',
+    //   icon: 'fa fa-percent',
+    // },
+    // {
+    //   name: 'Fechamentos',
+    //   url: '/moves/consultClosures',
+    //   icon: "fa fa-list-ul",
+    // },
     // {
     //   name: 'Orçamentos',
     //   url: '/moves/budget',

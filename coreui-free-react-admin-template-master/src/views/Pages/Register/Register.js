@@ -1,58 +1,76 @@
-import React, { Component } from 'react';
-import { Button, Card, CardBody, Col, Container, InputGroup, InputGroupAddon, InputGroupText, Row } from 'reactstrap';
-import { ErrorMessage, Formik, Form, Field } from 'formik'
-import axios from 'axios'
-import { history } from '../../../history'
-import * as yup from 'yup'
-import { URL_User } from '../../../services/userService'
-import swal from 'sweetalert';
-import InputMask from 'react-input-mask';
-import CharacterRemover from 'character-remover';
-import { FaSpinner } from 'react-icons/fa'
+import React, { Component } from "react";
+import {
+  Button,
+  Card,
+  CardBody,
+  Col,
+  Container,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupText,
+  Row,
+} from "reactstrap";
+import { ErrorMessage, Formik, Form, Field } from "formik";
+import axios from "axios";
+import { history } from "../../../history";
+import * as yup from "yup";
+import { URL_User } from "../../../services/userService";
+import swal from "sweetalert";
+import InputMask from "react-input-mask";
+import CharacterRemover from "character-remover";
+import { FaSpinner } from "react-icons/fa";
+
 class Register extends Component {
   state = {
-    loading: false
-  }
+    loading: false,
+  };
   render() {
-    const { loading } = this.state
-    const handleSubmit = async values => {
-      this.setState({ loading: true })
+    const { loading } = this.state;
+    const handleSubmit = async (values) => {
+      this.setState({ loading: true });
       const map = {
         name: values.firtName,
         email: values.email,
         password: values.password,
         birthDate: new Date(),
-        role: 'Admin',
-        cellPhone: CharacterRemover.removeAll(values.cellPhone)
-      }
-      await axios.post(URL_User, map)
-        .then(resp => {
-          const { data } = resp
-          if (data == 'Salvo com Sucesso!') {
+        role: "Admin",
+        cellPhone: CharacterRemover.removeAll(values.cellPhone),
+        typeUser: values.typeUser, // Adicionando o tipo de usuário ao objeto de envio
+      };
+      await axios
+        .post(URL_User, map)
+        .then((resp) => {
+          const { data } = resp;
+          if (data == "Salvo com Sucesso!") {
             swal(data, {
-              icon: "success"
-            }).then(ok => {
-              if (ok)
-                history.push('/login')
-            })
-          }
-          else {
+              icon: "success",
+            }).then((ok) => {
+              if (ok) history.push("/login");
+            });
+          } else {
             swal(data, {
-              icon: "warning"
-            })
+              icon: "warning",
+            });
           }
-        }).catch(() => this.setState({ loading: false }))
-      this.setState({ loading: false })
-    }
+        })
+        .catch(() => this.setState({ loading: false }));
+      this.setState({ loading: false });
+    };
 
     const validations = yup.object().shape({
-      firtName: yup.string().required('Informe seu Primeiro nome, min 4 caracteres!'),
+      firtName: yup
+        .string()
+        .required("Informe seu Primeiro nome, min 4 caracteres!"),
       email: yup.string().email("Email inválido!").required("Informe o Email."),
-      password: yup.string().required("Informe a Senha, mínimo de 3 caracteres!"),
-      Confirmedpassword: yup.string().oneOf([yup.ref('password'), null], 'Senha não confere!'),
+      password: yup
+        .string()
+        .required("Informe a Senha, mínimo de 3 caracteres!"),
+      Confirmedpassword: yup
+        .string()
+        .oneOf([yup.ref("password"), null], "Senha não confere!"),
       cellPhone: yup.string().required("Informe o telefone."),
-
-    })
+      typeUser: yup.string().required("Selecione o tipo de usuário"), // Validação para o campo select
+    });
     return (
       <div className="app flex-row align-items-center">
         <Container>
@@ -62,11 +80,12 @@ class Register extends Component {
                 <CardBody className="p-4">
                   <Formik
                     initialValues={{
-                      firtName: '',
-                      email: '',
-                      password: '',
-                      Confirmedpassword: '',
-                      cellPhone: ''
+                      firtName: "",
+                      email: "",
+                      password: "",
+                      Confirmedpassword: "",
+                      cellPhone: "",
+                      typeUser: "", // Valor inicial para o select
                     }}
                     onSubmit={handleSubmit}
                     validationSchema={validations}
@@ -80,9 +99,14 @@ class Register extends Component {
                             <i className="icon-user"></i>
                           </InputGroupText>
                         </InputGroupAddon>
-                        <Field className="form-control" name="firtName" placeholder="Primeiro nome" autoComplete="username" />
+                        <Field
+                          className="form-control"
+                          name="firtName"
+                          placeholder="Primeiro nome"
+                          autoComplete="username"
+                        />
                         <ErrorMessage
-                          style={{ color: 'red' }}
+                          style={{ color: "red" }}
                           name="firtName"
                         />
                       </InputGroup>
@@ -90,7 +114,12 @@ class Register extends Component {
                         <InputGroupAddon addonType="prepend">
                           <InputGroupText>@</InputGroupText>
                         </InputGroupAddon>
-                        <Field className="form-control" name="email" placeholder="Email" autoComplete="email" />
+                        <Field
+                          className="form-control"
+                          name="email"
+                          placeholder="Email"
+                          autoComplete="email"
+                        />
                         <ErrorMessage
                           component="span"
                           name="email"
@@ -103,7 +132,12 @@ class Register extends Component {
                             <i className="icon-lock"></i>
                           </InputGroupText>
                         </InputGroupAddon>
-                        <Field className="form-control" name="password" placeholder="Password" type='password' />
+                        <Field
+                          className="form-control"
+                          name="password"
+                          placeholder="Password"
+                          type="password"
+                        />
                         <ErrorMessage
                           component="span"
                           name="password"
@@ -116,12 +150,17 @@ class Register extends Component {
                             <i className="icon-lock"></i>
                           </InputGroupText>
                         </InputGroupAddon>
-                        <Field className="form-control" name="Confirmedpassword" type="password" placeholder="Confirme o password" autoComplete="new-password" />
+                        <Field
+                          className="form-control"
+                          name="Confirmedpassword"
+                          type="password"
+                          placeholder="Confirme o password"
+                          autoComplete="new-password"
+                        />
                         <ErrorMessage
                           component="span"
                           name="Confirmedpassword"
                           className="Login-Error"
-
                         />
                       </InputGroup>
                       <InputGroup className="mb-4">
@@ -132,13 +171,15 @@ class Register extends Component {
                         </InputGroupAddon>
                         <Field
                           render={({ field }) => {
-                            return <InputMask mask='(99) 9 9999-9999'
-                              {...field}
-                              id={"cellPhone"}
-                              className="form-control"
-                              placeholder="Telefone"
-                            />
-
+                            return (
+                              <InputMask
+                                mask="(99) 9 9999-9999"
+                                {...field}
+                                id={"cellPhone"}
+                                className="form-control"
+                                placeholder="Telefone"
+                              />
+                            );
                           }}
                           name="cellPhone"
                         />
@@ -148,30 +189,45 @@ class Register extends Component {
                           className="Login-Error"
                         />
                       </InputGroup>
+
+                      {/* Novo campo select para tipo de usuário */}
+                      <InputGroup className="mb-4">
+                        <InputGroupAddon addonType="prepend">
+                          <InputGroupText>
+                            <i className="icon-briefcase"></i>
+                          </InputGroupText>
+                        </InputGroupAddon>
+                        <Field
+                          as="select"
+                          name="typeUser"
+                          className="form-control"
+                        >
+                          <option value="">Selecione o tipo de usuário</option>
+                          <option value={0}>Revenda</option>
+                          <option value={1}>Fornecedor</option>
+                        </Field>
+                        <ErrorMessage
+                          component="span"
+                          name="typeUser"
+                          className="Login-Error"
+                        />
+                      </InputGroup>
+
                       <Button
                         block
                         type="submit"
                         color="success"
                         disabled={loading}
                       >
-                        {loading && <FaSpinner className='fa fa-spinner fa-spin' />}
+                        {loading && (
+                          <FaSpinner className="fa fa-spinner fa-spin" />
+                        )}
                         {loading && " Registrando..."}
-                        {/* {!loading && <i className="fa fa-plus-circle"></i>} */}
                         {!loading && " Registrar"}
                       </Button>
                     </Form>
                   </Formik>
                 </CardBody>
-                {/* <CardFooter className="p-4">
-                  <Row>
-                    <Col xs="12" sm="6">
-                      <Button className="btn-facebook mb-1" block><span>facebook</span></Button>
-                    </Col>
-                    <Col xs="12" sm="6">
-                      <Button className="btn-twitter mb-1" block><span>twitter</span></Button>
-                    </Col>
-                  </Row>
-                </CardFooter> */}
               </Card>
             </Col>
           </Row>
