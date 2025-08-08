@@ -2,22 +2,23 @@
 export default {
   items: [
     {
-      name: 'Dashboard',
-      url: '/dashboard',
-      icon: 'icon-speedometer',
+      name: "Dashboard",
+      url: "/dashboard",
+      icon: "icon-speedometer",
       badge: {
-        variant: 'info',
+        variant: "info",
         // text: 'NEW',
       },
     },
     {
       title: true,
-      name: 'Cadastros',
-      wrapper: {            // optional wrapper object
-        element: '',        // required valid HTML5 element tag
-        attributes: {}        // optional valid JS object with JS API naming ex: { className: "my-class", style: { fontFamily: "Verdana" }, id: "my-id"}
+      name: "Cadastros",
+      wrapper: {
+        // optional wrapper object
+        element: "", // required valid HTML5 element tag
+        attributes: {}, // optional valid JS object with JS API naming ex: { className: "my-class", style: { fontFamily: "Verdana" }, id: "my-id"}
       },
-      class: ''             // optional class names space delimited list for title item ex: "text-center"
+      class: "", // optional class names space delimited list for title item ex: "text-center"
     },
     // {
     //   name: 'Arquivos',
@@ -30,15 +31,20 @@ export default {
     //   icon: 'cui-dollar',
     // },
     {
-      name: 'Clientes',
-      url: '/register/client',
-      icon: 'icon-people',
+      name: "Meus dados",
+      url: "/register/company",
+      icon: "cui-note",
+    },
+    {
+      name: "Clientes",
+      url: "/register/client",
+      icon: "icon-people",
     },
 
     {
-      name: 'Vendedor',
-      url: '/register/salesman',
-      icon: 'fa fa-handshake-o',
+      name: "Vendedor",
+      url: "/register/salesman",
+      icon: "fa fa-handshake-o",
     },
     // {
     //   name: 'Serviços',
@@ -47,9 +53,9 @@ export default {
     // },
 
     {
-      name: 'Produtos',
-      url: '/register/product',
-      icon: 'icon-basket-loaded',
+      name: "Produtos",
+      url: "/register/product",
+      icon: "icon-basket-loaded",
     },
 
     // {
@@ -59,18 +65,19 @@ export default {
     // },
     {
       title: true,
-      name: 'Movimentações',
-      wrapper: {            // optional wrapper object
-        element: '',        // required valid HTML5 element tag
-        attributes: {}        // optional valid JS object with JS API naming ex: { className: "my-class", style: { fontFamily: "Verdana" }, id: "my-id"}
+      name: "Movimentações",
+      wrapper: {
+        // optional wrapper object
+        element: "", // required valid HTML5 element tag
+        attributes: {}, // optional valid JS object with JS API naming ex: { className: "my-class", style: { fontFamily: "Verdana" }, id: "my-id"}
       },
-      class: ''             // optional class names space delimited list for title item ex: "text-center"
+      class: "", // optional class names space delimited list for title item ex: "text-center"
     },
 
     {
-      name: 'Vendas',
-      url: '/moves/sales',
-      icon: 'fa fa-shopping-cart',
+      name: "Vendas",
+      url: "/moves/sales",
+      icon: "fa fa-shopping-cart",
     },
     // {
     //   name: 'Comissões',
