@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Model.DTO;
+using Model.Registrations;
 using Service;
 using System.Threading.Tasks;
 
@@ -37,8 +39,10 @@ namespace WebApiCommercial.Controllers
 
         // PUT api/<CompanyController>/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public async Task<ActionResult> Put(int id, [FromBody] CompanyDto value)
         {
+            value.CleanAllNumericFields();
+            return Ok(await _companyService.UpdateCompany(id, value));
         }
 
         // DELETE api/<CompanyController>/5

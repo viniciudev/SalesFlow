@@ -20,11 +20,11 @@ export default {
       },
       class: "", // optional class names space delimited list for title item ex: "text-center"
     },
-    // {
-    //   name: 'Arquivos',
-    //   url: '/register/file',
-    //   icon: 'fa fa-image',
-    // },
+    {
+      name: "Itens de venda",
+      url: "/register/file",
+      icon: "fa fa-cloud-upload",
+    },
     // {
     //   name: 'Prospect',
     //   url: '/register/prospect',

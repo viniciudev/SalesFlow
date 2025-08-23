@@ -7,8 +7,17 @@ namespace Model.Registrations
   public class Company : BaseEntity
   {
     public string CorporateName { get; set; }
+
     public Guid Guid { get; set; }
-    public ICollection<DescriptionFiles> DescriptionFiles { get; set; }
+        public string? Name { get; set; }
+        public string? Cnpj { get; set; }
+        public string? ZipCode { get; set; }
+        public string? Address { get; set; }
+        public string? State { get; set; }
+        public string? CommercialPhone { get; set; }
+        public string? City { get; set; }
+        public string? Cellphone { get; set; }
+        public ICollection<DescriptionFiles> DescriptionFiles { get; set; }
     public ICollection<User> Users { get; set; }
     public ICollection<Product> Products { get; set; }
     public ICollection<ServiceProvided> ServiceProvideds { get; set; }
