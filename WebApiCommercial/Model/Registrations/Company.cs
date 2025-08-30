@@ -17,6 +17,7 @@ namespace Model.Registrations
         public string? CommercialPhone { get; set; }
         public string? City { get; set; }
         public string? Cellphone { get; set; }
+        public string? Ie { get; set; }
         public ICollection<DescriptionFiles> DescriptionFiles { get; set; }
     public ICollection<User> Users { get; set; }
     public ICollection<Product> Products { get; set; }

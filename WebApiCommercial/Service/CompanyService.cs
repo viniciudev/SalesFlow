@@ -36,7 +36,7 @@ namespace Service
             existingCompany.City = value.City;
             existingCompany.CommercialPhone = value.CommercialPhone;
             existingCompany.Cellphone = value.Cellphone;
-
+            existingCompany.Ie = value.Ie;
             // Limpa os campos numéricos
             //existingCompany.CleanNumericFields();
 

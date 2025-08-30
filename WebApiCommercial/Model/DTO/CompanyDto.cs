@@ -7,18 +7,18 @@ namespace Model.DTO
 
     public class CompanyDto
     {
-        public string CorporateName { get; set; }
+        public string ?CorporateName { get; set; }
         public Guid Guid { get; set; }
         public int Id { get; set; }
-        public string Name { get; set; }
-        public string Cnpj { get; set; }
-        public string ZipCode { get; set; }
-        public string Address { get; set; }
-        public string State { get; set; }
-        public string CommercialPhone { get; set; }
-        public string City { get; set; }
-        public string Cellphone { get; set; }
-
+        public string? Name { get; set; }
+        public string? Cnpj { get; set; }
+        public string? ZipCode { get; set; }
+        public string? Address { get; set; }
+        public string? State { get; set; }
+        public string? CommercialPhone { get; set; }
+        public string? City { get; set; }
+        public string? Cellphone { get; set; }
+        public string? Ie { get; set; }
         // Construtor padrão
         public CompanyDto() { }
 

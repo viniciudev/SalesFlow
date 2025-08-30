@@ -34,6 +34,8 @@ import InputMask from "react-input-mask";
 import json_city from "./json_cities.json";
 import Axios from "axios";
 import { URL_Company } from "../../services/companyService";
+import swal from "sweetalert";
+import { icon } from "@fortawesome/fontawesome-svg-core";
 
 class FormCompany extends Component {
   state = {
@@ -51,6 +53,7 @@ class FormCompany extends Component {
       commercialPhone: "",
       cellphone: "",
       email: "",
+      ie: "",
     },
     errors: {},
     loading: false,
@@ -108,12 +111,13 @@ class FormCompany extends Component {
     )
       .then((resp) => {
         this.setState({ loading: false });
-        alert("Empresa atualizada com sucesso!");
+
+        swal("Empresa atualizada com sucesso!", { icon: "success" });
       })
       .catch((err) => {
         this.setState({ loading: false });
         console.error("Error updating company data:", err);
-        alert("Erro ao atualizar empresa.");
+        swal("Erro ao atualizar empresa.", { icon: "error" });
       });
   };
 
@@ -138,7 +142,7 @@ class FormCompany extends Component {
                     onChange={(e) => this.setValues(e, "corporateName")}
                   />
                 </div>
-                <div className="col-md-5">
+                <div className="col-md-3">
                   <Label htmlFor="name">Nome Empresa:</Label>
                   <Input
                     type="text"
@@ -146,6 +150,18 @@ class FormCompany extends Component {
                     className="form-control-warning"
                     value={this.state.formCompany.name}
                     onChange={(e) => this.setValues(e, "name")}
+                  />
+                </div>
+                <div className="col-md-2">
+                  <Label htmlFor="Ie">IE:</Label>
+                  <Input
+                    type="text"
+                    id="ie"
+                    // mask="999.999.999/9999-99"
+                    // tag={InputMask}
+                    className="form-control-warning"
+                    value={this.state.formCompany.ie}
+                    onChange={(e) => this.setValues(e, "ie")}
                   />
                 </div>
                 <div className="col-md-2">

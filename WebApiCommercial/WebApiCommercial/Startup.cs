@@ -195,7 +195,11 @@ namespace WebAppCommercial
       services.AddTransient<IClosuresDetailRepository, ClosuresDetailRepository>();
       services.AddTransient<IBaseService<ClosuresDetail>, ClosuresDetailService>();
 
-      services.AddCors(options =>
+            services.AddScoped<IEmailService, EmailService>();
+
+            // Configurações do appsettings.json
+            services.Configure<EmailSettings>(Configuration.GetSection("EmailSettings"));
+            services.AddCors(options =>
       {
         options.AddPolicy("EnableCORS", builder =>
         {

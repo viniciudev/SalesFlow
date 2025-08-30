@@ -17,7 +17,8 @@ namespace Model
     }
     public enum TypeUser
     {
-        resale,
+        client,
         provider,
+        manager
     }
 }
