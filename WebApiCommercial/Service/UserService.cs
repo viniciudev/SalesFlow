@@ -16,15 +16,18 @@ namespace Service
     private ICompanyService companyService;
     private IPlanCompanyService planCompanyService;
     private ICostCenterService costCenterService;
+        private IEmailService emailService;
     public UserService(IGenericRepository<User> repository,
       ICompanyService companyService,
       IPlanCompanyService planCompanyService,
-      ICostCenterService costCenterService) : base(repository)
+      ICostCenterService costCenterService,
+      IEmailService emailService) : base(repository)
       
     {
       this.companyService = companyService;
       this.planCompanyService = planCompanyService;
       this.costCenterService = costCenterService;
+            this.emailService = emailService;
     }
       public Task<User> GetUser(AuthenticateModel model)
       {
@@ -37,8 +40,8 @@ namespace Service
       //v@v.com--1
       // return null if user not found
       if (user == null) return new AuthenticateResponse(new User(), "", "Usuário não localizado!"); ;
-
-      Cryptography cryptography = new Cryptography();
+            if (!user.VerifiedEmail) return new AuthenticateResponse(new User(), "", "Email não verificado!"); ;
+            Cryptography cryptography = new Cryptography();
       Boolean ComparaSenha = cryptography.authentic(user, model.Password);
 
       if (!ComparaSenha)
@@ -98,6 +101,12 @@ namespace Service
       user.IdCompany = company.Id;
       user.Password = hash;
       await base.Create(user);
+            await emailService.SendVerificationEmailAsync(new EmailRequest
+            {
+                Email = user.Email,
+                Name = user.Name,
+                UserType= (int)  user.TypeUser,
+            });
       return "Salvo com Sucesso!";
     }
   }
