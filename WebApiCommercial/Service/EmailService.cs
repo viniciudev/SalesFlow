@@ -1,12 +1,10 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using MailKit.Net.Smtp;
+using MailKit.Security;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MimeKit;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Mail;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Service
@@ -25,51 +23,63 @@ namespace Service
     {
         private readonly EmailSettings _emailSettings;
         private readonly ILogger<EmailService> _logger;
-
-        public EmailService(IOptions<EmailSettings> emailSettings, ILogger<EmailService> logger)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public EmailService(IOptions<EmailSettings> emailSettings, ILogger<EmailService> logger, IHttpContextAccessor httpContextAccessor)
         {
             _emailSettings = emailSettings.Value;
             _logger = logger;
+            _httpContextAccessor = httpContextAccessor;
         }
+        public string GenerateVerificationUrl(string token, string email)
+        {
+            var request = _httpContextAccessor.HttpContext.Request;
+            var baseUrl = $"{request.Scheme}://{request.Host}";
 
+            return $"{baseUrl}/api/email/verify-email?token={token}&email={email}";
+        }
         public async Task<EmailResponse> SendVerificationEmailAsync(EmailRequest request)
         {
+          
             try
             {
-                // Validar configurações
-                if (string.IsNullOrEmpty(_emailSettings.SmtpHost) ||
-                    string.IsNullOrEmpty(_emailSettings.Username) ||
-                    string.IsNullOrEmpty(_emailSettings.Password))
-                {
-                    throw new InvalidOperationException("Configurações de email não foram definidas corretamente");
-                }
-
-                // Gerar token de verificação
                 var verificationToken = GenerateVerificationToken(request.Email);
 
-                // URL de verificação (ajuste conforme sua aplicação)
-                var verificationUrl = $"https://seu-dominio.com/verify-email?token={verificationToken}&email={request.Email}";
-
-                // Construir o corpo do email
+                var verificationUrl = GenerateVerificationUrl(verificationToken, request.Email);//$"https://seu-dominio.com/verify-email?token={verificationToken}&email={request.Email}";
                 var emailBody = BuildEmailBody(request.Name, verificationUrl, request.UserType);
 
-                using (var client = new SmtpClient(_emailSettings.SmtpHost, _emailSettings.SmtpPort))
+                var message = new MimeMessage();
+                message.From.Add(new MailboxAddress(_emailSettings.FromName, _emailSettings.FromEmail));
+                message.To.Add(new MailboxAddress(request.Name, request.Email));
+                message.Subject = "Verificação de Email - Seu Sistema";
+
+                var bodyBuilder = new BodyBuilder
                 {
-                    client.Credentials = new NetworkCredential(_emailSettings.Username, _emailSettings.Password);
-                    client.EnableSsl = _emailSettings.EnableSsl;
-                    client.Timeout = _emailSettings.Timeout;
+                    HtmlBody = emailBody
+                };
+                message.Body = bodyBuilder.ToMessageBody();
 
-                    var mailMessage = new MailMessage
+                using (var client = new SmtpClient())
+                {
+                    // Configuração baseada na porta
+                    if (_emailSettings.SmtpPort == 465)
                     {
-                        From = new MailAddress(_emailSettings.FromEmail, _emailSettings.FromName),
-                        Subject = "Verificação de Email - Seu Sistema",
-                        Body = emailBody,
-                        IsBodyHtml = true
-                    };
+                        // Porta 465 - SSL explícito
+                        await client.ConnectAsync(_emailSettings.SmtpHost, _emailSettings.SmtpPort, SecureSocketOptions.SslOnConnect);
+                    }
+                    else if (_emailSettings.SmtpPort == 587)
+                    {
+                        // Porta 587 - STARTTLS
+                        await client.ConnectAsync(_emailSettings.SmtpHost, _emailSettings.SmtpPort, SecureSocketOptions.StartTls);
+                    }
+                    else
+                    {
+                        // Auto-detect para outras portas
+                        await client.ConnectAsync(_emailSettings.SmtpHost, _emailSettings.SmtpPort, SecureSocketOptions.Auto);
+                    }
 
-                    mailMessage.To.Add(request.Email);
-
-                    await client.SendMailAsync(mailMessage);
+                    await client.AuthenticateAsync(_emailSettings.Username, _emailSettings.Password);
+                    await client.SendAsync(message);
+                    await client.DisconnectAsync(true);
                 }
 
                 _logger.LogInformation($"Email de verificação enviado para: {request.Email}");
@@ -78,13 +88,13 @@ namespace Service
                 {
                     Success = true,
                     Message = "Email de verificação enviado com sucesso",
-                    SentDate = DateTime.UtcNow
+                    SentDate = DateTime.UtcNow,
+
                 };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Erro ao enviar email para: {request.Email}");
-
                 return new EmailResponse
                 {
                     Success = false,
@@ -92,6 +102,7 @@ namespace Service
                     SentDate = null
                 };
             }
+        
         }
 
         private string GenerateVerificationToken(string email)

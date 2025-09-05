@@ -72,6 +72,7 @@ namespace WebApiCommercial.Controllers
         {
             try
             {
+                //mandar o id
                 // Aqui você implementaria a lógica para verificar o token
                 // Validar se o token é válido e não expirou
                 // Atualizar o usuário como verificado no banco de dados

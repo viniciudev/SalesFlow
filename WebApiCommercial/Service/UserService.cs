@@ -100,12 +100,14 @@ namespace Service
 
       user.IdCompany = company.Id;
       user.Password = hash;
+            user.VerifiedEmail = false;
       await base.Create(user);
             await emailService.SendVerificationEmailAsync(new EmailRequest
             {
                 Email = user.Email,
                 Name = user.Name,
                 UserType= (int)  user.TypeUser,
+                
             });
       return "Salvo com Sucesso!";
     }
