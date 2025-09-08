@@ -27,11 +27,12 @@ const FontAwesome = React.lazy(() => import("./views/Icons/FontAwesome"));
 const SimpleLineIcons = React.lazy(() =>
   import("./views/Icons/SimpleLineIcons")
 );
+const Login = React.lazy(() => import("./views/Pages/Login/Login.js"));
 // const Locks = React.lazy(() => import('./views/Locks/locks'))
 
 // https://github.com/ReactTraining/react-router/tree/master/packages/react-router-config
 const routes = [
-  { path: "/", exact: true, name: "login" },
+  { path: "/", exact: true, name: "Login", component: Login },
   { path: "/dashboard", name: "Dashboard", component: Dashboard },
   { path: "/register/file", name: "Arquivos", component: Files },
   { path: "/register/client", name: "Clientes", component: Client },

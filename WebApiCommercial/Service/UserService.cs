@@ -39,8 +39,8 @@ namespace Service
       var user = await (repository as IUserRepository).GetUser(model);
       //v@v.com--1
       // return null if user not found
-      if (user == null) return new AuthenticateResponse(new User(), "", "Usuário não localizado!"); ;
-            if (!user.VerifiedEmail) return new AuthenticateResponse(new User(), "", "Email não verificado!"); ;
+      if (user == null) return new AuthenticateResponse(new User(), "", "Usuário não localizado!"); 
+            if (!user.VerifiedEmail) return new AuthenticateResponse(new User(), "", "Email não verificado!");
             Cryptography cryptography = new Cryptography();
       Boolean ComparaSenha = cryptography.authentic(user, model.Password);
 
@@ -103,13 +103,15 @@ namespace Service
             user.VerifiedEmail = false;
             user.TokenVerify= Guid.NewGuid().ToString();
             await base.Create(user);
-            await emailService.SendVerificationEmailAsync(new EmailRequest
+            EmailResponse emailResp= await emailService.SendVerificationEmailAsync(new EmailRequest
             {
                 Email = user.Email,
                 Name = user.Name,
                 UserType= (int)  user.TypeUser,
                 
             }, user.TokenVerify);
+            if (!emailResp.Success)
+                return emailResp.Message;
       return "Salvo com Sucesso!";
     }
         public async Task<User> GetByToken(string token)

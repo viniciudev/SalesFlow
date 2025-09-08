@@ -93,38 +93,43 @@ class Register extends Component {
         const { data } = resp;
 
         if (data === "Salvo com Sucesso!") {
+          swal("Conta criada com sucesso! Email de verificação enviado.", {
+            icon: "success",
+          }).then((ok) => {
+            if (ok) history.push("/login");
+          });
           // Se não for cliente, enviar email de verificação
-          if (values.typeUser !== "0") {
-            try {
-              await axios.post("/api/send-verification-email", {
-                email: values.email,
-                name: values.firtName,
-                userType: values.typeUser,
-              });
+          // if (values.typeUser !== "0") {
+          //   try {
+          //     await axios.post("/api/send-verification-email", {
+          //       email: values.email,
+          //       name: values.firtName,
+          //       userType: values.typeUser,
+          //     });
 
-              swal("Conta criada com sucesso! Email de verificação enviado.", {
-                icon: "success",
-              }).then((ok) => {
-                if (ok) history.push("/login");
-              });
-            } catch (emailError) {
-              console.error("Erro ao enviar email:", emailError);
-              swal(
-                "Conta criada, mas houve um erro ao enviar o email de verificação.",
-                {
-                  icon: "warning",
-                }
-              ).then((ok) => {
-                if (ok) history.push("/login");
-              });
-            }
-          } else {
-            swal(data, {
-              icon: "success",
-            }).then((ok) => {
-              if (ok) history.push("/login");
-            });
-          }
+          //     swal("Conta criada com sucesso! Email de verificação enviado.", {
+          //       icon: "success",
+          //     }).then((ok) => {
+          //       if (ok) history.push("/login");
+          //     });
+          //   } catch (emailError) {
+          //     console.error("Erro ao enviar email:", emailError);
+          //     swal(
+          //       "Conta criada, mas houve um erro ao enviar o email de verificação.",
+          //       {
+          //         icon: "warning",
+          //       }
+          //     ).then((ok) => {
+          //       if (ok) history.push("/login");
+          //     });
+          //   }
+          // } else {
+          //   swal(data, {
+          //     icon: "success",
+          //   }).then((ok) => {
+          //     if (ok) history.push("/login");
+          //   });
+          // }
         } else {
           swal(data, {
             icon: "warning",

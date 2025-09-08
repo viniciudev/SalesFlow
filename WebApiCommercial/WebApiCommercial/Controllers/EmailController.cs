@@ -91,9 +91,9 @@ namespace WebApiCommercial.Controllers
 
                     return Ok(new
                     {
-                        Success = true,
+                        //Success = true,
                         Message = "Email verificado com sucesso",
-                        VerifiedDate = DateTime.UtcNow
+                        //VerifiedDate = DateTime.UtcNow
                     });
                 }
                 else
