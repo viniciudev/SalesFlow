@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Model;
 using Service;
 using System;
 using System.Threading.Tasks;
@@ -13,11 +14,13 @@ namespace WebApiCommercial.Controllers
     {
         private readonly IEmailService _emailService;
         private readonly ILogger<EmailController> _logger;
+        private readonly IUserService _userService;
 
-        public EmailController(IEmailService emailService, ILogger<EmailController> logger)
+        public EmailController(IEmailService emailService, ILogger<EmailController> logger, IUserService userService)
         {
             _emailService = emailService;
             _logger = logger;
+            _userService = userService;
         }
 
         [HttpPost("send-verification")]
@@ -44,7 +47,7 @@ namespace WebApiCommercial.Controllers
                     });
                 }
 
-                var result = await _emailService.SendVerificationEmailAsync(request);
+                var result = await _emailService.SendVerificationEmailAsync(request, Guid.NewGuid().ToString());
 
                 if (result.Success)
                 {
@@ -76,17 +79,27 @@ namespace WebApiCommercial.Controllers
                 // Aqui você implementaria a lógica para verificar o token
                 // Validar se o token é válido e não expirou
                 // Atualizar o usuário como verificado no banco de dados
-
-                // Exemplo simples:
-                // var isValid = await ValidateVerificationTokenAsync(email, token);
-                // if (!isValid) return BadRequest("Token inválido ou expirado");
-
-                return Ok(new
+                User user = await _userService.GetByToken(token);
+                if (user != null && user.Email == email)
                 {
-                    Success = true,
-                    Message = "Email verificado com sucesso",
-                    VerifiedDate = DateTime.UtcNow
-                });
+                    user.VerifiedEmail = true;
+                    await _userService.Alter(user);
+
+                    // Exemplo simples:
+                    // var isValid = await ValidateVerificationTokenAsync(email, token);
+                    // if (!isValid) return BadRequest("Token inválido ou expirado");
+
+                    return Ok(new
+                    {
+                        Success = true,
+                        Message = "Email verificado com sucesso",
+                        VerifiedDate = DateTime.UtcNow
+                    });
+                }
+                else
+                {
+                    return BadRequest("Falha ao verificar email.");
+                }
             }
             catch (Exception ex)
             {

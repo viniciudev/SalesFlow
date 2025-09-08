@@ -11,7 +11,7 @@ namespace Service
 {
     public interface IEmailService
     {
-        Task<EmailResponse> SendVerificationEmailAsync(EmailRequest request);
+        Task<EmailResponse> SendVerificationEmailAsync(EmailRequest request, string tokenVerify);
     }
     public class EmailRequest
     {
@@ -37,14 +37,12 @@ namespace Service
 
             return $"{baseUrl}/api/email/verify-email?token={token}&email={email}";
         }
-        public async Task<EmailResponse> SendVerificationEmailAsync(EmailRequest request)
+        public async Task<EmailResponse> SendVerificationEmailAsync(EmailRequest request,string verificationToken)
         {
           
             try
             {
-                var verificationToken = GenerateVerificationToken(request.Email);
-
-                var verificationUrl = GenerateVerificationUrl(verificationToken, request.Email);//$"https://seu-dominio.com/verify-email?token={verificationToken}&email={request.Email}";
+                var verificationUrl = GenerateVerificationUrl(verificationToken, request.Email);
                 var emailBody = BuildEmailBody(request.Name, verificationUrl, request.UserType);
 
                 var message = new MimeMessage();

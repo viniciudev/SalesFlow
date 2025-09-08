@@ -101,22 +101,28 @@ namespace Service
       user.IdCompany = company.Id;
       user.Password = hash;
             user.VerifiedEmail = false;
-      await base.Create(user);
+            user.TokenVerify= Guid.NewGuid().ToString();
+            await base.Create(user);
             await emailService.SendVerificationEmailAsync(new EmailRequest
             {
                 Email = user.Email,
                 Name = user.Name,
                 UserType= (int)  user.TypeUser,
                 
-            });
+            }, user.TokenVerify);
       return "Salvo com Sucesso!";
     }
-  }
+        public async Task<User> GetByToken(string token)
+        {
+            return await (repository as IUserRepository).GetByToken(token);
+        }
+    }
 
   public interface IUserService : IBaseService<User>
   {
     Task<string> SaveUser(User user);
     Task<AuthenticateResponse> Authenticate(AuthenticateModel model);
-  }
+        Task<User> GetByToken(string token);
+    }
 
 }

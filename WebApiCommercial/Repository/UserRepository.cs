@@ -16,10 +16,17 @@ namespace Repository
         .AsNoTracking().SingleOrDefaultAsync();
       return data;
     }
-  }
+        public async Task<User> GetByToken(string token)
+        {
+            var data = await _dbContext.Set<User>().Where(x => x.TokenVerify == token)
+    .AsNoTracking().SingleOrDefaultAsync();
+            return data;
+        }
+    }
 
   public interface IUserRepository : IGenericRepository<User>
   {
-    Task<User> GetUser(AuthenticateModel model);
+        Task<User> GetByToken(string token);
+        Task<User> GetUser(AuthenticateModel model);
   }
 }

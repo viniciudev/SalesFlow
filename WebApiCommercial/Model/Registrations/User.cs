@@ -15,6 +15,7 @@ namespace Model
         public int IdCompany { get; set; }
         public TypeUser TypeUser { get; set; }
         public bool VerifiedEmail { get; set; } = false;
+        public string TokenVerify { get; set; }
     }
     public enum TypeUser
     {
