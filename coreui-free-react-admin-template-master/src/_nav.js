@@ -46,11 +46,11 @@ export default {
       url: "/register/salesman",
       icon: "fa fa-handshake-o",
     },
-    // {
-    //   name: 'Serviços',
-    //   url: '/register/service',
-    //   icon: 'icon-wrench',
-    // },
+    {
+      name: "Serviços",
+      url: "/register/service",
+      icon: "icon-wrench",
+    },
 
     {
       name: "Produtos",
