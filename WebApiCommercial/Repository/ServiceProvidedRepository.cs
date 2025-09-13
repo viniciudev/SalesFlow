@@ -17,7 +17,10 @@ namespace Repository
 
     public async Task<PagedResult<ServiceProvided>> GetAllPaged(Filters filter)
     {
-      var paged = await base._dbContext.Set<ServiceProvided>().Where(x => x.IdCompany == filter.idCompany).
+      var paged = await base._dbContext.Set<ServiceProvided>().
+                Include(x=>x.Details)
+                .Where(x => x.IdCompany == filter.idCompany).
+
         GetPagedAsync<ServiceProvided>(filter.pageNumber, filter.pageSize);
       return paged;
     }

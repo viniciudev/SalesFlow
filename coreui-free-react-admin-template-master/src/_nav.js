@@ -73,7 +73,11 @@ export default {
       },
       class: "", // optional class names space delimited list for title item ex: "text-center"
     },
-
+    {
+      name: "Produção",
+      url: "/moves/production",
+      icon: "fa fa-cogs",
+    },
     {
       name: "Vendas",
       url: "/moves/sales",

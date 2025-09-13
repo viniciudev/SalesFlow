@@ -12,6 +12,7 @@ const Service = React.lazy(() => import("./views/Registrations/Service"));
 const Product = React.lazy(() => import("./views/Registrations/Product"));
 const Company = React.lazy(() => import("./views/Registrations/Company"));
 const Sale = React.lazy(() => import("./views/Moves/Sale"));
+const Production = React.lazy(() => import("./views/Moves/Production.js"));
 const Budget = React.lazy(() => import("./views/Moves/budget"));
 const ServiceProvision = React.lazy(() =>
   import("./views/Moves/serviceProvision")
@@ -43,6 +44,7 @@ const routes = [
   { path: "/register/company", name: "Empresa", component: Company },
   { path: "/moves/sales", name: "Vendas", component: Sale },
   { path: "/moves/budget", name: "budget", component: Budget },
+  { path: "/moves/production", name: "budget", component: Production },
   {
     path: "/moves/serviceProvision",
     name: "ServiceProvision",
