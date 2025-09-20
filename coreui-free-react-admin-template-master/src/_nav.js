@@ -20,11 +20,11 @@ export default {
       },
       class: "", // optional class names space delimited list for title item ex: "text-center"
     },
-    {
-      name: "Itens de venda",
-      url: "/register/file",
-      icon: "fa fa-cloud-upload",
-    },
+    // {
+    //   name: "Itens de venda",
+    //   url: "/register/file",
+    //   icon: "fa fa-cloud-upload",
+    // },
     // {
     //   name: 'Prospect',
     //   url: '/register/prospect',
@@ -78,11 +78,11 @@ export default {
       url: "/moves/production",
       icon: "fa fa-cogs",
     },
-    {
-      name: "Vendas",
-      url: "/moves/sales",
-      icon: "fa fa-shopping-cart",
-    },
+    // {
+    //   name: "Vendas",
+    //   url: "/moves/sales",
+    //   icon: "fa fa-shopping-cart",
+    // },
     // {
     //   name: 'Comissões',
     //   url: '/register/commission',

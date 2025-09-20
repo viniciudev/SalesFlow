@@ -44,7 +44,7 @@ const routes = [
   { path: "/register/company", name: "Empresa", component: Company },
   { path: "/moves/sales", name: "Vendas", component: Sale },
   { path: "/moves/budget", name: "budget", component: Budget },
-  { path: "/moves/production", name: "budget", component: Production },
+  { path: "/moves/production", name: "Production", component: Production },
   {
     path: "/moves/serviceProvision",
     name: "ServiceProvision",
