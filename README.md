@@ -1,6 +1,10 @@
 # SalesFlow 
-#backend asp .net core c#
-#frontend react.js
+
+## 🧠 Linguagens utilizadas
+- C#
+- .NET 6
+- SQL Server
+- React.js
 
 📌 Configuração Completa do Ambiente de Desenvolvimento
 1️⃣ Instalação do SDK .NET 6.0 + ASP.NET Core (Backend - API)
