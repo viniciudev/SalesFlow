@@ -1,4 +1,7 @@
-# SalesFlow
+# SalesFlow 
+#backend asp .net core c#
+#frontend react.js
+
 📌 Configuração Completa do Ambiente de Desenvolvimento
 1️⃣ Instalação do SDK .NET 6.0 + ASP.NET Core (Backend - API)
 🔹 Download: .NET 6.0 SDK
