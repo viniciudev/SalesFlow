@@ -1,0 +1,8 @@
+# Indica que C# é a linguagem principal
+*.cs linguist-detectable=true
+*.js linguist-detectable=true
+
+# Opcional: ignora pastas de build
+bin/ linguist-vendored
+obj/ linguist-vendored
+wwwroot/ linguist-vendored
