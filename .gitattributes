@@ -1,4 +1,4 @@
-# Indica que C# é a linguagem principal
+
 *.cs linguist-detectable=true
 *.js linguist-detectable=true
 
