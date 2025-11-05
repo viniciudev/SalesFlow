@@ -523,7 +523,7 @@ namespace WebAppCommercial
                     builder.AllowAnyOrigin().AllowAnyHeader().WithOrigins(
                       new[] {"http://localhost:3000", "http://localhost:3001",
             "http://appservicebox.link","https://appservicebox.link",
-            "https://tractuscommissions.com.br"}
+            "https://tractuscommissions.com.br","http://localhost:9002"}
                       ).AllowAnyMethod().Build();
                 });
             });

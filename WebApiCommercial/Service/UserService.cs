@@ -6,125 +6,160 @@ using Repository;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Service
 {
-   public class UserService : BaseService<User>, IUserService
-  {
-    private ICompanyService companyService;
-    private IPlanCompanyService planCompanyService;
-    private ICostCenterService costCenterService;
+    public class UserService : BaseService<User>, IUserService
+    {
+        private ICompanyService companyService;
+        private IPlanCompanyService planCompanyService;
+        private ICostCenterService costCenterService;
         private IEmailService emailService;
-    public UserService(IGenericRepository<User> repository,
-      ICompanyService companyService,
-      IPlanCompanyService planCompanyService,
-      ICostCenterService costCenterService,
-      IEmailService emailService) : base(repository)
-      
-    {
-      this.companyService = companyService;
-      this.planCompanyService = planCompanyService;
-      this.costCenterService = costCenterService;
-            this.emailService = emailService;
-    }
-      public Task<User> GetUser(AuthenticateModel model)
-      {
-         return (repository as IUserRepository).GetUser(model);
-      }
+        public UserService(IGenericRepository<User> repository,
+          ICompanyService companyService,
+          IPlanCompanyService planCompanyService,
+          ICostCenterService costCenterService,
+          IEmailService emailService) : base(repository)
 
-    public async Task<AuthenticateResponse> Authenticate(AuthenticateModel model)
-    {
-      var user = await (repository as IUserRepository).GetUser(model);
-      //v@v.com--1
-      // return null if user not found
-      if (user == null) return new AuthenticateResponse(new User(), "", "Usuário não localizado!"); 
+        {
+            this.companyService = companyService;
+            this.planCompanyService = planCompanyService;
+            this.costCenterService = costCenterService;
+            this.emailService = emailService;
+        }
+        public Task<User> GetUser(AuthenticateModel model)
+        {
+            return (repository as IUserRepository).GetUser(model);
+        }
+
+        public async Task<AuthenticateResponse> Authenticate(AuthenticateModel model)
+        {
+            var user = await (repository as IUserRepository).GetUser(model);
+            //v@v.com--1
+            // return null if user not found
+            if (user == null) return new AuthenticateResponse(new User(), "", "Usuário não localizado!");
             if (!user.VerifiedEmail) return new AuthenticateResponse(new User(), "", "Email não verificado!");
             Cryptography cryptography = new Cryptography();
-      Boolean ComparaSenha = cryptography.authentic(user, model.Password);
+            Boolean ComparaSenha = cryptography.authentic(user, model.Password);
 
-      if (!ComparaSenha)
-        return new AuthenticateResponse(user, "", "Senha inválida!");
+            if (!ComparaSenha)
+                return new AuthenticateResponse(user, "", "Senha inválida!");
 
-      // authentication successful so generate jwt token
+            // authentication successful so generate jwt token
 
-      var token = TokenService.GenerateToken(user);
+            var token = TokenService.GenerateToken(user);
 
-      return new AuthenticateResponse(user, token);
-    }
+            return new AuthenticateResponse(user, token);
+        }
 
-    private string GenerateJwtToken(User user, byte[] key)
-    {
-      // generate token that is valid for 7 days
-      var tokenHandler = new JwtSecurityTokenHandler();
-      var tokenDescriptor = new SecurityTokenDescriptor
-      {
-        Subject = new ClaimsIdentity(new[] { new Claim("id", user.Id.ToString()) }),
-        Expires = DateTime.UtcNow.AddDays(7),
-        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-      };
-      var token = tokenHandler.CreateToken(tokenDescriptor);
-      return tokenHandler.WriteToken(token);
-    }
-    public async Task<string> SaveUser(User user)
-    {
-      AuthenticateModel authenticateModel = new AuthenticateModel();
-      authenticateModel.Email = user.Email;
+        private string GenerateJwtToken(User user, byte[] key)
+        {
+            // generate token that is valid for 7 days
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[] { new Claim("id", user.Id.ToString()) }),
+                Expires = DateTime.UtcNow.AddDays(7),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
+        public async Task<string> SaveUser(User user)
+        {
+            AuthenticateModel authenticateModel = new AuthenticateModel();
+            authenticateModel.Email = user.Email;
 
-      var userExist = await (repository as IUserRepository).GetUser(authenticateModel);
-      if (userExist != null)
-        return "Usuário já possui cadastro!";
+            var userExist = await (repository as IUserRepository).GetUser(authenticateModel);
+            if (userExist != null)
+                return "Usuário já possui cadastro!";
 
-      Cryptography cryptography = new Cryptography();
-      var hash = cryptography.addsEncrypted(user.Password);
+            Cryptography cryptography = new Cryptography();
+            var hash = cryptography.addsEncrypted(user.Password);
 
-      Company company = new Company();
-      company.CorporateName = user.Name;
-      Guid g = Guid.NewGuid();
-      company.Guid= g;
-      await companyService.Create(company);
+            Company company = new Company();
+            company.CorporateName = user.Name;
+            Guid g = Guid.NewGuid();
+            company.Guid = g;
+            await companyService.Create(company);
 
-      PlanCompany planCompany = new PlanCompany();
-      planCompany.Status = (int)Statusplan.enable;
-      planCompany.ExpirationDate=DateTime.Now.AddDays(30);
-      planCompany.DateRegister = DateTime.Now;
-      planCompany.LastPayment= DateTime.Now;
-      planCompany.IdCompany = company.Id;
-      await planCompanyService.Create(planCompany);
+            PlanCompany planCompany = new PlanCompany();
+            planCompany.Status = (int)Statusplan.enable;
+            planCompany.ExpirationDate = DateTime.Now.AddDays(30);
+            planCompany.DateRegister = DateTime.Now;
+            planCompany.LastPayment = DateTime.Now;
+            planCompany.IdCompany = company.Id;
+            await planCompanyService.Create(planCompany);
 
-      CostCenter costCenter = new CostCenter();
-      costCenter.Name = "Padrão"; 
-      costCenter.IdCompany = company.Id;
-      await costCenterService.Create(costCenter);
+            CostCenter costCenter = new CostCenter();
+            costCenter.Name = "Padrão";
+            costCenter.IdCompany = company.Id;
+            await costCenterService.Create(costCenter);
 
-      user.IdCompany = company.Id;
-      user.Password = hash;
+            user.IdCompany = company.Id;
+            user.Password = hash;
             user.VerifiedEmail = false;
-            user.TokenVerify= Guid.NewGuid().ToString();
+            user.TokenVerify = Guid.NewGuid().ToString();
             await base.Create(user);
-            EmailResponse emailResp= await emailService.SendVerificationEmailAsync(new EmailRequest
+            EmailResponse emailResp = await emailService.SendVerificationEmailAsync(new EmailRequest
             {
                 Email = user.Email,
                 Name = user.Name,
-                UserType= (int)  user.TypeUser,
-                
+                UserType = (int)user.TypeUser,
+
             }, user.TokenVerify);
             if (!emailResp.Success)
                 return emailResp.Message;
-      return "Salvo com Sucesso!";
-    }
+            return "Salvo com Sucesso!";
+        }
         public async Task<User> GetByToken(string token)
         {
             return await (repository as IUserRepository).GetByToken(token);
         }
+        public async Task<string> ResetPassword(string email, string novaSenha, string confirmarSenha = null)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return "Email é obrigatório!";
+
+            if (string.IsNullOrWhiteSpace(novaSenha))
+                return "Nova senha é obrigatória!";
+
+            // Validação de confirmação de senha (se for fornecida)
+            if (!string.IsNullOrWhiteSpace(confirmarSenha) && novaSenha != confirmarSenha)
+                return "As senhas não conferem!";
+
+            // Buscar usuário pelo email
+            var authenticateModel = new AuthenticateModel { Email = email };
+            var user = await (repository as IUserRepository).GetUser(authenticateModel);
+
+            if (user == null)
+                return "Usuário não encontrado!";
+
+            // Validar força da senha
+            if (novaSenha.Length < 6)
+                return "A senha deve ter no mínimo 6 caracteres!";
+
+            // Criptografar e salvar a nova senha
+            Cryptography cryptography = new Cryptography();
+            var novaSenhaHash = cryptography.addsEncrypted(novaSenha);
+
+            user.Password = novaSenhaHash;
+            //use = DateTime.Now;
+
+            await base.Alter(user);
+
+            return "Senha redefinida com sucesso!";
+        }
     }
 
-  public interface IUserService : IBaseService<User>
-  {
-    Task<string> SaveUser(User user);
-    Task<AuthenticateResponse> Authenticate(AuthenticateModel model);
+
+    public interface IUserService : IBaseService<User>
+    {
+        Task<string> SaveUser(User user);
+        Task<AuthenticateResponse> Authenticate(AuthenticateModel model);
         Task<User> GetByToken(string token);
+        Task<string> ResetPassword(string email, string novaSenha, string confirmarSenha = null);
     }
 
 }
