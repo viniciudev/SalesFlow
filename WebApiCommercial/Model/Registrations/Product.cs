@@ -16,7 +16,9 @@ namespace Model.Registrations
         public ICollection<SaleItems> SaleItems { get; set; }
         public ICollection<Commission> Commissions { get; set; }
         public ICollection<Financial> Financials { get; set; }
-        [NotMapped]
+        public ICollection<Stock> Stocks { get; set; }
+
+        public string Code { get; set; }
         public string ImageBytes { get; set; }
     }
 }

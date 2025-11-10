@@ -26,43 +26,43 @@ namespace Service
         }
         public async Task SaveProduct(ProductCreateModelDto model, int tenantid)
         {
-          
-            byte[] file = null;
-            if (model.Id > 0)
-            {
-                var existingProduct = await base.GetByIdAsync(model.Id);
-                file = existingProduct.Image;
-            }
-         
-            // Processar a imagem se existir
-            if (model.Image != null && model.Image.Length > 0)
-            {
-                // Obter array de bytes da imagem
-                using (var memoryStream = new MemoryStream())
-                {
-                    await model.Image.CopyToAsync(memoryStream);
-                    byte[] imageBytes = memoryStream.ToArray();
 
-                    // Aqui você pode:
-                    // 1. Salvar o array de bytes no banco de dados (se sua entidade tiver essa propriedade)
-                    // product.ImageBytes = imageBytes;
+            //byte[] file = null;
+            //if (model.Id > 0)
+            //{
+            //    var existingProduct = await base.GetByIdAsync(model.Id);
+            //    file = existingProduct.Image;
+            //}
 
-                    // 2. Ou salvar no sistema de arquivos como no exemplo anterior
-                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
-                    if (!Directory.Exists(uploadsFolder))
-                    {
-                        Directory.CreateDirectory(uploadsFolder);
-                    }
+            //// Processar a imagem se existir
+            //if (model.Image != null && model.Image.Length > 0)
+            //{
+            //    // Obter array de bytes da imagem
+            //    using (var memoryStream = new MemoryStream())
+            //    {
+            //        await model.Image.CopyToAsync(memoryStream);
+            //        byte[] imageBytes = memoryStream.ToArray();
 
-                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + model.Image.FileName;
-                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+            //        // Aqui você pode:
+            //        // 1. Salvar o array de bytes no banco de dados (se sua entidade tiver essa propriedade)
+            //        // product.ImageBytes = imageBytes;
 
-                    // Salvar bytes no arquivo
-                    await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
-                    file = imageBytes;
-                    //product.ImageUrl = uniqueFileName; // Ou o caminho completo se preferir
-                }
-            }
+            //        // 2. Ou salvar no sistema de arquivos como no exemplo anterior
+            //        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
+            //        if (!Directory.Exists(uploadsFolder))
+            //        {
+            //            Directory.CreateDirectory(uploadsFolder);
+            //        }
+
+            //        var uniqueFileName = Guid.NewGuid().ToString() + "_" + model.Image.FileName;
+            //        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            //        // Salvar bytes no arquivo
+            //        await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
+            //        file = imageBytes;
+            //        //product.ImageUrl = uniqueFileName; // Ou o caminho completo se preferir
+            //    }
+            //}
             var product = new Product
             {
                 Id = model.Id,
@@ -71,7 +71,7 @@ namespace Service
                 Value = model.Value,
                 Description = model.Description,
                 Quantity = model.Quantity,
-                Image = file
+                Image = null//file
             };
             if (product.Id > 0)
                 await base.Alter(product);

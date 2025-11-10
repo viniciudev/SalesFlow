@@ -53,6 +53,7 @@ namespace Repository
             ConfiguraClosuresDetail(modelBuilder);
             ConfiguraClosures(modelBuilder);
             ConfiguraDetailsService(modelBuilder);
+            ConfiguraStockService(modelBuilder);
             var cascadeFKs = modelBuilder.Model.GetEntityTypes()
      .SelectMany(t => t.GetForeignKeys())
      .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
@@ -60,6 +61,21 @@ namespace Repository
                 fk.DeleteBehavior = DeleteBehavior.Restrict;
 
             base.OnModelCreating(modelBuilder);
+        }
+
+        private void ConfiguraStockService(ModelBuilder builder)
+        {
+            builder.Entity<Stock>(d =>
+            {
+                d.ToTable("tb_stock");
+                d.HasKey(c => c.Id);
+                d.Property(c => c.Id).ValueGeneratedOnAdd();
+
+            });
+            builder.Entity<Stock>()
+              .HasOne(dc => dc.Product)
+              .WithMany(c => c.Stocks)
+              .HasForeignKey(dc => dc.IdProduct);
         }
 
         private void ConfiguraDetailsService(ModelBuilder builder)

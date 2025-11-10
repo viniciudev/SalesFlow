@@ -44,29 +44,34 @@ namespace WebApiCommercial.Controllers
 
         // POST api/<ProductController>
         [HttpPost]
-        public async Task<ActionResult<dynamic>> Post([FromForm] ProductCreateModelDto model, [FromHeader] int tenantid)
+        public async Task<ActionResult<dynamic>> Post([FromBody] ProductCreateModelDto model, [FromHeader] int tenantid)
         {
-
             try
             {
-
-
                 await productServie.SaveProduct(model, tenantid);
-  
                 return Ok(new { success = true, message = "Produto cadastrado com sucesso" });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { success = false, message = ex.Message });
             }
-            return true;
         }
 
         // PUT api/<ProductController>/5
         [HttpPut]
         public async Task<ActionResult<dynamic>> Put([FromBody] Product model)
         {
-            await productServie.Alter(model);
+            try
+            {
+
+                await productServie.Alter(model);
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+      
             return true;
         }
 
