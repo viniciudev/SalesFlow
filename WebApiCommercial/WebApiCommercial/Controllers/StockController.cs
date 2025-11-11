@@ -18,7 +18,7 @@ namespace WebApiCommercial.Controllers
         _stockService = stockService;
         }    
         // GET: api/<StockController>
-        [HttpGet]
+        [HttpGet("paged")]
         public async Task<ActionResult> Get([FromHeader]int tenantid, [FromBody] Filters filters )
         {
             try
