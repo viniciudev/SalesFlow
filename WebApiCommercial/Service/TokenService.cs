@@ -24,7 +24,7 @@ namespace Service
                     new Claim(ClaimTypes.Name, user.Name.ToString()),
                     new Claim(ClaimTypes.Role, user.Role.ToString())
           }),
-        Expires = DateTime.UtcNow.AddHours(10),
+        Expires = DateTime.UtcNow.AddHours(1),
 
         SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
       };

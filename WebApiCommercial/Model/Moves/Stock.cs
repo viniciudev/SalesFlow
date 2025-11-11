@@ -11,10 +11,17 @@ namespace Model.Moves
     {
         public int IdProduct { get; set; }
         public Product Product { get; set; }
-        public int Amount { get; set; }
-        public string Description { get; set; }
+        public int IdCompany { get; set; }
+        public Company Company { get; set; }
+        public int Quantity { get; set; }
+        public string Reason { get; set; }
         public DateTime Date { get; set; }
-        public int MyProperty { get; set; }
-        public int Movement { get; set; }
+        public StockType Type { get; set; }
+     
+    }
+    public enum StockType
+    {
+        entry= 1,
+        exit=2
     }
 }

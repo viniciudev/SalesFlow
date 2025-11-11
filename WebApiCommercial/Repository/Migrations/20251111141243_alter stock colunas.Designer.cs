@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Repository;
 
@@ -11,9 +12,10 @@ using Repository;
 namespace Repository.Migrations
 {
     [DbContext(typeof(ContextBase))]
-    partial class ContextBaseModelSnapshot : ModelSnapshot
+    [Migration("20251111141243_alter stock colunas")]
+    partial class alterstockcolunas
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -530,9 +532,6 @@ namespace Repository.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("IdCompany")
-                        .HasColumnType("int");
-
                     b.Property<int>("IdProduct")
                         .HasColumnType("int");
 
@@ -546,8 +545,6 @@ namespace Repository.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("IdCompany");
 
                     b.HasIndex("IdProduct");
 
@@ -1206,19 +1203,11 @@ namespace Repository.Migrations
 
             modelBuilder.Entity("Model.Moves.Stock", b =>
                 {
-                    b.HasOne("Model.Registrations.Company", "Company")
-                        .WithMany("Stocks")
-                        .HasForeignKey("IdCompany")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("Model.Registrations.Product", "Product")
                         .WithMany("Stocks")
                         .HasForeignKey("IdProduct")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Company");
 
                     b.Navigation("Product");
                 });
@@ -1427,8 +1416,6 @@ namespace Repository.Migrations
                     b.Navigation("ServiceProvideds");
 
                     b.Navigation("ServiceProvisions");
-
-                    b.Navigation("Stocks");
 
                     b.Navigation("Users");
                 });

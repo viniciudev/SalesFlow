@@ -76,6 +76,11 @@ namespace Repository
               .HasOne(dc => dc.Product)
               .WithMany(c => c.Stocks)
               .HasForeignKey(dc => dc.IdProduct);
+
+            builder.Entity<Stock>()
+     .HasOne(dc => dc.Company)
+     .WithMany(c => c.Stocks)
+     .HasForeignKey(dc => dc.IdCompany);
         }
 
         private void ConfiguraDetailsService(ModelBuilder builder)

@@ -16,7 +16,7 @@ namespace Model.Registrations
         public ICollection<SaleItems> SaleItems { get; set; }
         public ICollection<Commission> Commissions { get; set; }
         public ICollection<Financial> Financials { get; set; }
-        public ICollection<Stock> Stocks { get; set; }
+        public ICollection<Stock> Stocks { get; set; }= new List<Stock>();
 
         public string Code { get; set; }
         public string ImageBytes { get; set; }

@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Model;
+using Model.Moves;
 using Service;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -16,34 +19,38 @@ namespace WebApiCommercial.Controllers
         }    
         // GET: api/<StockController>
         [HttpGet]
-        public IEnumerable<string> Get()
+        public async Task<ActionResult> Get([FromHeader]int tenantid, [FromBody] Filters filters )
         {
-            return new string[] { "value1", "value2" };
+            try
+            {
+                var resp = await _stockService.GetAllPage(filters.pageNumber,filters.pageSize);
+                return Ok(resp);
+            }
+            catch (System.Exception)
+            {
+                return BadRequest("Falha ao consultar moviemntos!");
+            }
         }
 
-        // GET api/<StockController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
+    
 
         // POST api/<StockController>
         [HttpPost]
-        public void Post([FromBody] string value)
+        public async Task<ActionResult> Post([FromBody] Stock value, [FromHeader] int tenantid)
         {
+            try
+            {
+                value.IdCompany=tenantid;
+                await _stockService.Create(value);
+                return Ok("Salvo com sucesso!");
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest("Erro:"+ ex.Message);
+           
+            }
         }
 
-        // PUT api/<StockController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<StockController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
+       
     }
 }
