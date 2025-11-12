@@ -45,7 +45,7 @@ namespace WebAppCommercial.Controllers
     [HttpPatch("{codGroup}/group")]
     public async Task<ActionResult<DescriptionFiles>> PatchGroup(Filters filter, int codGroup)
     {
-      filter.codGroup = codGroup;
+      filter.CodGroup = codGroup;
       var data = await descriptionFilesService.GetAllPaged(filter);
       return Ok(data);
     }

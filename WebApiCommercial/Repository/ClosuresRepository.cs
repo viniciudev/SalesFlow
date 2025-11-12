@@ -42,7 +42,7 @@ namespace Repository
 														ValueSumDetails = closures.ClosuresDetails.Sum(x => x.Value)
 													})
 
-				.AsNoTracking().GetPagedAsync(filters.pageNumber, filters.pageSize);
+				.AsNoTracking().GetPagedAsync(filters.PageNumber, filters.PageSize);
 				return data;
 			}
       catch (Exception ex)

@@ -26,14 +26,14 @@ namespace WebApiCommercial.Controllers
     public async Task<ActionResult<PagedResult<Sale>>> GetPaged([FromQuery]Filters filters,
       [FromHeader]int tenantid)
     {
-      filters.idCompany = tenantid;
+      filters.IdCompany = tenantid;
       return Ok(await saleService.GetAllPaged(filters));
     }
     [HttpGet("GetByMonthAllSales")]
     public async Task<ActionResult<SaleInfoResponse>> GetByMonthAllSales([FromQuery] Filters filters,
     [FromHeader] int tenantid)
     {
-      filters.idCompany = tenantid;
+      filters.IdCompany = tenantid;
       return Ok(await saleService.GetByMonthAllSales(filters));
     }
     [HttpGet("GetByIdSale")]
@@ -45,7 +45,7 @@ namespace WebApiCommercial.Controllers
     public async Task<ActionResult<SalesCommissionsInfo>> GetByWeekAllSales([FromQuery] Filters filters,
       [FromHeader] int tenantid)
     {
-      filters.idCompany = tenantid;
+      filters.IdCompany = tenantid;
       return Ok(await saleService.GetByWeekAllSales(filters));
     }
     [HttpGet("GetSalesmanByWeek")]

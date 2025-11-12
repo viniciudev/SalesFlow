@@ -25,7 +25,7 @@ namespace WebApiCommercial.Controllers
     public async Task<ActionResult<PagedResult<Financial>>> GetCommissions([FromQuery] Filters filters
       , [FromHeader] int tenantid)
     {
-      filters.idCompany = tenantid;
+      filters.IdCompany = tenantid;
       var data = await financialService.GetPagedByFilter(filters);
       return Ok(data);
     }
@@ -34,7 +34,7 @@ namespace WebApiCommercial.Controllers
     public async Task<ActionResult<PagedResult<Financial>>> GetByIdCompany([FromQuery] Filters filters
       , [FromHeader] int tenantid)
     {
-      filters.idCompany = tenantid;
+      filters.IdCompany = tenantid;
       var data = await financialService.GetByIdCompany(filters);
       return Ok(data);
     }
@@ -43,7 +43,7 @@ namespace WebApiCommercial.Controllers
     public async Task<ActionResult<CommissionInfoResponse>> GetByMonthAllCommission([FromQuery] Filters filters,
    [FromHeader] int tenantid)
     {
-      filters.idCompany = tenantid;
+      filters.IdCompany = tenantid;
       return Ok(await financialService.GetByMonthAllCommission(filters));
     }
     // GET api/<FinancialController>/5

@@ -22,8 +22,8 @@ namespace Repository
                          .Include(x => x.Salesman)
                          .Include(x => x.SaleItems)
                          .Include(x=>x.Client)
-                         where sale.IdCompany == filters.idCompany
-                         && (filters.idClient == 0 || sale.IdClient == filters.idClient)
+                         where sale.IdCompany == filters.IdCompany
+                         && (filters.IdClient == 0 || sale.IdClient == filters.IdClient)
                          && (filters.IdSeller == 0 || sale.IdSeller == filters.IdSeller)
                          && (sale.SaleDate >= filters.SaleDate.Date
                          && sale.SaleDate <= filters.SaleDateFinal.Date.
@@ -39,7 +39,7 @@ namespace Repository
                            NameClient=sale.Client.Name
                          })
                          .AsNoTracking()
-                         .GetPagedAsync<Sale>(filters.pageNumber, filters.pageSize);
+                         .GetPagedAsync<Sale>(filters.PageNumber, filters.PageSize);
       return paged;
     }
     public async Task<Sale> GetByIdSale(int id)
@@ -100,7 +100,7 @@ namespace Repository
       {
         SaleInfoResponse saleInfoResponse = new SaleInfoResponse { AmountMonth = new List<int>(), SalesAmount = 0 };
         List<Sale> data = await _dbContext.Set<Sale>()
-          .Where(x => x.IdCompany == filters.idCompany
+          .Where(x => x.IdCompany == filters.IdCompany
           && x.SaleDate.Year == DateTime.Now.Year)
           .AsNoTracking().ToListAsync();
 
@@ -141,7 +141,7 @@ namespace Repository
         };
         List<Sale> data = await _dbContext.Set<Sale>()
           .Include(x => x.Financials)
-          .Where(x => x.IdCompany == filters.idCompany
+          .Where(x => x.IdCompany == filters.IdCompany
           && (x.SaleDate >= thisWeekStart && x.SaleDate <= thisWeekEnd)
           && x.SaleDate.Year == DateTime.Now.Year)
           .AsNoTracking().ToListAsync();

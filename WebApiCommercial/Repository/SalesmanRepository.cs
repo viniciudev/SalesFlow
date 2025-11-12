@@ -18,21 +18,21 @@ namespace Repository
 
     public async Task<PagedResult<Salesman>> GetAllPaged(Filters filter)
     {
-      var paged = await base._dbContext.Set<Salesman>().Where(x => x.IdCompany == filter.idCompany).
-        GetPagedAsync<Salesman>(filter.pageNumber, filter.pageSize);
+      var paged = await base._dbContext.Set<Salesman>().Where(x => x.IdCompany == filter.IdCompany).
+        GetPagedAsync<Salesman>(filter.PageNumber, filter.PageSize);
       return paged;
     }
     public async Task<List<Salesman>> GetListByName(Filters filters)
     {
       var data = await base._dbContext.Set<Salesman>().Where(x =>
-      x.IdCompany==filters.idCompany &&
-      x.Name.Contains(filters.textOption)).AsNoTracking().ToListAsync();
+      x.IdCompany==filters.IdCompany &&
+      x.Name.Contains(filters.TextOption)).AsNoTracking().ToListAsync();
       return data;
     }
     public async Task<List<Salesman>> GetAllList(Filters filters)
     {
       var data = await(from  salesman in base._dbContext.Set<Salesman>() 
-                       where salesman.IdCompany == filters.idCompany
+                       where salesman.IdCompany == filters.IdCompany
                        select new Salesman
                        {
                          Id=salesman.Id,

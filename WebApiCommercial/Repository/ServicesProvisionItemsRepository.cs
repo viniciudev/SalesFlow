@@ -26,7 +26,7 @@ namespace Repository
                         join service in base._dbContext.Set<ServiceProvided>() on ServicesProvisionItems.IdItem equals service.Id into serviceLeft
                         from ser in serviceLeft.DefaultIfEmpty()
 
-                        where (ServicesProvisionItems.IdServiceProvision == filter.idServiceProvision)
+                        where (ServicesProvisionItems.IdServiceProvision == filter.IdServiceProvision)
                         select new ServicesProvisionItems
                         {
                           Id = ServicesProvisionItems.Id,
@@ -39,7 +39,7 @@ namespace Repository
                           IdServiceProvision= ServicesProvisionItems.IdServiceProvision
                         }
                        )
-        .GetPagedAsync<ServicesProvisionItems>(filter.pageNumber, filter.pageSize);
+        .GetPagedAsync<ServicesProvisionItems>(filter.PageNumber, filter.PageSize);
       return data;
     }
 
@@ -51,7 +51,7 @@ namespace Repository
                         into prodLeft from prod in prodLeft.DefaultIfEmpty()
                         join service in base._dbContext.Set<ServiceProvided>() on ServicesProvisionItems.IdItem equals service.Id
                         into serLeft from ser in serLeft.DefaultIfEmpty()
-                        where (ServicesProvisionItems.IdServiceProvision == filter.idServiceProvision)
+                        where (ServicesProvisionItems.IdServiceProvision == filter.IdServiceProvision)
                         select new ServicesProvisionItems
                         {
                           Id = ServicesProvisionItems.Id,

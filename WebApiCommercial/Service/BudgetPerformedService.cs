@@ -32,7 +32,7 @@ namespace Service
       budgetPerformed.NonExistentProducts = new List<NonExistentProducts>();
       budgetPerformed.DifferentValues = new List<DifferentValues>();
      
-      Budget budget = await budgetService.GetByIdBudget(filters.idBudget);
+      Budget budget = await budgetService.GetByIdBudget(filters.IdBudget);
       List<ServicesProvisionItems> ListServicesProvisionItems =
         await servicesProvisionItemsService.GedByIdServiceProvision(filters);  //buscar itens devido nome 
      

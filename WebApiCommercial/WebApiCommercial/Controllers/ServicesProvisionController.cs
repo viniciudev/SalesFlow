@@ -26,7 +26,7 @@ namespace WebApiCommercial.Controllers
     [HttpGet]
     public async Task<ActionResult<ServicesProvision>> Get([FromQuery]Filters filters,[FromHeader]int tenantid)
     {
-      filters.idCompany = tenantid;
+      filters.IdCompany = tenantid;
       var data= await servicesProvisionService.GetAllServicesProvisionPaged(filters);
       return Ok(data);
     }

@@ -25,7 +25,7 @@ namespace WebApiCommercial.Controllers
     public async Task<ActionResult<PagedResult<Prospects>>> Get([FromQuery] Filters filters,
       [FromHeader] int tenantid)
     {
-      filters.idCompany = tenantid;
+      filters.IdCompany = tenantid;
       var data = await _prospectsService.GetAllPaged(filters);
       return Ok(data);
     }
@@ -33,7 +33,7 @@ namespace WebApiCommercial.Controllers
     public async Task<ActionResult<SaleInfoResponse>> GetByMonthAllProspects([FromQuery] Filters filters,
    [FromHeader] int tenantid)
     {
-      filters.idCompany = tenantid;
+      filters.IdCompany = tenantid;
       return Ok(await _prospectsService.GetByMonthAllProspects(filters));
     }
 

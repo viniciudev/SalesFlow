@@ -45,7 +45,7 @@ namespace Repository
                             DueDate=fin.DueDate,
                             Origin=fin.Sale.Client.Name
                           }).AsNoTracking()
-                   .GetPagedAsync<CommissionFinancialResponse>(filters.pageNumber, filters.pageSize);
+                   .GetPagedAsync<CommissionFinancialResponse>(filters.PageNumber, filters.PageSize);
 
         return data;
       }
@@ -60,7 +60,7 @@ namespace Repository
       {
         var data = await (from fin in _dbContext.Set<Financial>()
              
-                          where (fin.IdCompany == filters.idCompany)
+                          where (fin.IdCompany == filters.IdCompany)
                           &&(fin.Origin==OriginFinancial.financial)
                           && (fin.CreationDate >= filters.SaleDate.Date
                               && fin.CreationDate <= filters.SaleDateFinal.Date)
@@ -74,7 +74,7 @@ namespace Repository
                             PaymentType= fin.PaymentType,
                             CreationDate= fin.CreationDate,
                           }).AsNoTracking()
-                   .GetPagedAsync<Financial>(filters.pageNumber, filters.pageSize);
+                   .GetPagedAsync<Financial>(filters.PageNumber, filters.PageSize);
 
         return data.Results.ToList();
       }
@@ -89,7 +89,7 @@ namespace Repository
       {
         CommissionInfoResponse clientInfoResponse = new CommissionInfoResponse { AmountMonth = new List<int>(), CommissionAmount = 0 };
         List<Financial> data = await _dbContext.Set<Financial>()
-          .Where(x => x.IdCompany == filters.idCompany
+          .Where(x => x.IdCompany == filters.IdCompany
           && x.CreationDate.Year == DateTime.Now.Year
           && x.commission==true)
           .AsNoTracking().ToListAsync();

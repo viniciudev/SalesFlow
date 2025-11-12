@@ -19,10 +19,10 @@ namespace Repository
     public async Task<PagedResult<Prospects>> GetAllPaged(Filters filters)
     {
       var paged = await base._dbContext.Set<Prospects>()
-        .Where(x=>x.IdCompany==filters.idCompany 
-        &&(string.IsNullOrEmpty(filters.textOption)
-        ||x.Name.Contains(filters.textOption)))
-         .GetPagedAsync<Prospects>(filters.pageNumber, filters.pageSize);
+        .Where(x=>x.IdCompany==filters.IdCompany 
+        &&(string.IsNullOrEmpty(filters.TextOption)
+        ||x.Name.Contains(filters.TextOption)))
+         .GetPagedAsync<Prospects>(filters.PageNumber, filters.PageSize);
       return paged;
     }
     public async Task<ProspectInfoResponse> GetByMonthAllProspects(Filters filters)
@@ -31,7 +31,7 @@ namespace Repository
       {
         ProspectInfoResponse clientInfoResponse = new ProspectInfoResponse { AmountMonth = new List<int>(), ProspectAmount = 0 };
         List<Prospects> data = await _dbContext.Set<Prospects>()
-          .Where(x => x.IdCompany == filters.idCompany
+          .Where(x => x.IdCompany == filters.IdCompany
           && x.RegisterDate.Year == DateTime.Now.Year)
           .AsNoTracking().ToListAsync();
 

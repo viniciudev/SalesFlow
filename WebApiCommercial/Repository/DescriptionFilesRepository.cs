@@ -15,9 +15,9 @@ namespace Repository
     public async Task<PagedResult<DescriptionFiles>> GetAllPaged(Filters filter)
     {
       var data = await (from descriptionFiles in base._dbContext.Set<DescriptionFiles>()
-                        where (filter.selectOption == FilterType.Name && (string.IsNullOrEmpty(filter.textOption) ||
-                        descriptionFiles.NameProduct.Contains(filter.textOption)) ||
-                        filter.codGroup > 0 || descriptionFiles.groupItems == filter.codGroup)
+                        where (filter.SelectOption == FilterType.Name && (string.IsNullOrEmpty(filter.TextOption) ||
+                        descriptionFiles.NameProduct.Contains(filter.TextOption)) ||
+                        filter.CodGroup > 0 || descriptionFiles.groupItems == filter.CodGroup)
 
                         //let files = (
                         //  from c in _dbContext.Set<File>() where descriptionFiles.Id == c.IdDescriptionFiles select c
@@ -32,7 +32,7 @@ namespace Repository
                           valueProduct = descriptionFiles.valueProduct,
                           groupItems = descriptionFiles.groupItems,
                           //Files = files
-                        }).GetPagedAsync<DescriptionFiles>(filter.pageNumber, filter.pageSize);
+                        }).GetPagedAsync<DescriptionFiles>(filter.PageNumber, filter.PageSize);
       return data;
 
     }

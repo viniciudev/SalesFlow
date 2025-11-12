@@ -19,11 +19,12 @@ namespace WebApiCommercial.Controllers
         }    
         // GET: api/<StockController>
         [HttpGet("paged")]
-        public async Task<ActionResult> Get([FromHeader]int tenantid, [FromBody] Filters filters )
+        public async Task<ActionResult> Get( [FromQuery] Filters filters , [FromHeader] int tenantid)
         {
             try
             {
-                var resp = await _stockService.GetAllPage(filters.pageNumber,filters.pageSize);
+                filters.IdCompany = tenantid;
+                var resp = await _stockService.GetAllPaged(filters);
                 return Ok(resp);
             }
             catch (System.Exception)

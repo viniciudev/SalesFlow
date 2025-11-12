@@ -1,6 +1,7 @@
 ﻿using Model.Registrations;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,7 +18,8 @@ namespace Model.Moves
         public string Reason { get; set; }
         public DateTime Date { get; set; }
         public StockType Type { get; set; }
-     
+        [NotMapped]
+        public string ProductName { get; set; }
     }
     public enum StockType
     {

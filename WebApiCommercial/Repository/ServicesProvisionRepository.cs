@@ -21,8 +21,8 @@ namespace Repository
                         on servicesProvision.IdBudget equals budget.Id into leftBudget
                         from bud in leftBudget.DefaultIfEmpty()
                         where (
-                        (filters.idClient==0|| servicesProvision.IdClient== filters.idClient)
-                        && servicesProvision.IdCompany == filters.idCompany)
+                        (filters.IdClient==0|| servicesProvision.IdClient== filters.IdClient)
+                        && servicesProvision.IdCompany == filters.IdCompany)
                         select new ServicesProvision
                         {
                           Id=servicesProvision.Id,
@@ -34,7 +34,7 @@ namespace Repository
                           NameClient=client.Name,
                           DescriptionBudget= bud.Description,
                         })
-        .GetPagedAsync<ServicesProvision>(filters.pageNumber, filters.pageSize);
+        .GetPagedAsync<ServicesProvision>(filters.PageNumber, filters.PageSize);
       return data;
     }
 

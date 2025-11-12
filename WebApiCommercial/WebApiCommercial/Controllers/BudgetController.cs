@@ -27,7 +27,7 @@ namespace WebApiCommercial.Controllers
     public async Task<ActionResult<PagedResult<Budget>>> Get([FromQuery] Filters filter,
       [FromHeader] int tenantid)
     {
-      filter.idCompany = tenantid;
+      filter.IdCompany = tenantid;
       var data = await budgetService.GetAllPaged(filter);
       return Ok(data);
     }
@@ -36,7 +36,7 @@ namespace WebApiCommercial.Controllers
     [HttpGet("GetByDescription")]
     public async Task<ActionResult<Budget>> GetByDescription([FromQuery] Filters filters, [FromHeader] int tenantid)
     {
-      filters.idCompany = tenantid;
+      filters.IdCompany = tenantid;
       var data =await budgetService.GetByDescription(filters);
       return Ok(data);
     }

@@ -18,27 +18,27 @@ namespace Repository
     public async Task<PagedResult<Client>> GetAllPaged(Filters clientFilter)
     {
       var paged = await base._dbContext.Set<Client>()
-         .Where(x => x.IdCompany==clientFilter.idCompany
+         .Where(x => x.IdCompany==clientFilter.IdCompany
          &&(String.IsNullOrEmpty(clientFilter.cellPhoneOption)
          || (x.CellPhone == clientFilter.cellPhoneOption)) &&
-         (clientFilter.selectOption == FilterType.Name 
-         && (string.IsNullOrEmpty(clientFilter.textOption) 
-         || x.Name.Contains(clientFilter.textOption))))
+         (clientFilter.SelectOption == FilterType.Name 
+         && (string.IsNullOrEmpty(clientFilter.TextOption) 
+         || x.Name.Contains(clientFilter.TextOption))))
          .AsNoTracking()
-         .GetPagedAsync<Client>(clientFilter.pageNumber, clientFilter.pageSize);
+         .GetPagedAsync<Client>(clientFilter.PageNumber, clientFilter.PageSize);
       return paged;
     }
     public async Task<List<Client>> GetByName(Filters clientFilter)
     {
       var data = await _dbContext.Set<Client>()
-        .Where(x => x.IdCompany == clientFilter.idCompany
-        && x.Name.Contains(clientFilter.textOption)).AsNoTracking().ToListAsync();
+        .Where(x => x.IdCompany == clientFilter.IdCompany
+        && x.Name.Contains(clientFilter.TextOption)).AsNoTracking().ToListAsync();
       return data;
     }
     public async Task<List<Client>> GetAllList(Filters clientFilter)
     {
       var data = await(from cli in _dbContext.Set<Client>()
-        where cli.IdCompany == clientFilter.idCompany
+        where cli.IdCompany == clientFilter.IdCompany
         select new Client
         {
           Name=cli.Name,
@@ -53,7 +53,7 @@ namespace Repository
       {
         ClientInfoResponse clientInfoResponse = new ClientInfoResponse { AmountMonth = new List<int>(), ClientAmount = 0 };
         List<Client> data = await _dbContext.Set<Client>()
-          .Where(x => x.IdCompany == filters.idCompany
+          .Where(x => x.IdCompany == filters.IdCompany
           && x.CreatDate.Year == DateTime.Now.Year)
           .AsNoTracking().ToListAsync();
 

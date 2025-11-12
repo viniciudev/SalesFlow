@@ -19,8 +19,8 @@ namespace Repository
     {
       var data= await (from budget in base._dbContext.Set<Budget>()
                       join client in base._dbContext.Set<Client>()on budget.IdClient equals client.Id
-                      where (budget.IdCompany==filters.idCompany) &&
-                      (filters.idClient==0 || budget.IdClient==filters.idClient)
+                      where (budget.IdCompany==filters.IdCompany) &&
+                      (filters.IdClient==0 || budget.IdClient==filters.IdClient)
                       select new Budget
                       {
                         Id=budget.Id,
@@ -30,13 +30,13 @@ namespace Repository
                         NameClient=client.Name,
                         Date=budget.Date
                       })
-        .GetPagedAsync<Budget>(filters.pageNumber, filters.pageSize);
+        .GetPagedAsync<Budget>(filters.PageNumber, filters.PageSize);
       return data;
     }
     public async Task<List<Budget>> GetByDescription(Filters filters)
     {
       var data = await _dbContext.Set<Budget>().
-        Where(x => x.Description.Contains(filters.textOption)).AsNoTracking().ToListAsync();
+        Where(x => x.Description.Contains(filters.TextOption)).AsNoTracking().ToListAsync();
       return data;
     }
 

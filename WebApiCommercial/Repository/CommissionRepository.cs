@@ -38,7 +38,7 @@ namespace Repository
                               TypeDay = (int)commission.TypeDay
                             })
                           .AsNoTracking()
-                          .GetPagedAsync<CommissionResponse>(filter.pageNumber, filter.pageSize);
+                          .GetPagedAsync<CommissionResponse>(filter.PageNumber, filter.PageSize);
         return dados;
       }
       catch (System.Exception ex)
@@ -68,7 +68,7 @@ namespace Repository
                               TypeDay = (int)commission.TypeDay
                             })
                           .AsNoTracking()
-                          .GetPagedAsync<CommissionResponse>(filter.pageNumber, filter.pageSize);
+                          .GetPagedAsync<CommissionResponse>(filter.PageNumber, filter.PageSize);
         return dados;
       }
       catch (System.Exception ex)

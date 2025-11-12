@@ -25,7 +25,7 @@ namespace WebApiCommercial.Controllers
     [HttpGet("contains")]
     public async Task<ActionResult<Client>> Get([FromHeader]Filters filters,[FromHeader]int tenantid )
     {
-      filters.idCompany = tenantid;
+      filters.IdCompany = tenantid;
       var data = await clientService.GetByName(filters);
       return Ok(data);
     }
@@ -34,7 +34,7 @@ namespace WebApiCommercial.Controllers
     [HttpGet]
     public async Task<ActionResult<List<Client>>> GetAll([FromHeader] Filters filters, [FromHeader] int tenantid)
     {
-      filters.idCompany = tenantid;
+      filters.IdCompany = tenantid;
       var data = await clientService.GetAllList(filters);
       return Ok(data);
     }

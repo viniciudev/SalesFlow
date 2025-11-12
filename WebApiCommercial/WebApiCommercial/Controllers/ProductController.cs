@@ -28,7 +28,7 @@ namespace WebApiCommercial.Controllers
         [HttpGet]
         public async Task<ActionResult<PagedResult<Product>>> Get([FromQuery] Filters filter, [FromHeader] int tenantid)
         {
-            filter.idCompany = tenantid;
+            filter.IdCompany = tenantid;
             var data = await productServie.GetAllPaged(filter);
             return Ok(data);
         }
@@ -37,7 +37,7 @@ namespace WebApiCommercial.Controllers
         [HttpGet("GetListByName")]
         public async Task<ActionResult<List<Product>>> GetListByName([FromQuery] Filters filter, [FromHeader] int tenantid)
         {
-            filter.idCompany = tenantid;
+            filter.IdCompany = tenantid;
             var data = await productServie.GetListByName(filter);
             return Ok(data);
         }

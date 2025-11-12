@@ -24,7 +24,7 @@ namespace WebAppCommercial.Controllers
     public async Task<ActionResult<PagedResult<Client>>> Get([FromQuery] Filters filter,
       [FromHeader]int tenantid)
     {
-      filter.idCompany = tenantid;
+      filter.IdCompany = tenantid;
       var pagedData = await clientService.GetAllPaged(filter);
 
       return Ok(pagedData);
@@ -35,7 +35,7 @@ namespace WebAppCommercial.Controllers
     public async Task<ActionResult<ClientInfoResponse>> GetByMonthAllClients([FromQuery] Filters filter,
       [FromHeader]int tenantid)
     {
-      filter.idCompany = tenantid;
+      filter.IdCompany = tenantid;
       return Ok(await clientService.GetByMonthAllClients(filter));
     }
 

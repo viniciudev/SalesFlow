@@ -24,14 +24,14 @@ namespace WebApiCommercial.Controllers
     public async Task<ActionResult<PagedResult<Commission>>> GetAllPagedProductsCommission(
       [FromQuery] Filters filters, [FromHeader]int tenantid)
     {
-      filters.idCompany = tenantid;
+      filters.IdCompany = tenantid;
       return Ok(await commissionService.GetAllPagedProductsCommission(filters));
     }
     [HttpGet("GetAllPagedServicesCommission")]
     public async Task<ActionResult<PagedResult<Commission>>> GetAllPagedServicesCommission(
       [FromQuery] Filters filters, [FromHeader] int tenantid)
     {
-      filters.idCompany = tenantid;
+      filters.IdCompany = tenantid;
       return Ok(await commissionService.GetAllPagedServicesCommission(filters));
     }
     // GET api/<CommissionController>/5

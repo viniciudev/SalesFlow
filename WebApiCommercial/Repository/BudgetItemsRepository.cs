@@ -28,7 +28,7 @@ namespace Repository
                         into serLeft
                         from ser in serLeft.DefaultIfEmpty()
 
-                        where (budgetItems.IdBudget == filter.idBudget)
+                        where (budgetItems.IdBudget == filter.IdBudget)
                         select new BudgetItems
                         {
                           Id = budgetItems.Id,
@@ -41,7 +41,7 @@ namespace Repository
                           IdItem = budgetItems.IdItem
                         }
                        )
-        .GetPagedAsync<BudgetItems>(filter.pageNumber, filter.pageSize);
+        .GetPagedAsync<BudgetItems>(filter.PageNumber, filter.PageSize);
       return data;
     }
     public async Task<bool> VerifyItemInlist(BudgetItems model)

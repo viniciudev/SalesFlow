@@ -39,7 +39,7 @@ namespace Repository
                            EnableRecurrence = saleItems.EnableRecurrence,
                            RecurringAmount = saleItems.RecurringAmount,
                            SharedCommissions = saleItems.SharedCommissions,
-                         }).GetPagedAsync<SaleItems>(filters.pageNumber, filters.pageSize);
+                         }).GetPagedAsync<SaleItems>(filters.PageNumber, filters.PageSize);
       return paged;
     }
   }
