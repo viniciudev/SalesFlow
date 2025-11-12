@@ -20,6 +20,8 @@ namespace Model.Moves
         public StockType Type { get; set; }
         [NotMapped]
         public string ProductName { get; set; }
+        [NotMapped]
+        public decimal Balance { get; set; }
     }
     public enum StockType
     {

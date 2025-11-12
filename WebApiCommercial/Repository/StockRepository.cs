@@ -3,6 +3,8 @@ using Model;
 using Model.Moves;
 using System.Threading.Tasks;
 using System.Linq;
+using Model.DTO;
+using System.Collections.Generic;
 namespace Repository
 {
 
@@ -17,6 +19,7 @@ namespace Repository
             var resp = await (from stock in _dbContext.Set<Stock>()
                         .Include(x => x.Product)
                               where stock.IdCompany == filters.IdCompany
+                              orderby stock.Id descending
                               select new Stock
                               {
                                   Id = stock.Id,
@@ -25,52 +28,57 @@ namespace Repository
                                   Reason = stock.Reason,
                                   ProductName = stock.Product.Name,
                                   Type = stock.Type,
+                                  IdProduct=stock.Product.Id
                               }
                         ).AsNoTracking()
                          .GetPagedAsync<Stock>(filters.PageNumber, filters.PageSize);
+            List<StockSummary> stockSummaries = await GetBalance(filters.IdCompany);
+
+            foreach (var item in resp.Results)
+            {
+            
+                decimal ?balance = stockSummaries.FirstOrDefault(x => x.IdProduct == item.IdProduct)?.SaldoAtual;
+                if (balance != null)
+                {
+                    item.Balance = (decimal)balance;
+                }
+            }
             return resp;
         }
-        public async Task<dynamic> GetBalance(int tenantid)
+        public async Task<List<StockSummary>> GetBalance(int tenantid)
         {
-            var resp = await (from stock in _dbContext.Set<Stock>()
-                      .Include(x => x.Product)
-                              where stock.IdCompany == tenantid
-                              select new Stock
-                              {
-                                  Id = stock.Id,
-                                  Quantity = stock.Quantity,
-                                  Date = stock.Date,
-                                  Reason = stock.Reason,
-                                  ProductName = stock.Product.Name,
-                                  Type = stock.Type,
-                              }
-                      ).AsNoTracking()
-                      .ToListAsync();
-            public class StockResumo
-        {
-            public int IdProduct { get; set; }
-            public string ProductName { get; set; }
-            public decimal TotalEntradas { get; set; }
-            public decimal TotalSaidas { get; set; }
-            public decimal SaldoAtual { get; set; }
-        }
+            //var resp = await (from stock in _dbContext.Set<Stock>()
+            //          .Include(x => x.Product)
+            //                  where stock.IdCompany == tenantid
+            //                  select new Stock
+            //                  {
+            //                      Id = stock.Id,
+            //                      Quantity = stock.Quantity,
+            //                      Date = stock.Date,
+            //                      Reason = stock.Reason,
+            //                      ProductName = stock.Product.Name,
+            //                      Type = stock.Type,
+            //                  }
+            //          ).AsNoTracking()
+            //          .ToListAsync();
+      
 
         var resp = await(from stock in _dbContext.Set<Stock>()
                 .Include(x => x.Product)
                          where stock.IdCompany == tenantid
                          group stock by new { stock.IdProduct, stock.Product.Name } into g
-                         select new StockResumo
+                         select new StockSummary
                          {
                              IdProduct = g.Key.IdProduct,
                              ProductName = g.Key.Name,
-                             TotalEntradas = g.Where(x => x.Type == 1).Sum(x => x.Quantity),
-                             TotalSaidas = g.Where(x => x.Type == 2).Sum(x => x.Quantity),
-                             SaldoAtual = g.Where(x => x.Type == 1).Sum(x => x.Quantity) -
-                                          g.Where(x => x.Type == 2).Sum(x => x.Quantity)
+                             TotalEntradas = g.Where(x => x.Type == StockType.entry).Sum(x => x.Quantity),
+                             TotalSaidas = g.Where(x => x.Type == StockType.exit).Sum(x => x.Quantity),
+                             SaldoAtual = g.Where(x => x.Type == StockType.entry).Sum(x => x.Quantity) -
+                                          g.Where(x => x.Type == StockType.exit).Sum(x => x.Quantity)
                          }
             ).AsNoTracking()
             .ToListAsync();
-
+            return resp;
     } 
     }
     public interface IStockRepository : IGenericRepository<Stock>
