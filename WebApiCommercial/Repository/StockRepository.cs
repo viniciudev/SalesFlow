@@ -47,22 +47,6 @@ namespace Repository
         }
         public async Task<List<StockSummary>> GetBalance(int tenantid)
         {
-            //var resp = await (from stock in _dbContext.Set<Stock>()
-            //          .Include(x => x.Product)
-            //                  where stock.IdCompany == tenantid
-            //                  select new Stock
-            //                  {
-            //                      Id = stock.Id,
-            //                      Quantity = stock.Quantity,
-            //                      Date = stock.Date,
-            //                      Reason = stock.Reason,
-            //                      ProductName = stock.Product.Name,
-            //                      Type = stock.Type,
-            //                  }
-            //          ).AsNoTracking()
-            //          .ToListAsync();
-      
-
         var resp = await(from stock in _dbContext.Set<Stock>()
                 .Include(x => x.Product)
                          where stock.IdCompany == tenantid

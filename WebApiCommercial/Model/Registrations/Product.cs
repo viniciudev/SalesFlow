@@ -20,5 +20,6 @@ namespace Model.Registrations
 
         public string Code { get; set; }
         public string ImageBytes { get; set; }
+        public string Reference { get; set; }
     }
 }

@@ -33,8 +33,6 @@ namespace WebApiCommercial.Controllers
             }
         }
 
-    
-
         // POST api/<StockController>
         [HttpPost]
         public async Task<ActionResult> Post([FromBody] Stock value, [FromHeader] int tenantid)
@@ -49,6 +47,20 @@ namespace WebApiCommercial.Controllers
             {
                 return BadRequest("Erro:"+ ex.Message);
            
+            }
+        }
+        [HttpDelete("{id}")]
+        public async Task<ActionResult>Delete(int id)
+        {
+            try
+            {
+                await _stockService.DeleteAsync(id);
+                return Ok("Deletado com sucesso!");
+            }
+            catch (System.Exception ex)
+            {
+
+                return BadRequest("Erro:" + ex.Message);
             }
         }
 

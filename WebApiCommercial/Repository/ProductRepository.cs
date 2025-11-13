@@ -33,7 +33,8 @@ namespace Repository
                  Description = p.Description,
                  Quantity = p.Quantity,
                  Code=p.Code,
-                 IdCompany=p.IdCompany
+                 IdCompany=p.IdCompany,
+                 Reference=p.Reference
                 //Image = p.Image,
                 // ImageBytes = p.Image != null ? Convert.ToBase64String(p.Image) : null
              })

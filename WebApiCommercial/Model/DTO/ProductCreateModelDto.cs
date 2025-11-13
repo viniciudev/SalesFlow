@@ -12,5 +12,6 @@ namespace Model.DTO
         public int Id { get; set; }
         public decimal Price { get; set; }
         public string Code { get; set; }
+        public string Reference { get; set; }
     }
 }
