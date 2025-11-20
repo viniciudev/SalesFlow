@@ -64,7 +64,7 @@ namespace WebApiCommercial.Controllers
       return Ok(id);
     }
     [HttpPut]
-    public async Task<ActionResult<dynamic>> Post([FromBody] Sale sale,
+    public async Task<ActionResult<dynamic>> Put([FromBody] Sale sale,
       [FromHeader] int tenantid)
     {
       sale.IdCompany = tenantid;
@@ -72,11 +72,7 @@ namespace WebApiCommercial.Controllers
       return Ok(true);
     }
 
-    // PUT api/<SaleController>/5
-    [HttpPut("{id}")]
-    public void Put(int id, [FromBody] string value)
-    {
-    }
+
 
     // DELETE api/<SaleController>/5
     [HttpDelete("{id}")]

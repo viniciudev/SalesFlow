@@ -40,6 +40,7 @@ namespace Service
                         IdSeller = sale.IdSeller == 0 ? null : sale.IdSeller,
                         ReleaseDate = sale.ReleaseDate,
                         SaleDate = sale.SaleDate,
+                        Total=sale.Total
                     };
                     await base.Save(s);
 

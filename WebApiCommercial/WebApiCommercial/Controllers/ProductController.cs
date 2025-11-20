@@ -36,7 +36,7 @@ namespace WebApiCommercial.Controllers
         // GET api/<ProductController>/5
         [HttpGet("GetListByName")]
         public async Task<ActionResult<List<Product>>> GetListByName([FromQuery] Filters filter, [FromHeader] int tenantid)
-        {
+       {
             filter.IdCompany = tenantid;
             var data = await productServie.GetListByName(filter);
             return Ok(data);
@@ -77,8 +77,18 @@ namespace WebApiCommercial.Controllers
 
         // DELETE api/<ProductController>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
+            try
+            {
+                await productServie.DeleteAsync(id);
+                return Ok(new { success = true, message = "Produto excluído com sucesso" });
+
+            }
+            catch (Exception)
+            {
+                return BadRequest( new { success = false, message = "Não é possível excluir o produto!" });
+            }
         }
     }
 }

@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Model;
-using Model.Moves;
-using System.Threading.Tasks;
-using System.Linq;
 using Model.DTO;
+using Model.Moves;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 namespace Repository
 {
 
@@ -63,10 +64,32 @@ namespace Repository
             ).AsNoTracking()
             .ToListAsync();
             return resp;
-    } 
+    }
+        public async Task<StockSummary> GetBalanceByProduct(int tenantid,int idProduct)
+        {
+            var resp = await (from stock in _dbContext.Set<Stock>()
+                    .Include(x => x.Product)
+                              where stock.IdCompany == tenantid
+                              && stock.IdProduct==idProduct
+                              select stock
+                ).AsNoTracking()
+                .ToListAsync();
+            
+
+            return  new StockSummary
+            {
+                //IdProduct = resp.FirstOrDefault()? .IdProduct,
+                //ProductName = stock.Name,
+                //TotalEntradas = stock.Type == StockType.entry).Sum(x => x.Quantity),
+                //TotalSaidas = g.Where(x => x.Type == StockType.exit).Sum(x => x.Quantity),
+                SaldoAtual = resp.Where(x => x.Type == StockType.entry).Sum(x => x.Quantity) -
+                                               resp.Where(x => x.Type == StockType.exit).Sum(x => x.Quantity)
+            };
+        }
     }
     public interface IStockRepository : IGenericRepository<Stock>
     {
+        Task<StockSummary> GetBalanceByProduct(int tenantid, int idProduct);
         Task<PagedResult<Stock>> GetAllPaged(Filters filters);
     }
 }
