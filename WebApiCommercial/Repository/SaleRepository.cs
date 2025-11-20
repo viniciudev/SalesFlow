@@ -28,6 +28,7 @@ namespace Repository
                          && (sale.SaleDate >= filters.SaleDate.Date
                          && sale.SaleDate <= filters.SaleDateFinal.Date.
                          AddHours(23).AddMinutes(59).AddSeconds(59))
+                         && (string.IsNullOrEmpty(filters.TextOption)||sale.Client.Name.Contains(filters.TextOption))
                          orderby sale.SaleDate descending
                          select new Sale
                          {
@@ -36,7 +37,9 @@ namespace Repository
                            SaleDate = sale.SaleDate,
                            NameSeller = sale.Salesman.Name,
                            ValueSale = sale.SaleItems.Sum(x => x.Value * x.Amount),
-                           NameClient=sale.Client.Name
+                           SaleItems=sale.SaleItems.Select(x=>new SaleItems { Id=x.Id,ProductName=x.Product.Name,Amount=x.Amount}).ToList(),
+                           NameClient=sale.Client.Name,
+                           IdClient=sale.IdClient,
                          })
                          .AsNoTracking()
                          .GetPagedAsync<Sale>(filters.PageNumber, filters.PageSize);

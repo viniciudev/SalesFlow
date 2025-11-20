@@ -13,13 +13,16 @@ namespace Service
     {
         private readonly ISaleItemsService saleItemsService;
         private readonly ICommissionService commissionService;
+        private readonly IStockService _stockService;
 
         public SaleService(IGenericRepository<Sale> repository,
           ISaleItemsService saleItemsService,
-          ICommissionService commissionService) : base(repository)
+          ICommissionService commissionService,
+          IStockService stockService) : base(repository)
         {
             this.saleItemsService = saleItemsService;
             this.commissionService = commissionService;
+            _stockService = stockService;
         }
 
         public async Task<PagedResult<Sale>> GetAllPaged(Filters filters)
@@ -62,6 +65,14 @@ namespace Service
                             RecurringAmount = item.RecurringAmount,
                         };
                         await saleItemsService.Save(data);
+
+                        await _stockService.Create(new Stock { IdCompany= sale.IdCompany ,
+                        Quantity=item.Amount,
+                        Date=sale.SaleDate,
+                        IdProduct=(int)item.IdProduct,
+                        Reason=$"Venda: dia {sale.SaleDate}",
+                        Type=StockType.exit
+                        });
 
                         if (item.SharedCommissions!=null &&item.SharedCommissions.Count > 0)
                             sharedCommission = new SharedCommission
