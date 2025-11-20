@@ -34,7 +34,7 @@ namespace Service
                 {
                     Sale s = new Sale
                     {
-                        Id = sale.Id,
+                        //Id = sale.Id,
                         IdClient = sale.IdClient,
                         IdCompany = sale.IdCompany,
                         IdSeller = sale.IdSeller == 0 ? null : sale.IdSeller,
@@ -63,7 +63,7 @@ namespace Service
                         };
                         await saleItemsService.Save(data);
 
-                        if (item.SharedCommissions.Count > 0)
+                        if (item.SharedCommissions!=null &&item.SharedCommissions.Count > 0)
                             sharedCommission = new SharedCommission
                             {
                                 Id = item.SharedCommissions.First().Id,

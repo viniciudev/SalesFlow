@@ -63,6 +63,7 @@ namespace WebApiCommercial.Controllers
       int id=await saleService.SaveWithItems(sale);
       return Ok(id);
     }
+
     [HttpPut]
     public async Task<ActionResult<dynamic>> Put([FromBody] Sale sale,
       [FromHeader] int tenantid)
