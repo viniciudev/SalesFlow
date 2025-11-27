@@ -86,10 +86,21 @@ namespace Repository
                                                resp.Where(x => x.Type == StockType.exit).Sum(x => x.Quantity)
             };
         }
+        public async Task<Stock> GetByReferenceIdAsync(int id)
+        {
+            var resp = await (from stock in _dbContext.Set<Stock>()
+              .Include(x => x.Product)
+                              where stock.ReferenceId==id
+                              select stock
+                              ).AsNoTracking()
+          .FirstOrDefaultAsync();
+            return resp;
+        }
     }
     public interface IStockRepository : IGenericRepository<Stock>
     {
         Task<StockSummary> GetBalanceByProduct(int tenantid, int idProduct);
         Task<PagedResult<Stock>> GetAllPaged(Filters filters);
+        Task<Stock> GetByReferenceIdAsync(int id);
     }
 }

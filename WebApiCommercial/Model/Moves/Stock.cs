@@ -22,6 +22,7 @@ namespace Model.Moves
         public string ProductName { get; set; }
         [NotMapped]
         public decimal Balance { get; set; }
+        public int ?ReferenceId { get; set; }
     }
     public enum StockType
     {

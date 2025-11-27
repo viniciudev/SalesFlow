@@ -43,7 +43,7 @@ namespace Service
                         IdSeller = sale.IdSeller == 0 ? null : sale.IdSeller,
                         ReleaseDate = sale.ReleaseDate,
                         SaleDate = sale.SaleDate,
-                        Total=sale.Total
+                        Total = sale.Total
                     };
                     await base.Save(s);
 
@@ -66,15 +66,115 @@ namespace Service
                         };
                         await saleItemsService.Save(data);
 
-                        await _stockService.Create(new Stock { IdCompany= sale.IdCompany ,
-                        Quantity=item.Amount,
-                        Date=sale.SaleDate,
-                        IdProduct=(int)item.IdProduct,
-                        Reason=$"Venda: dia {sale.SaleDate}",
-                        Type=StockType.exit
+                        await _stockService.Create(new Stock
+                        {
+                            IdCompany = sale.IdCompany,
+                            Quantity = item.Amount,
+                            Date = sale.SaleDate,
+                            IdProduct = (int)item.IdProduct,
+                            Reason = $"Venda: dia {sale.SaleDate}",
+                            Type = StockType.exit
                         });
 
-                        if (item.SharedCommissions!=null &&item.SharedCommissions.Count > 0)
+                        if (item.SharedCommissions != null && item.SharedCommissions.Count > 0)
+                            sharedCommission = new SharedCommission
+                            {
+                                Id = item.SharedCommissions.First().Id,
+                                CommissionDay = item.SharedCommissions.First().CommissionDay,
+                                IdCostCenter = item.SharedCommissions.First().IdCostCenter,
+                                IdSaleItems = item.Id,
+                                Percentage = item.SharedCommissions.First().Percentage,
+                                EnableSharedCommission = item.SharedCommissions.First().EnableSharedCommission,
+                                IdSalesman = item.SharedCommissions.First().IdSalesman,
+                                NameSeller = item.SharedCommissions.First().NameSeller,
+                                RecurringAmount = item.SharedCommissions.First().RecurringAmount,
+                                TypeDay = item.SharedCommissions.First().TypeDay,
+                            };
+                    }
+                    if (sale.IdSeller != null)
+                        await commissionService.GenerateCommission(data, sharedCommission, (int)sale.IdSeller, sale.IdCompany);
+                    transaction.Commit();
+                    return s.Id;
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
+
+        }
+        public async Task<int> PutWithItems(Sale sale)
+        {
+            using (var transaction = await repository.CreateTransactionAsync())
+            {
+                try
+                {
+                    Sale s = new Sale
+                    {
+                        Id = sale.Id,
+                        IdClient = sale.IdClient,
+                        IdCompany = sale.IdCompany,
+                        IdSeller = sale.IdSeller == 0 ? null : sale.IdSeller,
+                        ReleaseDate = sale.ReleaseDate,
+                        SaleDate = sale.SaleDate,
+                        Total = sale.Total
+                    };
+                    await base.Alter(s);
+
+                    SaleItems data = new SaleItems();
+                    SharedCommission sharedCommission = new SharedCommission();
+                    foreach (var item in sale.SaleItems)
+                    {
+                        //deletar itens pra incluir tudo depois
+                        await saleItemsService.DeleteAsync(item.Id);
+                        //voltar estoque
+                        Stock stock = await _stockService.GetByReferenceIdAsync(item.Id);
+                        //deletar para inserir com os novos itens
+                        if (stock != null)
+                        {
+                            await _stockService.DeleteAsync(stock.Id);
+                        }
+                        //await _stockService.Create(new Stock
+                        //{
+                        //    IdCompany = sale.IdCompany,
+                        //    Quantity = item.Amount,
+                        //    Date = sale.SaleDate,
+                        //    IdProduct = (int)item.IdProduct,
+                        //    Reason = $"Venda: dia {sale.SaleDate}",
+                        //    Type = StockType.exit
+                        //     ReferenceId=
+                        //});
+                    }
+                    foreach (var item in sale.SaleItems)
+                    {
+                        item.IdSale = s.Id;
+                        data = new SaleItems
+                        {
+                            IdSale = item.IdSale,
+                            IdProduct = item.IdProduct == 0 ? null : item.IdProduct,
+                            IdService = item.IdService == 0 ? null : item.IdService,
+                            Value = item.Value,
+                            Amount = item.Amount,
+                            InclusionDate = item.InclusionDate,
+                            TypeItem = item.TypeItem,
+                            EnableRecurrence = item.EnableRecurrence,
+                            RecurringAmount = item.RecurringAmount,
+                        };
+                        await saleItemsService.Save(data);
+
+                        await _stockService.Create(new Stock
+                        {
+                            IdCompany = sale.IdCompany,
+                            Quantity = item.Amount,
+                            Date = sale.SaleDate,
+                            IdProduct = (int)item.IdProduct,
+                            Reason = $"Venda: dia {sale.SaleDate}",
+                            Type = StockType.exit,
+                            ReferenceId = data.Id,
+                        });
+
+                        if (item.SharedCommissions != null && item.SharedCommissions.Count > 0)
                             sharedCommission = new SharedCommission
                             {
                                 Id = item.SharedCommissions.First().Id,

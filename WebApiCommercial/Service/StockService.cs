@@ -1,6 +1,7 @@
 ﻿using Model;
 using Model.DTO;
 using Model.Moves;
+using Model.Registrations;
 using Repository;
 using System.Threading.Tasks;
 
@@ -25,11 +26,15 @@ namespace Service
         {
             return await (repository as IStockRepository).GetBalanceByProduct(tenantid,idProduct);
         }
-
+        public async Task<Stock> GetByReferenceIdAsync(int id)
+        {
+            return await (repository as IStockRepository).GetByReferenceIdAsync(id);
+        }
     }
     public interface IStockService : IBaseService<Stock>
     {
         Task<StockSummary> GetBalanceByProduct(int tenantid, int idProduct);
         Task<PagedResult<Stock>> GetAllPaged(Filters filters);
+        Task<Stock> GetByReferenceIdAsync(int id);
     }
 }
