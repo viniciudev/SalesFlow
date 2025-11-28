@@ -22,6 +22,7 @@ namespace Repository
                          .Include(x => x.Salesman)
                          .Include(x => x.SaleItems)
                          .Include(x=>x.Client)
+                         .Include(x=>x.Financials)
                          where sale.IdCompany == filters.IdCompany
                          && (filters.IdClient == 0 || sale.IdClient == filters.IdClient)
                          && (filters.IdSeller == 0 || sale.IdSeller == filters.IdSeller)
@@ -49,6 +50,7 @@ namespace Repository
                            }).ToList(),
                            NameClient=sale.Client.Name,
                            IdClient=sale.IdClient,
+                           Financials= sale.Financials
                          })
                          .AsNoTracking()
                          .GetPagedAsync<Sale>(filters.PageNumber, filters.PageSize);
