@@ -118,6 +118,7 @@ namespace Repository
         {
             var data = await _dbContext.Set<Financial>()
                 .Where(x => x.IdSale == id)
+                .AsNoTracking()
                 .ToListAsync();
             return data;
         }

@@ -117,6 +117,7 @@ namespace Service
             var listCostCenter=await _costCenterRepository.GetByIdCompany(IdCompany);
             foreach (var item in financials)
             {
+                item.Id = 0;
                 item.FinancialStatus = FinancialStatus.downloaded;
                 item.FinancialType = FinancialType.recipe;
                 item.Origin = OriginFinancial.financial;
@@ -126,8 +127,16 @@ namespace Service
                 item.IdCompany = IdCompany;
                 item.Description = $"Venda no dia:{DateTime.Now}";
                 item.IdCostCenter= listCostCenter.FirstOrDefault()?.Id;
+                try
+                {
+                    await _financialService.Create(item);
+                }
+                catch (Exception ex)
+                {
 
-                await _financialService.Save(item);
+                    throw;
+                }
+                
             }
         }
         public async Task<int> PutWithItems(Sale sale)
