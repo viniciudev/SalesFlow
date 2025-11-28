@@ -73,7 +73,8 @@ namespace Service
                             Date = sale.SaleDate,
                             IdProduct = (int)item.IdProduct,
                             Reason = $"Venda: dia {sale.SaleDate}",
-                            Type = StockType.exit
+                            Type = StockType.exit,
+                            ReferenceId=data.Id
                         });
 
                         if (item.SharedCommissions != null && item.SharedCommissions.Count > 0)
@@ -127,6 +128,7 @@ namespace Service
                     foreach (var item in sale.SaleItems)
                     {
                         //deletar itens pra incluir tudo depois
+                        if(item.Id>0)
                         await saleItemsService.DeleteAsync(item.Id);
                         //voltar estoque
                         Stock stock = await _stockService.GetByReferenceIdAsync(item.Id);
@@ -135,16 +137,7 @@ namespace Service
                         {
                             await _stockService.DeleteAsync(stock.Id);
                         }
-                        //await _stockService.Create(new Stock
-                        //{
-                        //    IdCompany = sale.IdCompany,
-                        //    Quantity = item.Amount,
-                        //    Date = sale.SaleDate,
-                        //    IdProduct = (int)item.IdProduct,
-                        //    Reason = $"Venda: dia {sale.SaleDate}",
-                        //    Type = StockType.exit
-                        //     ReferenceId=
-                        //});
+                     
                     }
                     foreach (var item in sale.SaleItems)
                     {
@@ -228,5 +221,6 @@ namespace Service
         Task<SaleInfoResponse> GetByMonthAllSales(Filters filters);
         Task<SalesCommissionsInfo> GetByWeekAllSales(Filters filters);
         Task<List<SalesmanInfo>> GetSalesmanByWeek(int idCompany);
+        Task<int> PutWithItems(Sale sale);
     }
 }

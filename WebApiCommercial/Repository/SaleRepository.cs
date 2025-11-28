@@ -37,7 +37,16 @@ namespace Repository
                            SaleDate = sale.SaleDate,
                            NameSeller = sale.Salesman.Name,
                            ValueSale = sale.SaleItems.Sum(x => x.Value * x.Amount),
-                           SaleItems=sale.SaleItems.Select(x=>new SaleItems { Id=x.Id,ProductName=x.Product.Name,Amount=x.Amount}).ToList(),
+                           Total=sale.Total,
+                           
+                           SaleItems=sale.SaleItems.Select(x=>new SaleItems { 
+                               Id=x.Id,
+                               IdProduct=x.Product.Id,
+                               ProductName=x.Product.Name,
+                               Amount=x.Amount,
+                               Value=x.Value,
+                               IdSale=x.IdSale
+                           }).ToList(),
                            NameClient=sale.Client.Name,
                            IdClient=sale.IdClient,
                          })
