@@ -1,16 +1,20 @@
 ﻿using Model;
 using Model.DTO;
 using Model.Moves;
+using Model.Registrations;
 using Repository;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Service
 {
     public class FinancialService : BaseService<Financial>, IFinancialService
     {
-        public FinancialService(IGenericRepository<Financial> repository) : base(repository)
+        private readonly ICostCenterRepository _costCenterRepository;
+        public FinancialService(IGenericRepository<Financial> repository, ICostCenterRepository costCenterRepository) : base(repository)
         {
+            _costCenterRepository = costCenterRepository;
         }
         public async Task<List<Financial>> SearchBySaleItemsId(int id, TypeItem typeItem, int idItem)
         {
@@ -51,9 +55,41 @@ namespace Service
             financialData.PaymentType = financial.PaymentType;
             await base.Alter(financialData);
         }
+        public async Task<bool> CreateFinancial(FinancialRequest financial)
+        {
+            try
+            {
+            var listCostCenter = await _costCenterRepository.GetByIdCompany(financial.IdCompany);
+            Financial fin = new Financial
+            {
+                FinancialStatus = financial.FinancialStatus,
+                FinancialType = financial.FinancialType,
+                PaymentType = financial.PaymentType,
+                CreationDate = financial.CreationDate,
+                DueDate = financial.DueDate,
+                Description = financial.Description,
+                Origin = financial.Origin,
+                IdCompany=(int)financial.IdCompany,
+                IdCostCenter = listCostCenter.FirstOrDefault()?.Id,
+                Value=financial.Value
+            };
+            await base.Save(fin);
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+
+               return false;
+            }
+
+        }
         public async Task<List<Financial>> GetByIdSaleAsync(int id)
         {
             return await (repository as IFinancialRepository).GetByIdSaleAsync(id);
+        }
+        public async Task<PagedResult<FinancialResponse>> GetPaged(Filters filters)
+        {
+            return await (repository as IFinancialRepository).GetPaged(filters);
         }
     }
     public interface IFinancialService : IBaseService<Financial>
@@ -65,5 +101,7 @@ namespace Service
         Task<List<Financial>> GetByIdCompany(Filters filters);
         Task AlterFinancial(Financial financial);
         Task<List<Financial>> GetByIdSaleAsync(int id);
+        Task<bool> CreateFinancial(FinancialRequest financial);
+        Task<PagedResult<FinancialResponse>> GetPaged(Filters filters);
     }
 }

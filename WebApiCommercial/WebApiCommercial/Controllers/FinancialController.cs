@@ -47,29 +47,30 @@ namespace WebApiCommercial.Controllers
       return Ok(await financialService.GetByMonthAllCommission(filters));
     }
     // GET api/<FinancialController>/5
-    [HttpGet("{id}")]
-    public string Get(int id)
+    [HttpGet("paged")]
+    public async Task<ActionResult> GetPaged([FromQuery] Filters filters)
     {
-      return "value";
+            return Ok(await financialService.GetPaged(filters));
     }
 
     // POST api/<FinancialController>
     [HttpPost]
-    public async Task<ActionResult<dynamic>> Post([FromBody] Financial financial
+    public async Task<ActionResult<dynamic>> Post([FromBody] FinancialRequest financial
       , [FromHeader] int tenantid)
     {
-      try
-      {
-        financial.IdCompany = tenantid;
-        await financialService.Create(financial);
-      }
-      catch (System.Exception ex)
-      {
+            try
+            {
+                financial.IdCompany = tenantid;
+                bool resp=await financialService.CreateFinancial(financial);
+                return Ok("Salvo com sucesso!");
+            }
+            catch (System.Exception ex)
+            {
 
-        throw;
-      }
-   
-      return Ok(true);
+                return BadRequest(ex.Message);
+            }
+
+            
     }
 
     // PUT api/<FinancialController>/5

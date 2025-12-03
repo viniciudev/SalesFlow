@@ -101,7 +101,7 @@ namespace Service
             Description = $"Comissão {dataCommission.Salesman.Name} - dia: {item.InclusionDate.Date} - {item.NameItem}",
             FinancialType = FinancialType.expense,
             IdCostCenter = dataCommission.IdCostCenter,
-            FinancialStatus = FinancialStatus.open,
+            FinancialStatus = FinancialStatus.pending,
             DueDate = dataCommission.TypeDay == TypeDay.run
          ? dateRun.Date
          : fixedDate(dataCommission.CommissionDay, date),
@@ -156,7 +156,7 @@ namespace Service
               Description = $"Comissão {sharedCommission.NameSeller} - dia: {item.InclusionDate.Date} - {item.NameItem}",
               FinancialType = FinancialType.expense,
               IdCostCenter = sharedCommission.IdCostCenter,
-              FinancialStatus = FinancialStatus.open,
+              FinancialStatus = FinancialStatus.pending,
               DueDate = sharedCommission.TypeDay == TypeDay.run
            ? dateRun.Date
            : fixedDate(sharedCommission.CommissionDay, date),
@@ -226,7 +226,7 @@ namespace Service
             Description = $"Comissão {dataCommission.Salesman.Name} - dia: {item.InclusionDate.Date} - {item.NameItem}",
             FinancialType = FinancialType.expense,
             IdCostCenter = dataCommission.IdCostCenter,
-            FinancialStatus = FinancialStatus.open,
+            FinancialStatus = FinancialStatus.pending,
             DueDate = dataCommission.TypeDay == TypeDay.run
          ? dateRun.Date
          : fixedDate(dataCommission.CommissionDay, date),

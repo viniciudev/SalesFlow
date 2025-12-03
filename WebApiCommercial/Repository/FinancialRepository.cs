@@ -83,6 +83,39 @@ namespace Repository
                 throw;
             }
         }
+        public async Task<PagedResult<FinancialResponse>> GetPaged(Filters filters)
+        {
+            try
+            {
+                var data = await (from fin in _dbContext.Set<Financial>()
+                          .Include(x => x.Sale).ThenInclude(x => x.Client)
+                          .Include(x => x.Product)
+                          .Include(x => x.ServiceProvided)
+                                  where
+                                  fin.IdCompany== filters.IdCompany
+                                  orderby fin.Id descending
+                                  select new FinancialResponse
+                                  {
+                                      Id = fin.Id,
+                                      CreationDate = fin.CreationDate,
+                                      Value = fin.Value,
+                                      DueDate = fin.DueDate,
+                                      Origin = fin.Origin,
+                                      FinancialStatus=fin. FinancialStatus,
+                                      PaymentType=fin.PaymentType,
+                                      Description=fin.Description,
+                                      FinancialType=fin.FinancialType,
+                                      IdCompany= fin.IdCompany
+                                  }).AsNoTracking()
+                           .GetPagedAsync<FinancialResponse>(filters.PageNumber, filters.PageSize);
+
+                return data;
+            }
+            catch (System.Exception ex)
+            {
+                throw;
+            }
+        }
         public async Task<CommissionInfoResponse> GetByMonthAllCommission(Filters filters)
         {
             try
@@ -130,5 +163,7 @@ namespace Repository
         Task<CommissionInfoResponse> GetByMonthAllCommission(Filters filters);
         Task<List<Financial>> GetByIdCompany(Filters filters);
         Task<List<Financial>> GetByIdSaleAsync(int id);
+        Task<PagedResult<FinancialResponse>> GetPaged(Filters filters);
+
     }
 }
