@@ -48,8 +48,10 @@ namespace WebApiCommercial.Controllers
     }
     // GET api/<FinancialController>/5
     [HttpGet("paged")]
-    public async Task<ActionResult> GetPaged([FromQuery] Filters filters)
+    public async Task<ActionResult> GetPaged([FromQuery] Filters filters, [FromHeader] int tenantid)
+
     {
+            filters.IdCompany = tenantid;
             return Ok(await financialService.GetPaged(filters));
     }
 
