@@ -39,9 +39,8 @@ public enum FinancialType
 }
 public enum FinancialStatus
 {
-    paid = 0,
-    downloaded = 1,
-    pending = 2
+    pending = 1,
+    paid = 2
 }
 public enum PaymentType
 {

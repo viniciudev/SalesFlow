@@ -52,6 +52,7 @@ namespace Service
             financialData.FinancialType = financial.FinancialType;
             financialData.Description = financial.Description;
             financialData.DueDate = financial.DueDate;
+            financialData.FinancialStatus = financial.FinancialStatus;
             financialData.PaymentType = financial.PaymentType;
             await base.Alter(financialData);
         }
@@ -91,6 +92,20 @@ namespace Service
         {
             return await (repository as IFinancialRepository).GetPaged(filters);
         }
+        public async Task AlterFinancialStatus(Financial financial)
+        {
+            try
+            {
+                Financial financialData = await base.GetByIdAsync(financial.Id);
+                financialData.FinancialStatus = financial.FinancialStatus;
+                await base.Alter(financialData);
+            }
+            catch (System.Exception ex)
+            {
+
+                throw;
+            }
+        }
     }
     public interface IFinancialService : IBaseService<Financial>
     {
@@ -103,5 +118,6 @@ namespace Service
         Task<List<Financial>> GetByIdSaleAsync(int id);
         Task<bool> CreateFinancial(FinancialRequest financial);
         Task<PagedResult<FinancialResponse>> GetPaged(Filters filters);
+        Task AlterFinancialStatus(Financial financial);
     }
 }

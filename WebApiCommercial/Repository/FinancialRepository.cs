@@ -93,6 +93,8 @@ namespace Repository
                           .Include(x => x.ServiceProvided)
                                   where
                                   fin.IdCompany== filters.IdCompany
+                                  &&( string.IsNullOrEmpty(filters.TextOption)||fin.Description.Contains(filters.TextOption))
+                                  && (filters.FinancialStatus ==null||fin.FinancialStatus== filters.FinancialStatus)
                                   orderby fin.Id descending
                                   select new FinancialResponse
                                   {

@@ -118,7 +118,7 @@ namespace Service
             foreach (var item in financials)
             {
                 item.Id = 0;
-                item.FinancialStatus = FinancialStatus.downloaded;
+                item.FinancialStatus = FinancialStatus.paid;
                 item.FinancialType = FinancialType.recipe;
                 item.Origin = OriginFinancial.financial;
                 item.IdSale = IdSale;
