@@ -78,12 +78,77 @@ namespace Repository
         }
         public async Task<List<Client>> GetByFilter(Filters filter)
         {
-
             List<Client> data = await _dbContext.Set<Client>()
               .Where(x => x.IdCompany == filter.IdCompany
               && string.IsNullOrEmpty(filter.TextOption) || x.Name.Contains(filter.TextOption))
               .AsNoTracking().ToListAsync();
             return data;
+        }
+        public async Task<MonthlyClientsComparisonResult> GetMonthlyClientsWithComparisonByIdCompany(int idCompany)
+        {
+            var currentDate = DateTime.Now;
+            var currentMonth = currentDate.Month;
+            var currentYear = currentDate.Year;
+
+            var previousMonthDate = currentDate.AddMonths(-1);
+            var previousMonth = previousMonthDate.Month;
+            var previousMonthYear = previousMonthDate.Year;
+
+            // Usar um período de 60 dias para garantir os dois meses
+            var startDate = new DateTime(previousMonthYear, previousMonth, 1);
+            var endDate = new DateTime(currentYear, currentMonth, 1).AddMonths(1).AddDays(-1);
+
+            var monthlyCounts = await _dbContext.Set<Client>()
+                .Where(c => c.IdCompany == idCompany
+                        && c.CreatDate >= startDate
+                        && c.CreatDate <= endDate)
+                .GroupBy(c => new { c.CreatDate.Month, c.CreatDate.Year })
+                .Select(g => new
+                {
+                    g.Key.Month,
+                    g.Key.Year,
+                    ClientCount = g.Count()
+                })
+                .AsNoTracking()
+                .ToListAsync();
+
+            var currentMonthCount = monthlyCounts
+                .FirstOrDefault(m => m.Month == currentMonth && m.Year == currentYear)?
+                .ClientCount ?? 0;
+
+            var previousMonthCount = monthlyCounts
+                .FirstOrDefault(m => m.Month == previousMonth && m.Year == previousMonthYear)?
+                .ClientCount ?? 0;
+
+            // Calcular percentual
+            decimal percentage = 0;
+            if (previousMonthCount > 0)
+            {
+                percentage = ((currentMonthCount - (decimal)previousMonthCount) / previousMonthCount) * 100;
+            }
+            else if (currentMonthCount > 0)
+            {
+                percentage = 100;
+            }
+
+            return new MonthlyClientsComparisonResult
+            {
+                CurrentMonth = new MonthlyClientsComparisonResult.MonthData
+                {
+                    Month = currentMonth,
+                    Year = currentYear,
+                    ClientCount = currentMonthCount
+                },
+                PreviousMonth = new MonthlyClientsComparisonResult.MonthData
+                {
+                    Month = previousMonth,
+                    Year = previousMonthYear,
+                    ClientCount = previousMonthCount
+                },
+                PercentageChange = Math.Round(percentage, 2),
+                IsIncrease = percentage >= 0,
+                TotalComparison = currentMonthCount - previousMonthCount
+            };
         }
     }
     public interface IClientRepository : IGenericRepository<Client>
@@ -93,5 +158,6 @@ namespace Repository
         Task<List<Client>> GetByName(Filters clientFilter);
         Task<List<Client>> GetAllList(Filters clientFilter);
         Task<List<Client>> GetByFilter(Filters filter);
+        Task<MonthlyClientsComparisonResult> GetMonthlyClientsWithComparisonByIdCompany(int idCompany);
     }
 }

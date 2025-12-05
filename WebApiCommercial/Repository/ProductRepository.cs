@@ -60,10 +60,18 @@ namespace Repository
             }
             return data;
         }
+        public async Task<int> GetCountProductsByIdCompany(int tenantid)
+        {
+            var data = await base._dbContext.Set<Product>().Where(x =>
+          x.IdCompany == tenantid)
+            .AsNoTracking().CountAsync();
+            return data;
+        }
     }
     public interface IProductRepository : IGenericRepository<Product>
     {
         Task<PagedResult<Product>> GetAllPaged(Filters filter);
         Task<List<Product>> GetListByName(Filters filters);
+        Task<int> GetCountProductsByIdCompany(int tenantid);
     }
 }

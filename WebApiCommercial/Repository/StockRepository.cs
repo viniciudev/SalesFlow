@@ -96,11 +96,19 @@ namespace Repository
           .FirstOrDefaultAsync();
             return resp;
         }
+        public async Task<int> GetLowStockByIdCompany(int tenantid)
+        {
+            List<StockSummary> stockSummaries = await GetBalance(tenantid);
+
+            int resp =stockSummaries.Count(x => x.SaldoAtual <= 1);
+            return resp;
+        }
     }
     public interface IStockRepository : IGenericRepository<Stock>
     {
         Task<StockSummary> GetBalanceByProduct(int tenantid, int idProduct);
         Task<PagedResult<Stock>> GetAllPaged(Filters filters);
         Task<Stock> GetByReferenceIdAsync(int id);
+        Task<int> GetLowStockByIdCompany(int tenantid);
     }
 }

@@ -205,6 +205,9 @@ namespace WebAppCommercial
             services.AddTransient<IGenericRepository<Stock>, StockRepository>();
             services.AddTransient<IStockRepository, StockRepository>();
             services.AddTransient<IBaseService<Stock>, StockService>();
+            //Dashboard
+            services.AddTransient<IDashboardService, DashboardService>();
+ 
             services.AddCors(options =>
             {
                 options.AddPolicy("EnableCORS", builder =>
