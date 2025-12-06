@@ -47,7 +47,7 @@ namespace WebAppCommercial
             });
 
             services.AddDbContext<ContextBase>(options =>
-                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+                 options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
 
             services.Configure<GzipCompressionProviderOptions>(options =>
             {
