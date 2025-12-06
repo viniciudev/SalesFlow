@@ -49,6 +49,7 @@ namespace WebAppCommercial
             services.AddDbContext<ContextBase>(options =>
                  options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
 
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
             services.Configure<GzipCompressionProviderOptions>(options =>
             {
                 options.Level = CompressionLevel.Optimal;

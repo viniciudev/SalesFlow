@@ -25,18 +25,18 @@ namespace Repository
             //{
             //    optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Database=serviceboxdb;Trusted_Connection=True;");
             //}
-            if (!optionsBuilder.IsConfigured)
-            {
-                // Pega a connection string do appsettings.json
-                var configuration = new ConfigurationBuilder()
-                    .SetBasePath(Directory.GetCurrentDirectory())
-                    .AddJsonFile("appsettings.json")
-                    .Build();
+            //if (!optionsBuilder.IsConfigured)
+            //{
+            //    // Pega a connection string do appsettings.json
+            //    var configuration = new ConfigurationBuilder()
+            //        .SetBasePath(Directory.GetCurrentDirectory())
+            //        .AddJsonFile("appsettings.json")
+            //        .Build();
 
-                var connectionString = configuration.GetConnectionString("PostgreConnection");
+            //    var connectionString = configuration.GetConnectionString("PostgreConnection");
 
-                optionsBuilder.UseNpgsql(connectionString);
-            }
+            //    optionsBuilder.UseNpgsql(connectionString);
+            //}
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
