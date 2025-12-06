@@ -247,7 +247,7 @@ namespace WebAppCommercial
                 c.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Version = "v1",
-                    Title = "Tecidos API",
+                    Title = "Sales flow",
                     Description = "API para gestão comercial",
                     TermsOfService = new Uri("https://example.com/terms"),
                     Contact = new OpenApiContact
