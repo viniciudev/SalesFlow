@@ -196,7 +196,7 @@ namespace WebApiCommercial.Controllers
         <div class='success-icon'>✓</div>
         <h1>Email Verificado com Sucesso!</h1>
         <p>Sua conta foi ativada com sucesso. Agora você pode fazer login e aproveitar todos os recursos do nosso sistema.</p>
-        <a href='/login' class='btn' id='loginBtn'>Ir para Login</a>
+        <a href='https://studio-to69.onrender.com' class='btn' id='loginBtn'>Ir para Login</a>
         <p class='loading' id='loading'>Redirecionando em 5 segundos...</p>
     </div>
     
@@ -215,7 +215,7 @@ namespace WebApiCommercial.Controllers
                 
                 if (seconds < 0) {
                     clearInterval(countdown);
-                    window.location.href = '/login';
+                    window.location.href = 'https://studio-to69.onrender.com';
                 }
             }, 1000);
         }, 1000);
@@ -226,7 +226,7 @@ namespace WebApiCommercial.Controllers
             this.textContent = 'Redirecionando...';
             this.disabled = true;
             setTimeout(() => {
-                window.location.href = '/login';
+                window.location.href = 'https://studio-to69.onrender.com';
             }, 500);
         });
     </script>
@@ -312,7 +312,7 @@ namespace WebApiCommercial.Controllers
         <p>O link de verificação é inválido ou expirou.</p>
         <p>Por favor, solicite um novo link de verificação ou entre em contato com o suporte.</p>
         <div>
-            <a href='/login' class='btn'>Ir para Login</a>
+            <a href='https://studio-to69.onrender.com' class='btn'>Ir para Login</a>
             <a href='/resend-verification' class='btn btn-secondary'>Reenviar Verificação</a>
         </div>
     </div>

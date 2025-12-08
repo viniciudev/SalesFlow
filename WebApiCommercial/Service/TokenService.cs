@@ -22,7 +22,7 @@ namespace Service
         Subject = new ClaimsIdentity(new Claim[]
           {
                     new Claim(ClaimTypes.Name, user.Name.ToString()),
-                    new Claim(ClaimTypes.Role, user.Role.ToString())
+                    new Claim(ClaimTypes.Role, user?.Role?.ToString()??"admin")
           }),
         Expires = DateTime.UtcNow.AddHours(12),
 
