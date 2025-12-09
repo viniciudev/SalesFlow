@@ -132,7 +132,7 @@ namespace Service
 
                 if (response.IsSuccessStatusCode)
                 {
-                    _logger.LogInformation($"Email de verificação enviado para: {request.Email}");
+                   
 
                     return new EmailResponse
                     {
@@ -144,19 +144,17 @@ namespace Service
                 else
                 {
                     var errorBody = await response.Body.ReadAsStringAsync();
-                    _logger.LogError($"Falha no SendGrid. Status: {response.StatusCode}, Body: {errorBody}");
-
                     return new EmailResponse
                     {
                         Success = false,
-                        Message = $"Falha ao enviar email. Status: {response.StatusCode}",
+                        Message = $"Falha no SendGrid. Status: {response.StatusCode}, Body: {errorBody}",
                         SentDate = null
                     };
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Erro ao enviar email para: {request.Email}");
+              
                 return new EmailResponse
                 {
                     Success = false,
