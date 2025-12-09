@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
+using SendGrid;
+using SendGrid.Helpers.Mail;
 using System;
 using System.Threading.Tasks;
 
@@ -24,11 +26,13 @@ namespace Service
         private readonly EmailSettings _emailSettings;
         private readonly ILogger<EmailService> _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ISendGridClient _sendGridClient;
         public EmailService(IOptions<EmailSettings> emailSettings, ILogger<EmailService> logger, IHttpContextAccessor httpContextAccessor)
         {
             _emailSettings = emailSettings.Value;
             _logger = logger;
             _httpContextAccessor = httpContextAccessor;
+            _sendGridClient = new SendGridClient(_emailSettings.SendGridApiKey);
         }
         public string GenerateVerificationUrl(string token, string email)
         {
@@ -37,58 +41,118 @@ namespace Service
 
             return $"{baseUrl}/api/email/verify-email?token={token}&email={email}";
         }
-        public async Task<EmailResponse> SendVerificationEmailAsync(EmailRequest request,string verificationToken)
+        //public async Task<EmailResponse> SendVerificationEmailAsync(EmailRequest request,string verificationToken)
+        //{
+
+        //    try
+        //    {
+        //        var verificationUrl = GenerateVerificationUrl(verificationToken, request.Email);
+        //        var emailBody = BuildEmailBody(request.Name, verificationUrl, request.UserType);
+
+        //        var message = new MimeMessage();
+        //        message.From.Add(new MailboxAddress(_emailSettings.FromName, _emailSettings.FromEmail));
+        //        message.To.Add(new MailboxAddress(request.Name, request.Email));
+        //        message.Subject = "Verificação de Email - Seu Sistema";
+
+        //        var bodyBuilder = new BodyBuilder
+        //        {
+        //            HtmlBody = emailBody
+        //        };
+        //        message.Body = bodyBuilder.ToMessageBody();
+
+        //        using (var client = new SmtpClient())
+        //        {
+        //            // Configuração baseada na porta
+        //            if (_emailSettings.SmtpPort == 465)
+        //            {
+        //                // Porta 465 - SSL explícito
+        //                await client.ConnectAsync(_emailSettings.SmtpHost, _emailSettings.SmtpPort, SecureSocketOptions.SslOnConnect);
+        //            }
+        //            else if (_emailSettings.SmtpPort == 587)
+        //            {
+        //                // Porta 587 - STARTTLS
+        //                await client.ConnectAsync(_emailSettings.SmtpHost, _emailSettings.SmtpPort, SecureSocketOptions.StartTls);
+        //            }
+        //            else
+        //            {
+        //                // Auto-detect para outras portas
+        //                await client.ConnectAsync(_emailSettings.SmtpHost, _emailSettings.SmtpPort, SecureSocketOptions.Auto);
+        //            }
+
+        //            await client.AuthenticateAsync(_emailSettings.Username, _emailSettings.Password);
+        //            await client.SendAsync(message);
+        //            await client.DisconnectAsync(true);
+        //        }
+
+        //        _logger.LogInformation($"Email de verificação enviado para: {request.Email}");
+
+        //        return new EmailResponse
+        //        {
+        //            Success = true,
+        //            Message = "Email de verificação enviado com sucesso",
+        //            SentDate = DateTime.UtcNow,
+
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, $"Erro ao enviar email para: {request.Email}");
+        //        return new EmailResponse
+        //        {
+        //            Success = false,
+        //            Message = $"Falha ao enviar email: {ex.Message}",
+        //            SentDate = null
+        //        };
+        //    }
+
+        //}
+        public async Task<EmailResponse> SendVerificationEmailAsync(
+        EmailRequest request,
+        string verificationToken)
         {
-          
             try
             {
                 var verificationUrl = GenerateVerificationUrl(verificationToken, request.Email);
                 var emailBody = BuildEmailBody(request.Name, verificationUrl, request.UserType);
+                var plainTextContent = "Por favor, verifique seu email clicando no link fornecido.";
 
-                var message = new MimeMessage();
-                message.From.Add(new MailboxAddress(_emailSettings.FromName, _emailSettings.FromEmail));
-                message.To.Add(new MailboxAddress(request.Name, request.Email));
-                message.Subject = "Verificação de Email - Seu Sistema";
+                var from = new EmailAddress(_emailSettings.FromEmail, _emailSettings.FromName);
+                var to = new EmailAddress(request.Email, request.Name);
+                var subject = "Verificação de Email - Seu Sistema";
 
-                var bodyBuilder = new BodyBuilder
+                var msg = MailHelper.CreateSingleEmail(
+                    from,
+                    to,
+                    subject,
+                    plainTextContent,
+                    emailBody
+                );
+
+                var response = await _sendGridClient.SendEmailAsync(msg);
+
+                if (response.IsSuccessStatusCode)
                 {
-                    HtmlBody = emailBody
-                };
-                message.Body = bodyBuilder.ToMessageBody();
+                    _logger.LogInformation($"Email de verificação enviado para: {request.Email}");
 
-                using (var client = new SmtpClient())
-                {
-                    // Configuração baseada na porta
-                    if (_emailSettings.SmtpPort == 465)
+                    return new EmailResponse
                     {
-                        // Porta 465 - SSL explícito
-                        await client.ConnectAsync(_emailSettings.SmtpHost, _emailSettings.SmtpPort, SecureSocketOptions.SslOnConnect);
-                    }
-                    else if (_emailSettings.SmtpPort == 587)
-                    {
-                        // Porta 587 - STARTTLS
-                        await client.ConnectAsync(_emailSettings.SmtpHost, _emailSettings.SmtpPort, SecureSocketOptions.StartTls);
-                    }
-                    else
-                    {
-                        // Auto-detect para outras portas
-                        await client.ConnectAsync(_emailSettings.SmtpHost, _emailSettings.SmtpPort, SecureSocketOptions.Auto);
-                    }
-
-                    await client.AuthenticateAsync(_emailSettings.Username, _emailSettings.Password);
-                    await client.SendAsync(message);
-                    await client.DisconnectAsync(true);
+                        Success = true,
+                        Message = "Email de verificação enviado com sucesso",
+                        SentDate = DateTime.UtcNow
+                    };
                 }
-
-                _logger.LogInformation($"Email de verificação enviado para: {request.Email}");
-
-                return new EmailResponse
+                else
                 {
-                    Success = true,
-                    Message = "Email de verificação enviado com sucesso",
-                    SentDate = DateTime.UtcNow,
+                    var errorBody = await response.Body.ReadAsStringAsync();
+                    _logger.LogError($"Falha no SendGrid. Status: {response.StatusCode}, Body: {errorBody}");
 
-                };
+                    return new EmailResponse
+                    {
+                        Success = false,
+                        Message = $"Falha ao enviar email. Status: {response.StatusCode}",
+                        SentDate = null
+                    };
+                }
             }
             catch (Exception ex)
             {
@@ -100,7 +164,6 @@ namespace Service
                     SentDate = null
                 };
             }
-        
         }
 
         private string GenerateVerificationToken(string email)
@@ -174,5 +237,6 @@ namespace Service
         public string FromName { get; set; } = string.Empty;
         public bool EnableSsl { get; set; } = true;
         public int Timeout { get; set; } = 10000;
+        public string SendGridApiKey { get; set; } = string.Empty;
     }
 }

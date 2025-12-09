@@ -18,5 +18,6 @@ WORKDIR /app
 COPY --from=build /publish .
 
 EXPOSE 8080
+EXPOSE 443
 
 ENTRYPOINT ["dotnet", "WebApiCommercial.dll"]

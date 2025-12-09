@@ -100,17 +100,17 @@ namespace Service
             user.IdCompany = company.Id;
             user.Password = hash;
             user.VerifiedEmail = true;
-            //user.TokenVerify = Guid.NewGuid().ToString();
-            //await base.Create(user);
-            //EmailResponse emailResp = await emailService.SendVerificationEmailAsync(new EmailRequest
-            //{
-            //    Email = user.Email,
-            //    Name = user.Name,
-            //    UserType = (int)user.TypeUser,
+            user.TokenVerify = Guid.NewGuid().ToString();
+            await base.Create(user);
+            EmailResponse emailResp = await emailService.SendVerificationEmailAsync(new EmailRequest
+            {
+                Email = user.Email,
+                Name = user.Name,
+                UserType = (int)user.TypeUser,
 
-            //}, user.TokenVerify);
-            //if (!emailResp.Success)
-            //    return emailResp.Message;
+            }, user.TokenVerify);
+            if (!emailResp.Success)
+                return emailResp.Message;
             return "Salvo com Sucesso!";
         }
         public async Task<User> GetByToken(string token)
