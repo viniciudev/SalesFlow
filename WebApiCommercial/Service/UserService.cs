@@ -1,5 +1,6 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using Model;
+using Model.DTO;
 using Model.Moves;
 using Model.Registrations;
 using Repository;
@@ -7,6 +8,7 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Service
 {
@@ -99,7 +101,7 @@ namespace Service
 
             user.IdCompany = company.Id;
             user.Password = hash;
-            user.VerifiedEmail = true;
+            user.VerifiedEmail = false;
             user.TokenVerify = Guid.NewGuid().ToString();
             await base.Create(user);
             EmailResponse emailResp = await emailService.SendVerificationEmailAsync(new EmailRequest
@@ -151,6 +153,29 @@ namespace Service
 
             return "Senha redefinida com sucesso!";
         }
+        public async Task<ResponseGeneric> SaveCompanyUser(User user)
+        {
+            AuthenticateModel authenticateModel = new AuthenticateModel();
+            authenticateModel.Email = user.Email;
+
+            var userExist = await (repository as IUserRepository).GetUser(authenticateModel);
+            if (userExist != null)
+                return new ResponseGeneric {Success=false, Message="Usuário já possui cadastro!" };
+
+            Cryptography cryptography = new Cryptography();
+            var hash = cryptography.addsEncrypted(user.Password);
+
+            user.IdCompany = user.IdCompany;
+            user.Password = hash;
+            user.VerifiedEmail = true;
+            user.TokenVerify = Guid.NewGuid().ToString();
+            await base.Create(user);
+            return new ResponseGeneric { Success = true, Message = "Usuário salvo com sucesso!" };
+        }
+        public async Task<PagedResult<User>> GetUsersByCompany(Filters filters)
+        {
+             return await (repository as IUserRepository).GetUsersByCompany(filters);
+        }
     }
 
 
@@ -160,6 +185,9 @@ namespace Service
         Task<AuthenticateResponse> Authenticate(AuthenticateModel model);
         Task<User> GetByToken(string token);
         Task<string> ResetPassword(string email, string novaSenha, string confirmarSenha = null);
+        Task<ResponseGeneric> SaveCompanyUser(User user);
+        Task<PagedResult< User>> GetUsersByCompany(Filters filters);
+
     }
 
 }

@@ -92,6 +92,21 @@ namespace WebAppCommercial.Controllers
             var data = await userService.SaveUser(user);
             return Ok(data);
         }
+        [HttpPost("usercompany")]
+        public async Task<ActionResult> CompanyUser([FromHeader] int tenantid, [FromBody] User user)
+        {
+            user.IdCompany = tenantid;
+            var data = await userService.SaveCompanyUser(user);
+            return Ok(data);
+        }
+
+        [HttpGet("GetUsersByCompany")]
+        public async Task<ActionResult> GetUsersByCompany([FromHeader] int tenantid, [FromBody] Filters filters)
+        {
+            filters.IdCompany = tenantid;
+            var data = await userService.GetUsersByCompany(filters);
+            return Ok(data);
+        }
 
         [HttpPost("authenticate")]
         public async Task<ActionResult> Authenticate(AuthenticateModel model)
