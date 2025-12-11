@@ -25,7 +25,10 @@ namespace Repository
 
         public async Task<PagedResult<User>> GetUsersByCompany(Filters filters)
         {
-            var data = await _dbContext.Set<User>().Where(x => x.IdCompany == filters.IdCompany)
+            var data = await _dbContext.Set<User>()
+                .Where(x => x.IdCompany == filters.IdCompany 
+                && ((string.IsNullOrEmpty( filters.TextOption))||( x.Name.Contains(filters.TextOption)))
+                )
              .AsNoTracking()
              .GetPagedAsync(filters.PageNumber, filters.PageSize);
             return data;

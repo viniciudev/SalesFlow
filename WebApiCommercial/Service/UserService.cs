@@ -176,6 +176,26 @@ namespace Service
         {
              return await (repository as IUserRepository).GetUsersByCompany(filters);
         }
+        public async  Task<ResponseGeneric> AlterCompanyUser(User user)
+        {
+            User user1 = await base.GetByIdAsync(user.Id);
+            user1.CellPhone = user.CellPhone;
+            user1.BirthDate = user.BirthDate;
+            user1.Name = user.Name;
+            user1.Email = user.Email;
+            if(!string.IsNullOrEmpty(user.Password))
+            {
+                Cryptography cryptography = new Cryptography();
+                var hash = cryptography.addsEncrypted(user.Password);
+                user1.Password = hash;
+            }
+            await base.Alter(user1);
+            return new ResponseGeneric
+            {
+                Success = true,
+                Message = "Alterado com sucesso!"
+            };
+        }
     }
 
 
@@ -187,7 +207,7 @@ namespace Service
         Task<string> ResetPassword(string email, string novaSenha, string confirmarSenha = null);
         Task<ResponseGeneric> SaveCompanyUser(User user);
         Task<PagedResult< User>> GetUsersByCompany(Filters filters);
-
+        Task<ResponseGeneric> AlterCompanyUser(User user);
     }
 
 }

@@ -99,9 +99,16 @@ namespace WebAppCommercial.Controllers
             var data = await userService.SaveCompanyUser(user);
             return Ok(data);
         }
+        [HttpPut("alterusercompany")]
+        public async Task<ActionResult> AlterCompanyUser([FromHeader] int tenantid, [FromBody] User user)
+        {
+            user.IdCompany = tenantid;
+            var data = await userService.AlterCompanyUser(user);
+            return Ok(data);
+        }
 
         [HttpGet("usersbycompany")]
-        public async Task<IActionResult> GetUsersByCompany([FromHeader] int tenantid, [FromBody] Filters filters)
+        public async Task<IActionResult> GetUsersByCompany([FromHeader] int tenantid, [FromQuery] Filters filters)
         {
             filters.IdCompany = tenantid;
             var data = await userService.GetUsersByCompany(filters);
