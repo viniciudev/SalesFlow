@@ -100,8 +100,8 @@ namespace WebAppCommercial.Controllers
             return Ok(data);
         }
 
-        [HttpGet("GetUsersByCompany")]
-        public async Task<ActionResult> GetUsersByCompany([FromHeader] int tenantid, [FromBody] Filters filters)
+        [HttpGet("usersbycompany")]
+        public async Task<IActionResult> GetUsersByCompany([FromHeader] int tenantid, [FromBody] Filters filters)
         {
             filters.IdCompany = tenantid;
             var data = await userService.GetUsersByCompany(filters);

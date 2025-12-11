@@ -22,7 +22,7 @@ namespace Model
         public DateTime CheckinDate { get; set; }
         public DateTime CheckinDateFinal { get; set; }
         public int IdSeller { get; set; }
-        public FinancialType FinancialType  { get; set; }
+        public FinancialType ?FinancialType  { get; set; }
         public FinancialStatus ?FinancialStatus { get; set; }
     }
 
