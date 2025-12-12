@@ -61,7 +61,7 @@ namespace WebAppCommercial.Controllers
             model.IdCompany = tenantid;
             model.CreatDate = DateTime.Now;
             await clientService.Save(model);
-            return Ok(true);
+            return Ok(model);
         }
 
 
