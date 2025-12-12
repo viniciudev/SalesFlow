@@ -73,7 +73,9 @@ namespace Service
                 Quantity = model.Quantity,
                 Image = null,//file
                 Code=model.Code,
-                Reference=model.Reference
+                Reference=model.Reference,
+                CostPrice=model.CostPrice
+
             };
             if (product.Id > 0)
                 await base.Alter(product);
