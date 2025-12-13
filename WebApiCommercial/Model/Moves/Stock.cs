@@ -14,7 +14,7 @@ namespace Model.Moves
         public Product Product { get; set; }
         public int IdCompany { get; set; }
         public Company Company { get; set; }
-        public int Quantity { get; set; }
+        public decimal Quantity { get; set; }
         public string Reason { get; set; }
         public DateTime Date { get; set; }
         public StockType Type { get; set; }

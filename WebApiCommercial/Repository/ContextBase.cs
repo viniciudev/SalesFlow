@@ -5,6 +5,8 @@ using Model.Moves;
 using Model.Registrations;
 using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Repository
 {
@@ -18,7 +20,23 @@ namespace Repository
         }
         public virtual DbSet<User> User { get; set; }
 
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
 
+            NormalizeEntities();
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+        private void NormalizeEntities()
+        {
+            var entries = ChangeTracker.Entries()
+                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
+                .Select(e => e.Entity);
+
+            foreach (var entity in entries)
+            {
+                NormalizationHelper.NormalizeEntity(entity);
+            }
+        }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             //if (!optionsBuilder.IsConfigured)
@@ -37,6 +55,7 @@ namespace Repository
 
             //    optionsBuilder.UseNpgsql(connectionString);
             //}
+            //optionsBuilder.AddInterceptors(new CaseInsensitiveQueryInterceptor());
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -71,6 +90,7 @@ namespace Repository
      .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
             foreach (var fk in cascadeFKs)
                 fk.DeleteBehavior = DeleteBehavior.Restrict;
+
 
             base.OnModelCreating(modelBuilder);
         }

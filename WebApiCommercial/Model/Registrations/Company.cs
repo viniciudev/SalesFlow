@@ -9,6 +9,7 @@ namespace Model.Registrations
         public string CorporateName { get; set; }
 
         public Guid Guid { get; set; }
+        [Uppercase]
         public string? Name { get; set; }
         public string? Cnpj { get; set; }
         public string? ZipCode { get; set; }

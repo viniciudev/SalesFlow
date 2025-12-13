@@ -1,6 +1,8 @@
-﻿using GoogleApi.Entities.Search.Video.Common;
+﻿using GoogleApi.Entities.Search.Common;
+using GoogleApi.Entities.Search.Video.Common;
 using Model;
 using Model.DTO;
+using Model.Moves;
 using Model.Registrations;
 using Repository;
 using System;
@@ -12,8 +14,10 @@ namespace Service
 {
     public class ProductService : BaseService<Product>, IProductService
     {
-        public ProductService(IGenericRepository<Product> repository) : base(repository)
+        private readonly IStockService _stockService;
+        public ProductService(IGenericRepository<Product> repository, IStockService stockService) : base(repository)
         {
+            _stockService = stockService;
         }
 
         public async Task<PagedResult<Product>> GetAllPaged(Filters filter)
@@ -80,7 +84,19 @@ namespace Service
             if (product.Id > 0)
                 await base.Alter(product);
             else
+            {
                 await base.Save(product);
+                await _stockService.Create(new Stock
+                {
+                    IdCompany = tenantid,
+                    Quantity = product.Quantity,
+                    Date = DateTime.UtcNow,
+                    IdProduct = product.Id,
+                    Reason = $"Lançamento novo produto: dia {DateTime.UtcNow}",
+                    Type = StockType.entry
+                });
+            }
+                
         }
     }
     public interface IProductService : IBaseService<Product>

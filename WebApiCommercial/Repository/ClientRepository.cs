@@ -24,6 +24,8 @@ namespace Repository
                && (string.IsNullOrEmpty(clientFilter.TextOption)
                || x.Name.Contains(clientFilter.TextOption))))
                .AsNoTracking()
+               .WithCaseInsensitive()
+               .OrderByDescending(x=>x.Id)
                .GetPagedAsync<Client>(clientFilter.PageNumber, clientFilter.PageSize);
             return paged;
         }
@@ -43,7 +45,7 @@ namespace Repository
                                   Name = cli.Name,
                                   Id = cli.Id,
                               }
-              ).AsNoTracking().ToListAsync();
+              ).AsNoTracking().WithCaseInsensitive().ToListAsync();
             return data;
         }
         public async Task<ClientInfoResponse> GetByMonthAllClients(Filters filters)
@@ -54,7 +56,8 @@ namespace Repository
                 List<Client> data = await _dbContext.Set<Client>()
                   .Where(x => x.IdCompany == filters.IdCompany
                   && x.CreatDate.Year == DateTime.Now.Year)
-                  .AsNoTracking().ToListAsync();
+                  .AsNoTracking()
+                  .WithCaseInsensitive().ToListAsync();
 
                 var grupo1 = data.GroupBy(c => c.CreatDate.Month)
                                           .Select(g => new { Key = g.Key, Itens = g.ToList() }).ToList();
@@ -81,7 +84,8 @@ namespace Repository
             List<Client> data = await _dbContext.Set<Client>()
               .Where(x => x.IdCompany == filter.IdCompany
               && string.IsNullOrEmpty(filter.TextOption) || x.Name.Contains(filter.TextOption))
-              .AsNoTracking().ToListAsync();
+              .AsNoTracking().WithCaseInsensitive()
+              .ToListAsync();
             return data;
         }
         public async Task<MonthlyClientsComparisonResult> GetMonthlyClientsWithComparisonByIdCompany(int idCompany)

@@ -34,6 +34,7 @@ namespace Repository
                        //Image = p.Image,
                        // ImageBytes = p.Image != null ? Convert.ToBase64String(p.Image) : null
                    })
+                   .WithCaseInsensitive()
               .GetPagedAsync<Product>(filter.PageNumber, filter.PageSize);
             //busca saldo
             foreach (var item in paged.Results)
@@ -51,7 +52,7 @@ namespace Repository
             || x.Name.Contains(filters.TextOption)
             || x.Reference.Contains(filters.TextOption)
             || x.Code.Contains(filters.TextOption)))
-              .AsNoTracking().ToListAsync();
+              .AsNoTracking().WithCaseInsensitive().ToListAsync();
 
             //busca saldo
             foreach (var item in data)

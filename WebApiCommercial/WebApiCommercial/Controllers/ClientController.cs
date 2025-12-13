@@ -49,12 +49,7 @@ namespace WebAppCommercial.Controllers
             return Ok(await clientService.GetByMonthAllClients(filter));
         }
 
-        // POST api/<ClientController>
-        [HttpPost("{id}")]
-        public void Post([FromBody] string value)
-        {
-
-        }
+    
         [HttpPost]
         public async Task<ActionResult<dynamic>> Post([FromBody] Client model, [FromHeader] int tenantid)
         {

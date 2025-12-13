@@ -5,6 +5,7 @@ namespace Model
 {
     public class User : BaseEntity
     {
+        [Uppercase]
         public string Name { get; set; }
         public string CellPhone { get; set; }
         public string Password { get; set; }
