@@ -17,6 +17,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using ProfControl.WebApi;
 using Repository;
+using Repository.Providers;
 using Service;
 using System;
 using System.Collections.Generic;
@@ -208,7 +209,8 @@ namespace WebAppCommercial
             services.AddTransient<IBaseService<Stock>, StockService>();
             //Dashboard
             services.AddTransient<IDashboardService, DashboardService>();
- 
+            //providertenantid
+            services.AddScoped<ITenantProvider, HeaderTenantProvider>();
             services.AddCors(options =>
             {
                 options.AddPolicy("EnableCORS", builder =>
