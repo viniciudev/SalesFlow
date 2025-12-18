@@ -159,7 +159,8 @@ namespace Service
 
                     SaleItems data = new SaleItems();
                     SharedCommission sharedCommission = new SharedCommission();
-                    foreach (var item in sale.SaleItems)
+                    List<SaleItems> prods = await saleItemsService.GetByIdSaleAsync(s.Id);
+                    foreach (var item in prods)
                     {
                         //deletar itens pra incluir tudo depois
                         if(item.Id>0)
