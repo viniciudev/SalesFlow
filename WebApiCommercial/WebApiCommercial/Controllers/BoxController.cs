@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Model;
 using Model.DTO.BoxDto;
+using Model.Moves;
+using Repository;
 using Service;
 using System;
 using System.Collections.Generic;
@@ -35,18 +38,18 @@ namespace WebApiCommercial.Controllers
         }
 
         [HttpGet("status")]
-        public async Task<ActionResult> VerificarStatus()
+        public async Task<ActionResult> GetBoxStatus([FromHeader] int tenantid)
         {
-            //var status = await _caixaService.VerificarStatusCaixaAsync();
-            //return Ok(status);
-            return Ok();
+            var status = await _caixaService.GetStatusByCompany(tenantid);
+            return Ok(status);
         }
 
-        //[HttpGet("movimentacoes/{caixaId}")]
-        //public async Task<ActionResult<List<MovimentacaoDTO>>> GetMovimentacoes(Guid caixaId)
-        //{
-        //    var movimentacoes = await _caixaService.GetMovimentacoesAsync(caixaId);
-        //    return Ok(movimentacoes);
-        //}
+        [HttpGet("paged")]
+        public async Task<ActionResult> GetMovimentacoes([FromHeader] int tenantid, [FromQuery] Filters filters)
+        {
+            filters.IdCompany = tenantid;
+            PagedResult<Box> movimentacoes = await _caixaService.GetMovimentacoesAsync(filters);
+            return Ok(movimentacoes);
+        }
     }
 }

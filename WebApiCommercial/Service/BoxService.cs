@@ -1,4 +1,5 @@
-﻿using Model.DTO;
+﻿using Model;
+using Model.DTO;
 using Model.DTO.BoxDto;
 using Model.Moves;
 using Repository;
@@ -70,10 +71,20 @@ namespace Service
 
             return new ResponseGeneric { Message = "Caixa fechado!", Success = true, Data = caixa };
         }
+        public async Task<PagedResult<Box>> GetMovimentacoesAsync(Filters filters)
+        {
+           return await (repository as IBoxRepository).GetPaged(filters);
+        }
+        public async Task<BoxStatus> GetStatusByCompany(int tenantid)
+        {
+            return await (repository as IBoxRepository).GetStatusByCompany(tenantid);
+        }
     }
     public interface IBoxService : IBaseService<Box>
     {
         Task<ResponseGeneric> AbrirCaixaAsync(OpenBoxDto dto);
         Task<ResponseGeneric> FecharCaixaAsync(int caixaId, CloseBoxDto dto);
+        Task<PagedResult<Box>> GetMovimentacoesAsync(Filters filters);
+        Task<BoxStatus> GetStatusByCompany(int tenantid);
     }
 }
