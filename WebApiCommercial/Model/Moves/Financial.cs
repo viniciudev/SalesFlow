@@ -29,6 +29,7 @@ namespace Model.Moves
         public decimal Percentage { get; set; }
         public bool commission { get; set; }
         public OriginFinancial Origin { get; set; }
+        public int? BoxId { get; set; }
     }
 
 }
