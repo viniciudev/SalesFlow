@@ -147,12 +147,17 @@ namespace Service
         throw;
       }
     }
-  }
+        public async Task<List<SaleItems>> GetByIdSaleAsync(int id)
+        {
+            return await (repository as ISaleItemsRepository).GetByIdSaleAsync(id);
+        }
+    }
   public interface ISaleItemsService : IBaseService<SaleItems>
   {
     Task<PagedResult<SaleItems>> GetPaged(Filters filters);
     Task SaveSaleItems(SaleItems saleItems, int tenantid);
     Task AlterSaleItems(SaleItems saleItems, int tenantid);
     Task Delete(int id);
-  }
+        Task<List<SaleItems>> GetByIdSaleAsync(int id);
+    }
 }

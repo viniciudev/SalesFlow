@@ -2,6 +2,7 @@
 using Model;
 using Model.DTO;
 using Model.Registrations;
+using Repository.Providers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,16 +12,22 @@ namespace Repository
     public class ProductRepository : GenericRepository<Product>, IProductRepository
     {
         private readonly IStockRepository _stockRepository;
+
+        private readonly ITenantProvider _tenantProvider;
         public ProductRepository(ContextBase dbContext, IStockRepository stockRepository) : base(dbContext)
         {
             _stockRepository = stockRepository;
+
         }
 
         public async Task<PagedResult<Product>> GetAllPaged(Filters filter)
         {
 
             var paged = await base._dbContext.Set<Product>()
-                      .Where(x => x.IdCompany == filter.IdCompany && string.IsNullOrEmpty(filter.TextOption) || x.Name.Contains(filter.TextOption))
+                      .Where(x =>
+                      (x.IdCompany==filter.IdCompany)&&
+                      (string.IsNullOrEmpty(filter.TextOption) || x.Name.Contains(filter.TextOption)))
+                      
                    .Select(p => new Product
                    {
                        Id = p.Id,
@@ -35,6 +42,8 @@ namespace Repository
                        // ImageBytes = p.Image != null ? Convert.ToBase64String(p.Image) : null
                    })
                    .WithCaseInsensitive()
+                 
+
               .GetPagedAsync<Product>(filter.PageNumber, filter.PageSize);
             //busca saldo
             foreach (var item in paged.Results)

@@ -1,6 +1,8 @@
-﻿using Model;
+﻿using Microsoft.EntityFrameworkCore;
+using Model;
 using Model.Moves;
 using Model.Registrations;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -42,9 +44,16 @@ namespace Repository
                          }).GetPagedAsync<SaleItems>(filters.PageNumber, filters.PageSize);
       return paged;
     }
-  }
+        public async Task<List<SaleItems>> GetByIdSaleAsync(int id)
+        {
+            return await _dbContext.Set<SaleItems>().Where(x => x.IdSale == id)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+    }
   public interface ISaleItemsRepository : IGenericRepository<SaleItems>
   {
-    Task<PagedResult<SaleItems>> GetPaged(Filters filters);
+        Task<List<SaleItems>> GetByIdSaleAsync(int id);
+        Task<PagedResult<SaleItems>> GetPaged(Filters filters);
   }
 }

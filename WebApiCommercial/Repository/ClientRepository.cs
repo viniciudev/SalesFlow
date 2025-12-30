@@ -17,7 +17,7 @@ namespace Repository
         public async Task<PagedResult<Client>> GetAllPaged(Filters clientFilter)
         {
             var paged = await base._dbContext.Set<Client>()
-               .Where(x => x.IdCompany == clientFilter.IdCompany
+               .Where(x => (x.IdCompany == clientFilter.IdCompany)
                && (String.IsNullOrEmpty(clientFilter.cellPhoneOption)
                || (x.CellPhone == clientFilter.cellPhoneOption)) &&
                (clientFilter.SelectOption == FilterType.Name
@@ -82,8 +82,8 @@ namespace Repository
         public async Task<List<Client>> GetByFilter(Filters filter)
         {
             List<Client> data = await _dbContext.Set<Client>()
-              .Where(x => x.IdCompany == filter.IdCompany
-              && string.IsNullOrEmpty(filter.TextOption) || x.Name.Contains(filter.TextOption))
+              .Where(x =>( x.IdCompany == filter.IdCompany)
+              && (string.IsNullOrEmpty(filter.TextOption) || x.Name.Contains(filter.TextOption)))
               .AsNoTracking().WithCaseInsensitive()
               .ToListAsync();
             return data;

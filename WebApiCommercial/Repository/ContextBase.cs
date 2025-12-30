@@ -3,20 +3,24 @@ using Model;
 using Model.Closure;
 using Model.Moves;
 using Model.Registrations;
+using Repository.Providers;
 using System;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Repository
 {
+
     public class ContextBase : DbContext
     {
+       
         public ContextBase()
         { }
         public ContextBase(DbContextOptions<ContextBase> opcoes) : base(opcoes)
         {
-
+           
         }
         public virtual DbSet<User> User { get; set; }
 
@@ -56,10 +60,14 @@ namespace Repository
             //    optionsBuilder.UseNpgsql(connectionString);
             //}
             //optionsBuilder.AddInterceptors(new CaseInsensitiveQueryInterceptor());
+            //optionsBuilder.AddInterceptors(new TenantQueryInterceptor(_tenantProvider));
+            //base.OnConfiguring(optionsBuilder);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+          
+
             ConfiguraCompany(modelBuilder);
             ConfiguraEmpresa(modelBuilder);
             ConfiguraClient(modelBuilder);
@@ -91,7 +99,7 @@ namespace Repository
             foreach (var fk in cascadeFKs)
                 fk.DeleteBehavior = DeleteBehavior.Restrict;
 
-
+          
             base.OnModelCreating(modelBuilder);
         }
 
