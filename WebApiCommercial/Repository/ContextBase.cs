@@ -93,6 +93,7 @@ namespace Repository
             ConfiguraClosures(modelBuilder);
             ConfiguraDetailsService(modelBuilder);
             ConfiguraStockService(modelBuilder);
+            ConfiguraBox(modelBuilder);
             var cascadeFKs = modelBuilder.Model.GetEntityTypes()
      .SelectMany(t => t.GetForeignKeys())
      .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
@@ -101,6 +102,17 @@ namespace Repository
 
           
             base.OnModelCreating(modelBuilder);
+        }
+
+        private void ConfiguraBox(ModelBuilder builder)
+        {
+            builder.Entity<Box>(d =>
+            {
+                d.ToTable("tb_box");
+                d.HasKey(c => c.Id);
+                d.Property(c => c.Id).ValueGeneratedOnAdd();
+
+            });
         }
 
         private void ConfiguraStockService(ModelBuilder builder)
@@ -437,11 +449,17 @@ namespace Repository
             builder.Entity<Financial>()
       .HasOne(dc => dc.Sale)
       .WithMany(c => c.Financials)
+
       .HasForeignKey(dc => dc.IdSale);
             builder.Entity<Financial>()
             .HasOne(dc => dc.SaleItems)
             .WithMany(c => c.Financials)
             .HasForeignKey(dc => dc.IdSaleItems);
+            
+            builder.Entity<Financial>()
+        .HasOne(dc => dc.Box)
+        .WithMany(c => c.Movimentacoes)
+        .HasForeignKey(dc => dc.IdProduct);
         }
         private void ConfiguraPlanCompany(ModelBuilder builder)
         {

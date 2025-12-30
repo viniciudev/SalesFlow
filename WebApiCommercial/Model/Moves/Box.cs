@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Model.Registrations;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -37,5 +38,7 @@ namespace Model.Moves
         public DateTime CreatedAt { get; set; }
         // Navigation properties
         public  ICollection<Financial> Movimentacoes { get; set; } = new List<Financial>();
+        public Company Company { get; set; }
+        public int IdCompany { get; set; }
     }
 }

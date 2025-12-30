@@ -1,0 +1,8 @@
+# Adicionar uma nova migração
+dotnet ef migrations add NomeDaMigracao
+
+# Atualizar banco de dados com a migração mais recente
+dotnet ef database update
+
+# Remover a última migração (antes de aplicar ao banco)
+dotnet ef migrations remove

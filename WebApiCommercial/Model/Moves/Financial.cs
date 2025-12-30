@@ -30,6 +30,7 @@ namespace Model.Moves
         public bool commission { get; set; }
         public OriginFinancial Origin { get; set; }
         public int? BoxId { get; set; }
+        public Box Box { get; set; }
     }
 
 }

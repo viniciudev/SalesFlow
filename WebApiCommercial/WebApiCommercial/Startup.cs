@@ -211,6 +211,11 @@ namespace WebAppCommercial
             services.AddTransient<IDashboardService, DashboardService>();
             //providertenantid
             services.AddScoped<ITenantProvider, HeaderTenantProvider>();
+            //Box
+            services.AddTransient<IBoxService, BoxService>();
+            services.AddTransient<IGenericRepository<Box>, BoxRepository>();
+            services.AddTransient<IBoxRepository, BoxRepository>();
+            services.AddTransient<IBaseService<Box>, BoxService>();
             services.AddCors(options =>
             {
                 options.AddPolicy("EnableCORS", builder =>

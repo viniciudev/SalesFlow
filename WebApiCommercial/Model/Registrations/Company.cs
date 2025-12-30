@@ -33,5 +33,6 @@ namespace Model.Registrations
         public PlanCompany PlanCompany { get; set; }
         public ICollection<Prospects> Prospects { get; set; }
         public ICollection<Stock> Stocks { get; set; } = new List<Stock>();
+        public ICollection<Box> Boxes { get; set; } = new List<Box>();
     }
 }
