@@ -2,6 +2,7 @@
 using Model;
 using Model.DTO.BoxDto;
 using Model.Moves;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -32,6 +33,7 @@ namespace Repository
         {
             return await _dbContext.Set<Box>()
                 .Where(x => x.IdCompany == filters.IdCompany)
+                .OrderByDescending(x=>x.Id)
                 .AsNoTracking()
                 .GetPagedAsync(filters.PageNumber, filters.PageSize);
         }
@@ -40,9 +42,11 @@ namespace Repository
             var data= await (from b in _dbContext.Set<Box>()
                           where b.IdCompany == tenantid
                           orderby b.Id descending
-                          select b).FirstOrDefaultAsync();
+                          select b).ToListAsync();
 
-            return new BoxStatus { CaixaAberto = data };
+            decimal abertos = data.Where(x => (x.Status == CaixaStatus.ABERTO && x.DataAbertura.Date==DateTime.Now.Date)).Count();
+            decimal fechados= data.Where(x => (x.Status == CaixaStatus.FECHADO && x.DataFechamento.Value.Date == DateTime.Now.Date)).Count();
+            return new BoxStatus { CaixaAberto = data.FirstOrDefault(),TotalAbertoHoje=abertos,TotalFechadoHoje=fechados };
         }
     }
     public interface IBoxRepository : IGenericRepository<Box>

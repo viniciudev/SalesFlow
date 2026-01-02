@@ -34,6 +34,8 @@ namespace Service
                 ValorInicial = dto.ValorInicial,
                 Observacoes = dto.Observacoes,
                 Status = CaixaStatus.ABERTO,
+                CreatedAt=DateTime.UtcNow,
+                DataAbertura=DateTime.UtcNow,
             };
 
        
@@ -60,7 +62,7 @@ namespace Service
             var saldoCalculado = caixa.ValorInicial + totalEntradas - totalSaidas;
             var diferenca = dto.ValorFinal - saldoCalculado;
 
-            caixa.DataFechamento = DateTime.Now;
+            caixa.DataFechamento = DateTime.UtcNow;
             caixa.ValorFinal = dto.ValorFinal;
             caixa.SaldoCalculado = saldoCalculado;
             caixa.Diferenca = diferenca;
