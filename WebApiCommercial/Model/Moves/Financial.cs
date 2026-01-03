@@ -31,6 +31,8 @@ namespace Model.Moves
         public OriginFinancial Origin { get; set; }
         public int? BoxId { get; set; }
         public Box Box { get; set; }
+        public Client Client { get; set; }
+        public int? IdClient { get; set; }
     }
 
 }

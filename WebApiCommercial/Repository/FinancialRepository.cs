@@ -91,6 +91,7 @@ namespace Repository
                           .Include(x => x.Sale).ThenInclude(x => x.Client)
                           .Include(x => x.Product)
                           .Include(x => x.ServiceProvided)
+                          .Include(x=>x.Client)
                                   where
                                   fin.IdCompany== filters.IdCompany
                                   &&( string.IsNullOrEmpty(filters.TextOption)||fin.Description.Contains(filters.TextOption))
@@ -107,7 +108,8 @@ namespace Repository
                                       PaymentType=fin.PaymentType,
                                       Description=fin.Description,
                                       FinancialType=fin.FinancialType,
-                                      IdCompany= fin.IdCompany
+                                      IdCompany= fin.IdCompany,
+                                      ClientName=fin.Client.Name
                                   }).AsNoTracking()
                            .GetPagedAsync<FinancialResponse>(filters.PageNumber, filters.PageSize);
 

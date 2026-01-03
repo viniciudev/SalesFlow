@@ -460,6 +460,11 @@ namespace Repository
         .HasOne(dc => dc.Box)
         .WithMany(c => c.Movimentacoes)
         .HasForeignKey(dc => dc.IdProduct);
+
+            builder.Entity<Financial>()
+        .HasOne(dc => dc.Client)
+        .WithMany(c => c.Financials)
+        .HasForeignKey(dc => dc.IdClient);
         }
         private void ConfiguraPlanCompany(ModelBuilder builder)
         {

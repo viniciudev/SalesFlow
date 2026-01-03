@@ -26,6 +26,7 @@ namespace Model
         public statusType Status { get; set; }
         public ICollection<ServicesProvision> ServiceProvisions { get; set; }
         public ICollection<Sale> Sale { get; set; }
+        public ICollection<Financial> Financials { get; set; }
         public enum statusType
         {
             Ativo,

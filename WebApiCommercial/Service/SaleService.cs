@@ -99,7 +99,7 @@ namespace Service
                     }
                     if (sale.IdSeller != null)
                         await commissionService.GenerateCommission(data, sharedCommission, (int)sale.IdSeller, sale.IdCompany);
-                    await GenerateFinancial(sale.Financials, s.Id, sale.IdCompany);
+                    await GenerateFinancial(sale.Financials, s.Id, sale.IdCompany,sale.IdClient);
 
                     transaction.Commit();
                     return s.Id;
@@ -112,7 +112,7 @@ namespace Service
             }
 
         }
-        private async Task GenerateFinancial(ICollection<Financial> financials,int IdSale,int IdCompany)
+        private async Task GenerateFinancial(ICollection<Financial> financials,int IdSale,int IdCompany, int ?IdClient=null)
         {
             var listCostCenter=await _costCenterRepository.GetByIdCompany(IdCompany);
             foreach (var item in financials)
@@ -127,6 +127,7 @@ namespace Service
                 item.IdCompany = IdCompany;
                 item.Description = $"Venda no dia:{DateTime.Now}";
                 item.IdCostCenter= listCostCenter.FirstOrDefault()?.Id;
+                item.IdClient= IdClient;
                 try
                 {
                     await _financialService.Create(item);
@@ -181,7 +182,7 @@ namespace Service
                         await _financialService.DeleteAsync(item.Id);
                     }
                     //gerar novos financeiros
-                    await GenerateFinancial(sale.Financials, s.Id, sale.IdCompany);
+                    await GenerateFinancial(sale.Financials, s.Id, sale.IdCompany,sale.IdClient);
                     foreach (var item in sale.SaleItems)
                     {
                         item.IdSale = s.Id;

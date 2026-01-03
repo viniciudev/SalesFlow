@@ -29,6 +29,6 @@ namespace Model.DTO
         public string Description { get; set; }
         public PaymentType PaymentType { get; set; }
         public int IdCompany { get; set; }
-
+        public string ?ClientName { get; set; }
     }
 }
