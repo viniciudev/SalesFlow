@@ -72,7 +72,8 @@ namespace Service
                 Origin = financial.Origin,
                 IdCompany=(int)financial.IdCompany,
                 IdCostCenter = listCostCenter.FirstOrDefault()?.Id,
-                Value=financial.Value
+                Value=financial.Value,
+                IdClient=financial.ClientId
             };
             await base.Save(fin);
                 return true;

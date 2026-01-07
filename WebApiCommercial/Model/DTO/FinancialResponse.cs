@@ -30,5 +30,6 @@ namespace Model.DTO
         public PaymentType PaymentType { get; set; }
         public int IdCompany { get; set; }
         public string ?ClientName { get; set; }
+        public int? ClientId { get; set; }
     }
 }

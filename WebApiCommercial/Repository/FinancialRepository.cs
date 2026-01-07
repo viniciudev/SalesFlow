@@ -109,7 +109,8 @@ namespace Repository
                                       Description=fin.Description,
                                       FinancialType=fin.FinancialType,
                                       IdCompany= fin.IdCompany,
-                                      ClientName=fin.Client.Name
+                                      ClientName=fin.Client.Name,
+                                      ClientId=fin.Client.Id,
                                   }).AsNoTracking()
                            .GetPagedAsync<FinancialResponse>(filters.PageNumber, filters.PageSize);
 
