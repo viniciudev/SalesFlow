@@ -109,8 +109,8 @@ namespace Service
             user.VerifiedEmail = false;
             user.TokenVerify = Guid.NewGuid().ToString();
             await base.Create(user);
-            if (_environment.IsProduction())
-            {
+            //if (_environment.IsProduction())
+            //{
                 EmailResponse emailResp = await emailService.SendVerificationEmailAsync(new EmailRequest
                 {
                     Email = user.Email,
@@ -121,7 +121,7 @@ namespace Service
 
                 if (!emailResp.Success)
                     return emailResp.Message;
-            }
+            //}
             return "Salvo com Sucesso!";
         }
         public async Task<User> GetByToken(string token)
