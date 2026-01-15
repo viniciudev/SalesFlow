@@ -1,4 +1,6 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using Model;
 using Model.DTO;
 using Model.Moves;
@@ -18,17 +20,20 @@ namespace Service
         private IPlanCompanyService planCompanyService;
         private ICostCenterService costCenterService;
         private IEmailService emailService;
+        private readonly IWebHostEnvironment _environment;
         public UserService(IGenericRepository<User> repository,
           ICompanyService companyService,
           IPlanCompanyService planCompanyService,
           ICostCenterService costCenterService,
-          IEmailService emailService) : base(repository)
+          IEmailService emailService,
+          IWebHostEnvironment environment) : base(repository)
 
         {
             this.companyService = companyService;
             this.planCompanyService = planCompanyService;
             this.costCenterService = costCenterService;
             this.emailService = emailService;
+            this._environment = environment;
         }
         public Task<User> GetUser(AuthenticateModel model)
         {
@@ -104,15 +109,19 @@ namespace Service
             user.VerifiedEmail = false;
             user.TokenVerify = Guid.NewGuid().ToString();
             await base.Create(user);
-            EmailResponse emailResp = await emailService.SendVerificationEmailAsync(new EmailRequest
+            if (_environment.IsProduction())
             {
-                Email = user.Email,
-                Name = user.Name,
-                UserType = (int)user.TypeUser,
+                EmailResponse emailResp = await emailService.SendVerificationEmailAsync(new EmailRequest
+                {
+                    Email = user.Email,
+                    Name = user.Name,
+                    UserType = (int)user.TypeUser,
 
-            }, user.TokenVerify);
-            if (!emailResp.Success)
-                return emailResp.Message;
+                }, user.TokenVerify);
+
+                if (!emailResp.Success)
+                    return emailResp.Message;
+            }
             return "Salvo com Sucesso!";
         }
         public async Task<User> GetByToken(string token)
