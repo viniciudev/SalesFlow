@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Model;
 using Model.DTO;
+using Model.DTO.User;
+using SendGrid.Helpers.Mail;
 using Service;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using static System.Net.WebRequestMethods;
 
 namespace WebAppCommercial.Controllers
 {
@@ -21,6 +24,70 @@ namespace WebAppCommercial.Controllers
             this.userService = userService;
             this.companyService = companyService;
         }
+        // Adicione no UserController.cs
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new
+                    {
+                        message = "Dados inválidos",
+                        errors = ModelState.Values.SelectMany(v => v.Errors)
+                    });
+                }
+
+                var user = await userService.GetUserByEmail(request.Email);
+                if (user == null)
+                {
+                    // Por segurança, retornamos sucesso mesmo se o email não existir
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "Se o email existir, enviaremos um link de recuperação"
+                    });
+                }
+
+                // Gerar token de recuperação (expira em 1 hora)
+                //var token = Guid.NewGuid().ToString();
+                //var tokenHash = BCrypt.Net.BCrypt.HashPassword(token);
+
+                // Salvar token no banco de dados (você precisa implementar isso no seu serviço)
+                //await userService.SaveResetPasswordToken(user.Id, tokenHash, DateTime.UtcNow.AddHours(1));
+                var urlweb = "https://studio-to69.onrender.com";
+                // Construir URL de recuperação
+                var resetUrl = $"{urlweb}/forgot-password?token={user.TokenVerify}&email={request.Email}";
+
+                // Enviar email (usando seu EmailService)
+                var emailRequest = new EmailRequest
+                {
+                    Email = request.Email,
+                    Name = user.Name
+                };
+
+                // Você pode criar um método específico para emails de recuperação
+                await userService.SendResetPasswordEmail(emailRequest, resetUrl);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Link de recuperação enviado com sucesso"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Erro interno do servidor",
+                    error = ex.Message
+                });
+            }
+        }
+
+        // Método para enviar email de recuperação
+        
 
         [HttpGet]
         public async Task<ActionResult<User>> Get()

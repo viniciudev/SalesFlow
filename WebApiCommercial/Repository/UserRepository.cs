@@ -33,12 +33,21 @@ namespace Repository
              .GetPagedAsync(filters.PageNumber, filters.PageSize);
             return data;
         }
+        public async Task<User> GetUserByEmail(string email)
+        {
+            var data = await _dbContext.Set<User>()
+                .AsNoTracking()
+                .Where(x => x.Email == email)
+                .FirstOrDefaultAsync();
+            return data;
+        }
     }
 
     public interface IUserRepository : IGenericRepository<User>
     {
         Task<User> GetByToken(string token);
         Task<User> GetUser(AuthenticateModel model);
+        Task<User> GetUserByEmail(string email);
         Task<PagedResult<User>> GetUsersByCompany(Filters filters);
     }
 }

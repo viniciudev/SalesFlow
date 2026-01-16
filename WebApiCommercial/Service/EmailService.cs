@@ -15,6 +15,7 @@ namespace Service
 {
     public interface IEmailService
     {
+        Task SendResetPasswordEmailAsync(EmailRequest request, string emailBody, string resetUrl);
         Task<EmailResponse> SendVerificationEmailAsync(EmailRequest request, string tokenVerify);
     }
     public class EmailRequest
@@ -43,71 +44,21 @@ namespace Service
 
             return $"{baseUrl}/api/email/verify-email?token={token}&email={email}";
         }
-        //public async Task<EmailResponse> SendVerificationEmailAsync(EmailRequest request,string verificationToken)
-        //{
+        public async Task SendResetPasswordEmailAsync(EmailRequest request, string emailBody, string resetUrl)
+        {
+            // Enviar usando SendGrid (ou seu método atual)
+            var from = new EmailAddress(_emailSettings.FromEmail, _emailSettings.FromName);
+            var to = new EmailAddress(request.Email, request.Name);
+            var msg = MailHelper.CreateSingleEmail(
+                from,
+                to,
+                "Recuperação de Senha - StockFlow",
+                "Para redefinir sua senha, clique no link: " + resetUrl,
+                emailBody
+            );
 
-        //    try
-        //    {
-        //        var verificationUrl = GenerateVerificationUrl(verificationToken, request.Email);
-        //        var emailBody = BuildEmailBody(request.Name, verificationUrl, request.UserType);
-
-        //        var message = new MimeMessage();
-        //        message.From.Add(new MailboxAddress(_emailSettings.FromName, _emailSettings.FromEmail));
-        //        message.To.Add(new MailboxAddress(request.Name, request.Email));
-        //        message.Subject = "Verificação de Email - Seu Sistema";
-
-        //        var bodyBuilder = new BodyBuilder
-        //        {
-        //            HtmlBody = emailBody
-        //        };
-        //        message.Body = bodyBuilder.ToMessageBody();
-
-        //        using (var client = new SmtpClient())
-        //        {
-        //            // Configuração baseada na porta
-        //            if (_emailSettings.SmtpPort == 465)
-        //            {
-        //                // Porta 465 - SSL explícito
-        //                await client.ConnectAsync(_emailSettings.SmtpHost, _emailSettings.SmtpPort, SecureSocketOptions.SslOnConnect);
-        //            }
-        //            else if (_emailSettings.SmtpPort == 587)
-        //            {
-        //                // Porta 587 - STARTTLS
-        //                await client.ConnectAsync(_emailSettings.SmtpHost, _emailSettings.SmtpPort, SecureSocketOptions.StartTls);
-        //            }
-        //            else
-        //            {
-        //                // Auto-detect para outras portas
-        //                await client.ConnectAsync(_emailSettings.SmtpHost, _emailSettings.SmtpPort, SecureSocketOptions.Auto);
-        //            }
-
-        //            await client.AuthenticateAsync(_emailSettings.Username, _emailSettings.Password);
-        //            await client.SendAsync(message);
-        //            await client.DisconnectAsync(true);
-        //        }
-
-        //        _logger.LogInformation($"Email de verificação enviado para: {request.Email}");
-
-        //        return new EmailResponse
-        //        {
-        //            Success = true,
-        //            Message = "Email de verificação enviado com sucesso",
-        //            SentDate = DateTime.UtcNow,
-
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, $"Erro ao enviar email para: {request.Email}");
-        //        return new EmailResponse
-        //        {
-        //            Success = false,
-        //            Message = $"Falha ao enviar email: {ex.Message}",
-        //            SentDate = null
-        //        };
-        //    }
-
-        //}
+            var response = await _sendGridClient.SendEmailAsync(msg);
+        }
         public async Task<EmailResponse> SendVerificationEmailAsync(
         EmailRequest request,
         string verificationToken)
@@ -165,122 +116,7 @@ namespace Service
                 };
             }
         }
-        // Adicione no UserController.cs
-        [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto request)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(new
-                    {
-                        message = "Dados inválidos",
-                        errors = ModelState.Values.SelectMany(v => v.Errors)
-                    });
-                }
-
-                var user = await userService.GetUserByEmail(request.Email);
-                if (user == null)
-                {
-                    // Por segurança, retornamos sucesso mesmo se o email não existir
-                    return Ok(new
-                    {
-                        success = true,
-                        message = "Se o email existir, enviaremos um link de recuperação"
-                    });
-                }
-
-                // Gerar token de recuperação (expira em 1 hora)
-                var token = Guid.NewGuid().ToString();
-                var tokenHash = BCrypt.Net.BCrypt.HashPassword(token);
-
-                // Salvar token no banco de dados (você precisa implementar isso no seu serviço)
-                await userService.SaveResetPasswordToken(user.Id, tokenHash, DateTime.UtcNow.AddHours(1));
-
-                // Construir URL de recuperação
-                var resetUrl = $"{Request.Scheme}://{Request.Host}/forgot-password?token={token}&email={request.Email}";
-
-                // Enviar email (usando seu EmailService)
-                var emailRequest = new EmailRequest
-                {
-                    Email = request.Email,
-                    Name = user.Name
-                };
-
-                // Você pode criar um método específico para emails de recuperação
-                await SendResetPasswordEmail(emailRequest, resetUrl);
-
-                return Ok(new
-                {
-                    success = true,
-                    message = "Link de recuperação enviado com sucesso"
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    message = "Erro interno do servidor",
-                    error = ex.Message
-                });
-            }
-        }
-
-        // Método para enviar email de recuperação
-        private async Task SendResetPasswordEmail(EmailRequest request, string resetUrl)
-        {
-            var emailBody = $@"
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset='utf-8'>
-        <style>
-            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-            .header {{ background-color: #007bff; color: white; padding: 20px; text-align: center; }}
-            .content {{ background-color: #f8f9fa; padding: 30px; }}
-            .button {{ background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; }}
-            .footer {{ text-align: center; margin-top: 20px; color: #6c757d; }}
-        </style>
-    </head>
-    <body>
-        <div class='container'>
-            <div class='header'>
-                <h1>Recuperação de Senha</h1>
-            </div>
-            <div class='content'>
-                <h2>Olá, {request.Name}!</h2>
-                <p>Recebemos uma solicitação para redefinir sua senha.</p>
-                <p>Clique no botão abaixo para criar uma nova senha:</p>
-                <p style='text-align: center;'>
-                    <a href='{resetUrl}' class='button'>Redefinir Senha</a>
-                </p>
-                <p>Se o botão não funcionar, copie e cole o link abaixo no seu navegador:</p>
-                <p style='word-break: break-all;'>{resetUrl}</p>
-                <p><strong>Este link expira em 1 hora.</strong></p>
-                <p>Se você não solicitou a recuperação de senha, por favor ignore este email.</p>
-            </div>
-            <div class='footer'>
-                <p>&copy; 2024 StockFlow. Todos os direitos reservados.</p>
-            </div>
-        </div>
-    </body>
-    </html>";
-
-            // Enviar usando SendGrid (ou seu método atual)
-            var from = new EmailAddress(_emailSettings.FromEmail, _emailSettings.FromName);
-            var to = new EmailAddress(request.Email, request.Name);
-            var msg = MailHelper.CreateSingleEmail(
-                from,
-                to,
-                "Recuperação de Senha - StockFlow",
-                "Para redefinir sua senha, clique no link: " + resetUrl,
-                emailBody
-            );
-
-            var response = await _sendGridClient.SendEmailAsync(msg);
-        }
+       
         private string GenerateVerificationToken(string email)
         {
             return Guid.NewGuid().ToString();
