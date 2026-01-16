@@ -196,6 +196,32 @@ namespace Service
                 Message = "Alterado com sucesso!"
             };
         }
+        // Implementação dos métodos...
+        public async Task<User> GetUserByEmail(string email)
+        {
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == email);
+        }
+
+        public async Task SaveResetPasswordToken(int userId, string tokenHash, DateTime expiryDate)
+        {
+            // Implemente a lógica para salvar o token no banco
+        }
+
+        public async Task<bool> ValidateResetToken(string email, string token)
+        {
+            // Implemente a validação do token
+        }
+
+        public async Task<string> ResetPassword(string email, string newPassword, string token)
+        {
+            // Valide o token primeiro
+            var isValid = await ValidateResetToken(email, token);
+            if (!isValid)
+                return "Token inválido ou expirado";
+
+            // Continue com a redefinição de senha...
+        }
     }
 
 
@@ -208,6 +234,12 @@ namespace Service
         Task<ResponseGeneric> SaveCompanyUser(User user);
         Task<PagedResult< User>> GetUsersByCompany(Filters filters);
         Task<ResponseGeneric> AlterCompanyUser(User user);
+
+        //---vaidação reset senha
+        Task<User> GetUserByEmail(string email);
+        Task SaveResetPasswordToken(int userId, string tokenHash, DateTime expiryDate);
+        Task<bool> ValidateResetToken(string email, string token);
+        Task<string> ResetPassword(string email, string newPassword, string token);
     }
 
 }
