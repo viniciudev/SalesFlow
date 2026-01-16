@@ -213,15 +213,7 @@ namespace Service
             // Implemente a validação do token
         }
 
-        public async Task<string> ResetPassword(string email, string newPassword, string token)
-        {
-            // Valide o token primeiro
-            var isValid = await ValidateResetToken(email, token);
-            if (!isValid)
-                return "Token inválido ou expirado";
-
-            // Continue com a redefinição de senha...
-        }
+       
     }
 
 
