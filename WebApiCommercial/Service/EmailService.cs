@@ -1,9 +1,11 @@
 ﻿using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
+using Org.BouncyCastle.Asn1.Ocsp;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 using System;
@@ -13,6 +15,7 @@ namespace Service
 {
     public interface IEmailService
     {
+        Task SendResetPasswordEmailAsync(EmailRequest request, string emailBody, string resetUrl);
         Task<EmailResponse> SendVerificationEmailAsync(EmailRequest request, string tokenVerify);
     }
     public class EmailRequest
@@ -41,71 +44,21 @@ namespace Service
 
             return $"{baseUrl}/api/email/verify-email?token={token}&email={email}";
         }
-        //public async Task<EmailResponse> SendVerificationEmailAsync(EmailRequest request,string verificationToken)
-        //{
+        public async Task SendResetPasswordEmailAsync(EmailRequest request, string emailBody, string resetUrl)
+        {
+            // Enviar usando SendGrid (ou seu método atual)
+            var from = new EmailAddress(_emailSettings.FromEmail, _emailSettings.FromName);
+            var to = new EmailAddress(request.Email, request.Name);
+            var msg = MailHelper.CreateSingleEmail(
+                from,
+                to,
+                "Recuperação de Senha - StockFlow",
+                "Para redefinir sua senha, clique no link: " + resetUrl,
+                emailBody
+            );
 
-        //    try
-        //    {
-        //        var verificationUrl = GenerateVerificationUrl(verificationToken, request.Email);
-        //        var emailBody = BuildEmailBody(request.Name, verificationUrl, request.UserType);
-
-        //        var message = new MimeMessage();
-        //        message.From.Add(new MailboxAddress(_emailSettings.FromName, _emailSettings.FromEmail));
-        //        message.To.Add(new MailboxAddress(request.Name, request.Email));
-        //        message.Subject = "Verificação de Email - Seu Sistema";
-
-        //        var bodyBuilder = new BodyBuilder
-        //        {
-        //            HtmlBody = emailBody
-        //        };
-        //        message.Body = bodyBuilder.ToMessageBody();
-
-        //        using (var client = new SmtpClient())
-        //        {
-        //            // Configuração baseada na porta
-        //            if (_emailSettings.SmtpPort == 465)
-        //            {
-        //                // Porta 465 - SSL explícito
-        //                await client.ConnectAsync(_emailSettings.SmtpHost, _emailSettings.SmtpPort, SecureSocketOptions.SslOnConnect);
-        //            }
-        //            else if (_emailSettings.SmtpPort == 587)
-        //            {
-        //                // Porta 587 - STARTTLS
-        //                await client.ConnectAsync(_emailSettings.SmtpHost, _emailSettings.SmtpPort, SecureSocketOptions.StartTls);
-        //            }
-        //            else
-        //            {
-        //                // Auto-detect para outras portas
-        //                await client.ConnectAsync(_emailSettings.SmtpHost, _emailSettings.SmtpPort, SecureSocketOptions.Auto);
-        //            }
-
-        //            await client.AuthenticateAsync(_emailSettings.Username, _emailSettings.Password);
-        //            await client.SendAsync(message);
-        //            await client.DisconnectAsync(true);
-        //        }
-
-        //        _logger.LogInformation($"Email de verificação enviado para: {request.Email}");
-
-        //        return new EmailResponse
-        //        {
-        //            Success = true,
-        //            Message = "Email de verificação enviado com sucesso",
-        //            SentDate = DateTime.UtcNow,
-
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, $"Erro ao enviar email para: {request.Email}");
-        //        return new EmailResponse
-        //        {
-        //            Success = false,
-        //            Message = $"Falha ao enviar email: {ex.Message}",
-        //            SentDate = null
-        //        };
-        //    }
-
-        //}
+            var response = await _sendGridClient.SendEmailAsync(msg);
+        }
         public async Task<EmailResponse> SendVerificationEmailAsync(
         EmailRequest request,
         string verificationToken)
@@ -163,7 +116,7 @@ namespace Service
                 };
             }
         }
-
+       
         private string GenerateVerificationToken(string email)
         {
             return Guid.NewGuid().ToString();

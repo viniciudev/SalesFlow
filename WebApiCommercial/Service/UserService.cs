@@ -6,6 +6,7 @@ using Model.DTO;
 using Model.Moves;
 using Model.Registrations;
 using Repository;
+using SendGrid.Helpers.Mail;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -205,6 +206,55 @@ namespace Service
                 Message = "Alterado com sucesso!"
             };
         }
+       
+
+        public async Task SendResetPasswordEmail(EmailRequest request, string resetUrl)
+        {
+            var emailBody = $@"
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset='utf-8'>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background-color: #007bff; color: white; padding: 20px; text-align: center; }}
+            .content {{ background-color: #f8f9fa; padding: 30px; }}
+            .button {{ background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; }}
+            .footer {{ text-align: center; margin-top: 20px; color: #6c757d; }}
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <div class='header'>
+                <h1>Recuperação de Senha</h1>
+            </div>
+            <div class='content'>
+                <h2>Olá, {request.Name}!</h2>
+                <p>Recebemos uma solicitação para redefinir sua senha.</p>
+                <p>Clique no botão abaixo para criar uma nova senha:</p>
+                <p style='text-align: center;'>
+                    <a href='{resetUrl}' class='button'>Redefinir Senha</a>
+                </p>
+                <p>Se o botão não funcionar, copie e cole o link abaixo no seu navegador:</p>
+                <p style='word-break: break-all;'>{resetUrl}</p>
+                <p><strong>Este link expira em 1 hora.</strong></p>
+                <p>Se você não solicitou a recuperação de senha, por favor ignore este email.</p>
+            </div>
+            <div class='footer'>
+                <p>&copy; 2024 StockFlow. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </body>
+    </html>";
+            await emailService.SendResetPasswordEmailAsync(request, emailBody, resetUrl);
+          
+        }
+        public async Task<User> GetUserByEmail(string email)
+        {
+            User user = await (repository as IUserRepository).GetUserByEmail(email);
+            return user;
+        }
     }
 
 
@@ -217,6 +267,11 @@ namespace Service
         Task<ResponseGeneric> SaveCompanyUser(User user);
         Task<PagedResult< User>> GetUsersByCompany(Filters filters);
         Task<ResponseGeneric> AlterCompanyUser(User user);
+
+     
+        Task<User> GetUserByEmail(string email);
+      
+        Task SendResetPasswordEmail(EmailRequest request, string resetUrl);
     }
 
 }
