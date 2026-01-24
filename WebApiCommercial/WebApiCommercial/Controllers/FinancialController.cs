@@ -4,7 +4,9 @@ using Model.DTO;
 using Model.Moves;
 using Repository;
 using Service;
+using System;
 using System.Threading.Tasks;
+using YourNamespace.DTOs;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -108,5 +110,46 @@ namespace WebApiCommercial.Controllers
             await financialService.DeleteAsync(id);
             return Ok(true);
         }
+        /// <summary>
+        /// Solicitar renegociação
+        /// </summary>
+        //[HttpPost("request")]
+        //public async Task<ActionResult<ApiResponse<RenegotiationResponseDto>>> RequestRenegotiation(
+        //    [FromBody] RenegotiationRequestDto request)
+        //{
+        //    try
+        //    {
+        //        // Validar request
+        //        if (request.OriginalInstallmentsIds == null || request.OriginalInstallmentsIds.Count == 0)
+        //        {
+        //            return BadRequest(new ApiResponse<RenegotiationResponseDto>
+        //            {
+        //                Success = false,
+        //                Message = "Nenhuma parcela selecionada para renegociação"
+        //            });
+        //        }
+
+        //        // Obter ID do usuário do contexto (você pode ajustar conforme sua autenticação)
+        //        request.CreatedByUserId = GetCurrentUserId();
+
+        //        var result = await _renegotiationService.CreateRenegotiationAsync(request);
+
+        //        return Ok(new ApiResponse<RenegotiationResponseDto>
+        //        {
+        //            Success = true,
+        //            Data = result,
+        //            Message = "Renegociação solicitada com sucesso"
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Erro ao solicitar renegociação");
+        //        return BadRequest(new ApiResponse<RenegotiationResponseDto>
+        //        {
+        //            Success = false,
+        //            Message = "Erro ao solicitar renegociação: " + ex.Message
+        //        });
+        //    }
+        //}
     }
 }
