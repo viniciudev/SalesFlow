@@ -160,6 +160,37 @@ namespace Repository
                 .ToListAsync();
             return data;
         }
+        public async Task<PagedResult<Financial>> GetPagedByIdClient(Filters filters)
+        {
+       
+            try
+            {
+                var data = await (from fin in _dbContext.Set<Financial>()
+
+                                  where (fin.IdCompany == filters.IdCompany)
+                                  && (fin.IdClient == filters.IdClient)
+                                 &&(fin.FinancialStatus !=FinancialStatus.paid)
+                                  select new Financial
+                                  {
+                                      Id = fin.Id,
+                                      Value = fin.Value,
+                                      DueDate = fin.DueDate,
+                                      Description = fin.Description,
+                                      FinancialType = fin.FinancialType,
+                                      PaymentType = fin.PaymentType,
+                                      CreationDate = fin.CreationDate,
+                                      FinancialStatus=fin.FinancialStatus
+                                  }).AsNoTracking()
+                           .GetPagedAsync(filters.PageNumber, filters.PageSize);
+
+                return data;
+            }
+            catch (System.Exception ex)
+            {
+                throw;
+            }
+        
+    }
     }
     public interface IFinancialRepository : IGenericRepository<Financial>
     {
@@ -169,6 +200,7 @@ namespace Repository
         Task<List<Financial>> GetByIdCompany(Filters filters);
         Task<List<Financial>> GetByIdSaleAsync(int id);
         Task<PagedResult<FinancialResponse>> GetPaged(Filters filters);
+        Task<PagedResult<Financial>> GetPagedByIdClient(Filters filters);
 
     }
 }

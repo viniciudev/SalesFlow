@@ -35,7 +35,17 @@ namespace WebApiCommercial.Controllers
           , [FromHeader] int tenantid)
         {
             filters.IdCompany = tenantid;
+ 
             var data = await financialService.GetByIdCompany(filters);
+            return Ok(data);
+        }
+        [HttpGet("client")]
+        public async Task<ActionResult<PagedResult<Financial>>> GetByIdClient(
+            [FromQuery] Filters filters
+       , [FromHeader] int tenantid)
+        {
+            filters.IdCompany = tenantid;
+            var data = await financialService.GetPagedByIdClient(filters);
             return Ok(data);
         }
 

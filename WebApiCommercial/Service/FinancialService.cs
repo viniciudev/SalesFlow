@@ -93,6 +93,10 @@ namespace Service
         {
             return await (repository as IFinancialRepository).GetPaged(filters);
         }
+        public async Task<PagedResult<Financial>> GetPagedByIdClient(Filters filters)
+        {
+            return await (repository as IFinancialRepository).GetPagedByIdClient(filters);
+        }
         public async Task AlterFinancialStatus(Financial financial)
         {
             try
@@ -120,5 +124,6 @@ namespace Service
         Task<bool> CreateFinancial(FinancialRequest financial);
         Task<PagedResult<FinancialResponse>> GetPaged(Filters filters);
         Task AlterFinancialStatus(Financial financial);
+        Task<PagedResult<Financial>> GetPagedByIdClient(Filters filters);
     }
 }
