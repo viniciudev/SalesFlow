@@ -113,43 +113,41 @@ namespace WebApiCommercial.Controllers
         /// <summary>
         /// Solicitar renegociação
         /// </summary>
-        //[HttpPost("request")]
-        //public async Task<ActionResult<ApiResponse<RenegotiationResponseDto>>> RequestRenegotiation(
-        //    [FromBody] RenegotiationRequestDto request)
-        //{
-        //    try
-        //    {
-        //        // Validar request
-        //        if (request.OriginalInstallmentsIds == null || request.OriginalInstallmentsIds.Count == 0)
-        //        {
-        //            return BadRequest(new ApiResponse<RenegotiationResponseDto>
-        //            {
-        //                Success = false,
-        //                Message = "Nenhuma parcela selecionada para renegociação"
-        //            });
-        //        }
+        [HttpPost("renegotiate")]
+        public async Task<ActionResult> RequestRenegotiation(
+            [FromHeader] int tenantid,
+            [FromBody] RenegotiationRequestDto request)
+        {
+            try
+            {
+                // Validar request
+                if (request.OriginalInstallments == null || request.OriginalInstallments.Count == 0)
+                {
+                    return BadRequest(new ResponseGeneric
+                    {
+                        Success = false,
+                        Message = "Nenhuma parcela selecionada para renegociação"
+                    });
+                }
+                request.IdCompany = tenantid;
+                await financialService.CreateRenegotiationAsync(request);
 
-        //        // Obter ID do usuário do contexto (você pode ajustar conforme sua autenticação)
-        //        request.CreatedByUserId = GetCurrentUserId();
-
-        //        var result = await _renegotiationService.CreateRenegotiationAsync(request);
-
-        //        return Ok(new ApiResponse<RenegotiationResponseDto>
-        //        {
-        //            Success = true,
-        //            Data = result,
-        //            Message = "Renegociação solicitada com sucesso"
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Erro ao solicitar renegociação");
-        //        return BadRequest(new ApiResponse<RenegotiationResponseDto>
-        //        {
-        //            Success = false,
-        //            Message = "Erro ao solicitar renegociação: " + ex.Message
-        //        });
-        //    }
-        //}
+                return Ok(new ResponseGeneric
+                {
+                    Success = true,
+                    //Data = result,
+                    Message = "Renegociação solicitada com sucesso"
+                });
+            }
+            catch (Exception ex)
+            {
+               
+                return BadRequest(new ResponseGeneric
+                {
+                    Success = false,
+                    Message = "Erro ao solicitar renegociação: " + ex.Message
+                });
+            }
+        }
     }
 }

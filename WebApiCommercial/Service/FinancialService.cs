@@ -3,9 +3,11 @@ using Model.DTO;
 using Model.Moves;
 using Model.Registrations;
 using Repository;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using YourNamespace.DTOs;
 
 namespace Service
 {
@@ -111,6 +113,54 @@ namespace Service
                 throw;
             }
         }
+        public async Task CreateRenegotiationAsync(RenegotiationRequestDto request)
+        {
+            await GenerateFinancial(request);
+        }
+        private async Task GenerateFinancial(RenegotiationRequestDto request)
+        {
+            try
+            {
+
+         
+            //cria nova parcela
+            var listCostCenter = await _costCenterRepository.GetByIdCompany(request.IdCompany);
+            for (int i = 0; i < request.NumberOfInstallments; i++)
+            {
+                Financial financial = new Financial();
+                financial.Id = 0;
+                financial.FinancialStatus =i==0? FinancialStatus.paid:FinancialStatus.pending;
+                financial.FinancialType = FinancialType.recipe;
+                financial.Origin = OriginFinancial.renegotiation;
+                //financial.IdSale = IdSale;
+                financial.CreationDate = DateTime.Now;
+                financial.DueDate = i==0?request.NewDueDate:request.NewDueDate.AddMonths(i);
+                financial.IdCompany = request.IdCompany;
+                financial.Description = request.Description;
+                financial.IdCostCenter = listCostCenter.FirstOrDefault()?.Id;
+                financial.IdClient = request.ClientId;
+                //financial.FinancialResources = new FinancialResources { Id = request.OriginalInstallments[i] };
+                financial.Value = (request.NewValue / request.NumberOfInstallments);
+               
+                await base.Create(financial);
+            }
+
+            //muda o status pra renegociado
+            foreach (var item in request.OriginalInstallments)
+            {
+                await AlterFinancialStatus(new Financial
+                {
+                    Id = item,
+                    FinancialStatus = FinancialStatus.renegotiated,
+                });
+            }
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+        }
     }
     public interface IFinancialService : IBaseService<Financial>
     {
@@ -125,5 +175,6 @@ namespace Service
         Task<PagedResult<FinancialResponse>> GetPaged(Filters filters);
         Task AlterFinancialStatus(Financial financial);
         Task<PagedResult<Financial>> GetPagedByIdClient(Filters filters);
+        Task CreateRenegotiationAsync(RenegotiationRequestDto request);
     }
 }

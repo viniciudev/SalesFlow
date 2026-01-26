@@ -8,7 +8,7 @@ namespace YourNamespace.DTOs
         /// <summary>
         /// IDs das parcelas originais que serão renegociadas
         /// </summary>
-        public List<int> OriginalInstallmentsIds { get; set; } = new List<int>();
+        public List<int> OriginalInstallments { get; set; } = new List<int>();
 
         /// <summary>
         /// ID do cliente
@@ -23,7 +23,7 @@ namespace YourNamespace.DTOs
         /// <summary>
         /// Novo valor total após renegociação (com descontos/juros aplicados)
         /// </summary>
-        public decimal NewTotalValue { get; set; }
+        public decimal NewValue { get; set; }
 
         /// <summary>
         /// Número de parcelas da nova renegociação
@@ -33,7 +33,7 @@ namespace YourNamespace.DTOs
         /// <summary>
         /// Data de vencimento da primeira parcela da renegociação
         /// </summary>
-        public DateTime FirstDueDate { get; set; }
+        public DateTime NewDueDate { get; set; }
 
         /// <summary>
         /// Valor original total das parcelas selecionadas (antes de qualquer ajuste)
@@ -53,7 +53,7 @@ namespace YourNamespace.DTOs
         /// <summary>
         /// Valor total do desconto aplicado
         /// </summary>
-        public decimal DiscountValue { get; set; }
+        public decimal? DiscountValue { get; set; }
 
         /// <summary>
         /// Percentual de multa por atraso (0-100)
@@ -63,22 +63,22 @@ namespace YourNamespace.DTOs
         /// <summary>
         /// Valor total da multa por atraso
         /// </summary>
-        public decimal LateFeeValue { get; set; }
+        public decimal? LateFeeValue { get; set; }
 
         /// <summary>
         /// Percentual de juros ao dia (0-100)
         /// </summary>
-        public decimal InterestPercentagePerDay { get; set; }
+        public decimal? InterestPercentage { get; set; }
 
         /// <summary>
         /// Número de dias em atraso considerados para cálculo de juros
         /// </summary>
-        public int InterestDays { get; set; }
+        public int? InterestDays { get; set; }
 
         /// <summary>
         /// Valor total dos juros
         /// </summary>
-        public decimal InterestValue { get; set; }
+        public decimal? InterestValue { get; set; }
 
         /// <summary>
         /// Valor total de todas as taxas (multa + juros)
@@ -88,12 +88,12 @@ namespace YourNamespace.DTOs
         /// <summary>
         /// Tipo de renegociação
         /// </summary>
-        public RenegotiationType Type { get; set; } = RenegotiationType.Consolidation;
+        public RenegotiationType? Type { get; set; } = RenegotiationType.Consolidation;
 
         /// <summary>
         /// Status da renegociação
         /// </summary>
-        public RenegotiationStatus Status { get; set; } = RenegotiationStatus.Pending;
+        public RenegotiationStatus? Status { get; set; } = RenegotiationStatus.Pending;
 
         /// <summary>
         /// Data de criação da solicitação de renegociação
@@ -103,17 +103,18 @@ namespace YourNamespace.DTOs
         /// <summary>
         /// ID do usuário que solicitou a renegociação
         /// </summary>
-        public int CreatedByUserId { get; set; }
+        public int? CreatedByUserId { get; set; }
 
         /// <summary>
         /// Detalhes das novas parcelas (preenchido após cálculo no backend)
         /// </summary>
-        public List<NewInstallmentDto> NewInstallments { get; set; } = new List<NewInstallmentDto>();
+        public List<NewInstallmentDto>? NewInstallments { get; set; } = new List<NewInstallmentDto>();
 
         /// <summary>
         /// Detalhes das parcelas originais (para auditoria)
         /// </summary>
         public List<OriginalInstallmentDetailDto> OriginalInstallmentsDetails { get; set; } = new List<OriginalInstallmentDetailDto>();
+        public int IdCompany { get; set; }
     }
 
     public class NewInstallmentDto

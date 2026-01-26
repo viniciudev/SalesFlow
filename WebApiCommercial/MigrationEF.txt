@@ -6,3 +6,4 @@ dotnet ef database update
 
 # Remover a última migração (antes de aplicar ao banco)
 dotnet ef migrations remove
+

@@ -128,6 +128,7 @@ namespace Service
                 item.Description = $"Venda no dia:{DateTime.Now}";
                 item.IdCostCenter= listCostCenter.FirstOrDefault()?.Id;
                 item.IdClient= IdClient;
+                item.Value = item.Value;
                 try
                 {
                     await _financialService.Create(item);

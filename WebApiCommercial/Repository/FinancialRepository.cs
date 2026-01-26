@@ -169,7 +169,7 @@ namespace Repository
 
                                   where (fin.IdCompany == filters.IdCompany)
                                   && (fin.IdClient == filters.IdClient)
-                                 &&(fin.FinancialStatus !=FinancialStatus.paid)
+                                 &&(fin.FinancialStatus ==FinancialStatus.pending)
                                   select new Financial
                                   {
                                       Id = fin.Id,

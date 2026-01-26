@@ -1,5 +1,8 @@
-﻿using Model.Registrations;
+﻿using Microsoft.EntityFrameworkCore;
+using Model;
+using Model.Registrations;
 using System;
+using System.Collections.Generic;
 
 namespace Model.Moves
 {
@@ -31,11 +34,18 @@ namespace Model.Moves
         public OriginFinancial Origin { get; set; }
         public int? BoxId { get; set; }
         public Box Box { get; set; }
-        public Client Client { get; set; }
         public int? IdClient { get; set; }
+        public Client Client { get; set; }
+       
+        //public int? IdFinancialResources { get; set; }
+        //public FinancialResources FinancialResources { get; set; }
+
     }
 
+
 }
+
+
 public enum FinancialType
 {
     recipe = 0,
@@ -44,7 +54,9 @@ public enum FinancialType
 public enum FinancialStatus
 {
     pending = 1,
-    paid = 2
+    paid = 2,
+    renegotiated=3
+
 }
 public enum PaymentType
 {
@@ -56,5 +68,6 @@ public enum PaymentType
 public enum OriginFinancial
 {
     commission = 0,
-    financial = 1
+    financial = 1,
+    renegotiation=2
 }
