@@ -13,6 +13,7 @@ namespace Model.Registrations
         public decimal Value { get; set; }
         public decimal Quantity { get; set; }
         public string Description { get; set; }
+        public string Observation { get; set; } = string.Empty;
         public byte[] ?Image { get; set; }
         public ICollection<SaleItems> SaleItems { get; set; }
         public ICollection<Commission> Commissions { get; set; }

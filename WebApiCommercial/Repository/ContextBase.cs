@@ -95,6 +95,7 @@ namespace Repository
             ConfiguraStockService(modelBuilder);
             ConfiguraBox(modelBuilder);
             ConfiguraFinancialResources(modelBuilder);
+            ConfiguraPaymentMethod(modelBuilder);
             var cascadeFKs = modelBuilder.Model.GetEntityTypes()
      .SelectMany(t => t.GetForeignKeys())
      .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
@@ -103,6 +104,21 @@ namespace Repository
 
           
             base.OnModelCreating(modelBuilder);
+        }
+
+        private void ConfiguraPaymentMethod(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<PaymentMethod>(d =>
+            {
+                d.ToTable("tb_paymentMethod");
+                d.HasKey(c => c.Id);
+                d.Property(c => c.Id).ValueGeneratedOnAdd();
+
+            });
+            modelBuilder.Entity<PaymentMethod>()
+   .HasOne(dc => dc.Company)
+   .WithMany(c => c.PaymentMethods)
+   .HasForeignKey(dc => dc.IdCompany);
         }
 
         private void ConfiguraFinancialResources(ModelBuilder modelBuilder)

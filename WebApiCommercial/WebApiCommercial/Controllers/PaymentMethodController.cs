@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Model;
-using Model.DTO;
 using Model.Registrations;
 using Repository;
-using Service;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -14,23 +12,20 @@ namespace WebApiCommercial.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductController : ControllerBase
+    public class PaymentMethodController : ControllerBase
     {
-
-        private readonly IProductService productServie;
-
-        public ProductController(IProductService productServie)
-        {
-            this.productServie = productServie;
-        }
-
         // GET: api/<ProductController>
+        private readonly IPaymentMethodRepository _paymentMethodRepository;
+        public PaymentMethodController(IPaymentMethodRepository paymentMethodRepository)
+        {
+            _paymentMethodRepository = paymentMethodRepository;
+        }
         [HttpGet]
         public async Task<ActionResult<PagedResult<Product>>> Get([FromQuery] Filters filter, [FromHeader] int tenantid)
         {
-            filter.IdCompany = tenantid;
-            var data = await productServie.GetAllPaged(filter);
-            return Ok(data);
+            //filter.IdCompany = tenantid;
+            //var data = await _paymentMethodRepository.GetAllPage();
+            return Ok("data");
         }
 
         // GET api/<ProductController>/5
@@ -38,18 +33,18 @@ namespace WebApiCommercial.Controllers
         public async Task<ActionResult<List<Product>>> GetListByName([FromQuery] Filters filter, [FromHeader] int tenantid)
         {
             filter.IdCompany = tenantid;
-            var data = await productServie.GetListByName(filter);
+            var data = await _paymentMethodRepository.GetAll();
             return Ok(data);
         }
 
         // POST api/<ProductController>
         [HttpPost]
-        public async Task<ActionResult<dynamic>> Post([FromBody] ProductCreateModelDto model, [FromHeader] int tenantid)
+        public async Task<ActionResult<dynamic>> Post([FromBody] PaymentMethod model, [FromHeader] int tenantid)
         {
             try
             {
-                await productServie.SaveProduct(model, tenantid);
-                return Ok(new { success = true, message = "Produto cadastrado com sucesso" });
+                await _paymentMethodRepository.CreateAsync(model);
+                return Ok(new { success = true, message = "Forma de pagamento cadastrado com sucesso" });
             }
             catch (Exception ex)
             {
@@ -59,12 +54,12 @@ namespace WebApiCommercial.Controllers
 
         // PUT api/<ProductController>/5
         [HttpPut]
-        public async Task<ActionResult<dynamic>> Put([FromBody] Product model)
+        public async Task<ActionResult<dynamic>> Put([FromBody] PaymentMethod model)
         {
             try
             {
 
-                await productServie.Alter(model);
+                //await _paymentMethodRepository.UpdateAsync(model);
             }
             catch (Exception ex)
             {
@@ -81,7 +76,7 @@ namespace WebApiCommercial.Controllers
         {
             try
             {
-                await productServie.DeleteAsync(id);
+                await _paymentMethodRepository.DeleteAsync(id);
                 return Ok(new { success = true, message = "Produto excluído com sucesso" });
 
             }

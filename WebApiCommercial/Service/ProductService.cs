@@ -78,8 +78,8 @@ namespace Service
                 Image = null,//file
                 Code=model.Code,
                 Reference=model.Reference,
-                CostPrice=model.CostPrice
-
+                CostPrice=model.CostPrice,
+                Observation=model.Observation
             };
             if (product.Id > 0)
                 await base.Alter(product);

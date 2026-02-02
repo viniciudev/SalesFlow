@@ -37,9 +37,11 @@ namespace Repository
                        Code = p.Code,
                        IdCompany = p.IdCompany,
                        Reference = p.Reference,
-                      CostPrice=p.CostPrice
+                      CostPrice=p.CostPrice,
+                      Observation=p.Observation,
                        //Image = p.Image,
                        // ImageBytes = p.Image != null ? Convert.ToBase64String(p.Image) : null
+
                    })
                    .WithCaseInsensitive()
                  
