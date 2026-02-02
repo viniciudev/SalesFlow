@@ -91,11 +91,12 @@ namespace Repository
                           .Include(x => x.Sale).ThenInclude(x => x.Client)
                           .Include(x => x.Product)
                           .Include(x => x.ServiceProvided)
-                          .Include(x=>x.Client)
+                          .Include(x => x.Client)
+
                                   where
-                                  fin.IdCompany== filters.IdCompany
-                                  &&( string.IsNullOrEmpty(filters.TextOption)||fin.Description.Contains(filters.TextOption))
-                                  && (filters.FinancialStatus ==null||fin.FinancialStatus== filters.FinancialStatus)
+                                  fin.IdCompany == filters.IdCompany
+                                  && (string.IsNullOrEmpty(filters.TextOption) || fin.Description.Contains(filters.TextOption))
+                                  && (filters.FinancialStatus == null || fin.FinancialStatus == filters.FinancialStatus)
                                   orderby fin.Id descending
                                   select new FinancialResponse
                                   {
@@ -104,13 +105,27 @@ namespace Repository
                                       Value = fin.Value,
                                       DueDate = fin.DueDate,
                                       Origin = fin.Origin,
-                                      FinancialStatus=fin. FinancialStatus,
-                                      PaymentType=fin.PaymentType,
-                                      Description=fin.Description,
-                                      FinancialType=fin.FinancialType,
-                                      IdCompany= fin.IdCompany,
-                                      ClientName=fin.Client.Name,
-                                      ClientId=fin.Client.Id,
+                                      FinancialStatus = fin.FinancialStatus,
+                                      PaymentType = fin.PaymentType,
+                                      Description = fin.Description,
+                                      FinancialType = fin.FinancialType,
+                                      IdCompany = fin.IdCompany,
+                                      ClientName = fin.Client.Name,
+                                      ClientId = fin.Client.Id,
+                                      FinancialResourcesResponseList = _dbContext.Set<FinancialResources>()
+                            .Where(fr => fr.IdNewFinancial == fin.Id)
+                            .Join(_dbContext.Set<Financial>(),
+                                  fr => fr.IdRefOrigin,
+                                  f => f.Id,
+                                  (fr, f) => new { fr, f })
+                            .Select(x => new FinancialResourcesResponse
+                            {
+                                Id = x.f.Id,
+                                Description = x.f.Description,
+                                Value = x.f.Value
+                            })
+                            .ToList()
+
                                   }).AsNoTracking()
                            .GetPagedAsync<FinancialResponse>(filters.PageNumber, filters.PageSize);
 
@@ -162,14 +177,14 @@ namespace Repository
         }
         public async Task<PagedResult<Financial>> GetPagedByIdClient(Filters filters)
         {
-       
+
             try
             {
                 var data = await (from fin in _dbContext.Set<Financial>()
 
                                   where (fin.IdCompany == filters.IdCompany)
                                   && (fin.IdClient == filters.IdClient)
-                                 &&(fin.FinancialStatus ==FinancialStatus.pending)
+                                 && (fin.FinancialStatus == FinancialStatus.pending)
                                   select new Financial
                                   {
                                       Id = fin.Id,
@@ -179,7 +194,7 @@ namespace Repository
                                       FinancialType = fin.FinancialType,
                                       PaymentType = fin.PaymentType,
                                       CreationDate = fin.CreationDate,
-                                      FinancialStatus=fin.FinancialStatus
+                                      FinancialStatus = fin.FinancialStatus
                                   }).AsNoTracking()
                            .GetPagedAsync(filters.PageNumber, filters.PageSize);
 
@@ -189,8 +204,8 @@ namespace Repository
             {
                 throw;
             }
-        
-    }
+
+        }
     }
     public interface IFinancialRepository : IGenericRepository<Financial>
     {

@@ -36,9 +36,6 @@ namespace Model.Moves
         public Box Box { get; set; }
         public int? IdClient { get; set; }
         public Client Client { get; set; }
-       
-        //public int? IdFinancialResources { get; set; }
-        //public FinancialResources FinancialResources { get; set; }
 
     }
 

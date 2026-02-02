@@ -14,9 +14,13 @@ namespace Service
     public class FinancialService : BaseService<Financial>, IFinancialService
     {
         private readonly ICostCenterRepository _costCenterRepository;
-        public FinancialService(IGenericRepository<Financial> repository, ICostCenterRepository costCenterRepository) : base(repository)
+       private readonly IFinancialResourceRepository  _financialResourceRepository;
+        public FinancialService(IGenericRepository<Financial> repository,
+            ICostCenterRepository costCenterRepository,
+            IFinancialResourceRepository financialResourceRepository) : base(repository)
         {
             _costCenterRepository = costCenterRepository;
+            _financialResourceRepository = financialResourceRepository;
         }
         public async Task<List<Financial>> SearchBySaleItemsId(int id, TypeItem typeItem, int idItem)
         {
@@ -132,28 +136,40 @@ namespace Service
                 financial.FinancialStatus =i==0? FinancialStatus.paid:FinancialStatus.pending;
                 financial.FinancialType = FinancialType.recipe;
                 financial.Origin = OriginFinancial.renegotiation;
-                //financial.IdSale = IdSale;
+                    financial.PaymentType = PaymentType.cash;
                 financial.CreationDate = DateTime.Now;
                 financial.DueDate = i==0?request.NewDueDate:request.NewDueDate.AddMonths(i);
                 financial.IdCompany = request.IdCompany;
                 financial.Description = request.Description;
                 financial.IdCostCenter = listCostCenter.FirstOrDefault()?.Id;
                 financial.IdClient = request.ClientId;
-                //financial.FinancialResources = new FinancialResources { Id = request.OriginalInstallments[i] };
+             
                 financial.Value = (request.NewValue / request.NumberOfInstallments);
                
                 await base.Create(financial);
-            }
+
+                    foreach (var id in request.OriginalInstallments)
+                    {
+                       await _financialResourceRepository.CreateAsync(
+                        new FinancialResources
+                        {
+                            IdRefOrigin = id,
+                            IdNewFinancial = financial.Id
+                        });
+                    }
+                    }
 
             //muda o status pra renegociado
-            foreach (var item in request.OriginalInstallments)
+            foreach (var id in request.OriginalInstallments)
             {
                 await AlterFinancialStatus(new Financial
                 {
-                    Id = item,
+                    Id = id,
                     FinancialStatus = FinancialStatus.renegotiated,
                 });
             }
+
+
             }
             catch (Exception ex)
             {

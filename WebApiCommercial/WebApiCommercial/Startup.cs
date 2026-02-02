@@ -216,6 +216,11 @@ namespace WebAppCommercial
             services.AddTransient<IGenericRepository<Box>, BoxRepository>();
             services.AddTransient<IBoxRepository, BoxRepository>();
             services.AddTransient<IBaseService<Box>, BoxService>();
+            //FinancialResource
+            //services.AddTransient<IFinancialResourceService, FinancialResourceService>();
+            services.AddTransient<IGenericRepository<FinancialResources>, FinancialResourceRepository>();
+            services.AddTransient<IFinancialResourceRepository, FinancialResourceRepository>();
+            //services.AddTransient<IBaseService<FinancialResource>, FinancialResourceService>();
             services.AddCors(options =>
             {
                 options.AddPolicy("EnableCORS", builder =>
