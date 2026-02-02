@@ -20,22 +20,22 @@ namespace WebApiCommercial.Controllers
         {
             _paymentMethodRepository = paymentMethodRepository;
         }
-        [HttpGet]
-        public async Task<ActionResult<PagedResult<Product>>> Get([FromQuery] Filters filter, [FromHeader] int tenantid)
+        [HttpGet("GetAll")]
+        public async Task<ActionResult> GetAllPage([FromQuery] Filters filter, [FromHeader] int tenantid)
         {
-            //filter.IdCompany = tenantid;
-            //var data = await _paymentMethodRepository.GetAllPage();
-            return Ok("data");
+            filter.IdCompany = tenantid;
+            List<PaymentMethod> data = await _paymentMethodRepository.GetAllPage(filter);
+            return Ok(data);
         }
 
         // GET api/<ProductController>/5
-        [HttpGet("GetListByName")]
-        public async Task<ActionResult<List<Product>>> GetListByName([FromQuery] Filters filter, [FromHeader] int tenantid)
-        {
-            filter.IdCompany = tenantid;
-            var data = await _paymentMethodRepository.GetAll();
-            return Ok(data);
-        }
+        //[HttpGet("GetListByName")]
+        //public async Task<ActionResult<List<Product>>> GetListByName([FromQuery] Filters filter, [FromHeader] int tenantid)
+        //{
+        //    filter.IdCompany = tenantid;
+        //    var data = await _paymentMethodRepository.GetAll();
+        //    return Ok(data);
+        //}
 
         // POST api/<ProductController>
         [HttpPost]
@@ -43,6 +43,7 @@ namespace WebApiCommercial.Controllers
         {
             try
             {
+                model.IdCompany = tenantid;
                 await _paymentMethodRepository.CreateAsync(model);
                 return Ok(new { success = true, message = "Forma de pagamento cadastrado com sucesso" });
             }
@@ -59,7 +60,7 @@ namespace WebApiCommercial.Controllers
             try
             {
 
-                //await _paymentMethodRepository.UpdateAsync(model);
+                await _paymentMethodRepository.UpdateAsync(model.Id,model);
             }
             catch (Exception ex)
             {

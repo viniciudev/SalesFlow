@@ -119,6 +119,7 @@ namespace Repository
    .HasOne(dc => dc.Company)
    .WithMany(c => c.PaymentMethods)
    .HasForeignKey(dc => dc.IdCompany);
+            
         }
 
         private void ConfiguraFinancialResources(ModelBuilder modelBuilder)
@@ -493,10 +494,10 @@ namespace Repository
         .HasOne(dc => dc.Client)
         .WithMany(c => c.Financials)
         .HasForeignKey(dc => dc.IdClient);
-   //         builder.Entity<Financial>()
-   //.HasOne(dc => dc.FinancialResources)
-   //.WithMany(c => c.Financials)
-   //.HasForeignKey(dc => dc.IdFinancialResources);
+            builder.Entity<Financial>()
+         .HasOne(dc => dc.PaymentMethod)
+         .WithMany(c => c.Financials)
+         .HasForeignKey(dc => dc.PaymentMethodId);
         }
         private void ConfiguraPlanCompany(ModelBuilder builder)
         {

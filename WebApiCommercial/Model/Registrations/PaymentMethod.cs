@@ -1,15 +1,16 @@
-﻿using System;
+﻿
+
+
+using Model.Moves;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Model.Registrations
 {
-    public class PaymentMethod:BaseEntity
+    public class PaymentMethod : BaseEntity
     {
         public string Name { get; set; }
         public int IdCompany { get; set; }
         public Company Company { get; set; }
+        public ICollection<Financial> Financials { get; set; } = new List<Financial>();
     }
 }

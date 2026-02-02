@@ -115,6 +115,7 @@ namespace YourNamespace.DTOs
         /// </summary>
         public List<OriginalInstallmentDetailDto> OriginalInstallmentsDetails { get; set; } = new List<OriginalInstallmentDetailDto>();
         public int IdCompany { get; set; }
+        public int? PaymentMethodId { get; set; }
     }
 
     public class NewInstallmentDto

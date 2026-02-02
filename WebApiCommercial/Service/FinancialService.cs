@@ -59,7 +59,7 @@ namespace Service
             financialData.Description = financial.Description;
             financialData.DueDate = financial.DueDate;
             financialData.FinancialStatus = financial.FinancialStatus;
-            financialData.PaymentType = financial.PaymentType;
+            financialData.PaymentMethodId = financial.PaymentMethodId;
             await base.Alter(financialData);
         }
         public async Task<bool> CreateFinancial(FinancialRequest financial)
@@ -71,7 +71,7 @@ namespace Service
             {
                 FinancialStatus = financial.FinancialStatus,
                 FinancialType = financial.FinancialType,
-                PaymentType = financial.PaymentType,
+                PaymentMethodId = financial.PaymentMethodId,
                 CreationDate = financial.CreationDate,
                 DueDate = financial.DueDate,
                 Description = financial.Description,
@@ -136,7 +136,7 @@ namespace Service
                 financial.FinancialStatus =i==0? FinancialStatus.paid:FinancialStatus.pending;
                 financial.FinancialType = FinancialType.recipe;
                 financial.Origin = OriginFinancial.renegotiation;
-                    financial.PaymentType = PaymentType.cash;
+                    financial.PaymentMethodId = request.PaymentMethodId;
                 financial.CreationDate = DateTime.Now;
                 financial.DueDate = i==0?request.NewDueDate:request.NewDueDate.AddMonths(i);
                 financial.IdCompany = request.IdCompany;

@@ -3,6 +3,7 @@ using Model;
 using Model.Registrations;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Model.Moves
 {
@@ -18,7 +19,8 @@ namespace Model.Moves
         public FinancialStatus FinancialStatus { get; set; }
         public DateTime DueDate { get; set; }
         public decimal Value { get; set; }
-        public PaymentType PaymentType { get; set; }
+        public PaymentMethod PaymentMethod { get; set; }
+        public int? PaymentMethodId { get; set; }
         public int? IdSalesman { get; set; }
         public Salesman Salesman { get; set; }
         public int? IdProduct { get; set; }
@@ -36,7 +38,8 @@ namespace Model.Moves
         public Box Box { get; set; }
         public int? IdClient { get; set; }
         public Client Client { get; set; }
-
+        [NotMapped]
+        public string ?PaymentType { get; set; }
     }
 
 
@@ -55,13 +58,13 @@ public enum FinancialStatus
     renegotiated=3
 
 }
-public enum PaymentType
-{
-    pix = 1,
-    card = 2,
-    cash = 3,
+//public enum PaymentType
+//{
+//    pix = 1,
+//    card = 2,
+//    cash = 3,
 
-}
+//}
 public enum OriginFinancial
 {
     commission = 0,

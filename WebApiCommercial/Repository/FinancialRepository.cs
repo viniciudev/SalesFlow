@@ -92,7 +92,7 @@ namespace Repository
                           .Include(x => x.Product)
                           .Include(x => x.ServiceProvided)
                           .Include(x => x.Client)
-
+                          .Include(x=>x.PaymentMethod)
                                   where
                                   fin.IdCompany == filters.IdCompany
                                   && (string.IsNullOrEmpty(filters.TextOption) || fin.Description.Contains(filters.TextOption))
@@ -106,7 +106,7 @@ namespace Repository
                                       DueDate = fin.DueDate,
                                       Origin = fin.Origin,
                                       FinancialStatus = fin.FinancialStatus,
-                                      PaymentType = fin.PaymentType,
+                                      PaymentType = fin.PaymentMethod.Name,
                                       Description = fin.Description,
                                       FinancialType = fin.FinancialType,
                                       IdCompany = fin.IdCompany,
@@ -181,7 +181,7 @@ namespace Repository
             try
             {
                 var data = await (from fin in _dbContext.Set<Financial>()
-
+                                     .Include(x => x.PaymentMethod)
                                   where (fin.IdCompany == filters.IdCompany)
                                   && (fin.IdClient == filters.IdClient)
                                  && (fin.FinancialStatus == FinancialStatus.pending)
@@ -192,7 +192,7 @@ namespace Repository
                                       DueDate = fin.DueDate,
                                       Description = fin.Description,
                                       FinancialType = fin.FinancialType,
-                                      PaymentType = fin.PaymentType,
+                                      PaymentType = fin.PaymentMethod.Name,
                                       CreationDate = fin.CreationDate,
                                       FinancialStatus = fin.FinancialStatus
                                   }).AsNoTracking()

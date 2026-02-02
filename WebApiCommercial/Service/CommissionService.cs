@@ -106,7 +106,7 @@ namespace Service
          ? dateRun.Date
          : fixedDate(dataCommission.CommissionDay, date),
             Value = value,
-            PaymentType = PaymentType.cash,
+            //PaymentType = PaymentType.cash,
             IdCompany = idCompany,
             IdSalesman = idSeller,
             IdProduct = item.IdProduct == 0 ? null : item.IdProduct,
@@ -161,7 +161,7 @@ namespace Service
            ? dateRun.Date
            : fixedDate(sharedCommission.CommissionDay, date),
               Value = value,
-              PaymentType = PaymentType.cash,
+              //PaymentType = PaymentType.cash,
               IdCompany = idCompany,
               IdSalesman = sharedCommission.IdSalesman,
               IdProduct = item.IdProduct == 0 ? null : item.IdProduct,
@@ -231,7 +231,7 @@ namespace Service
          ? dateRun.Date
          : fixedDate(dataCommission.CommissionDay, date),
             Value = value,
-            PaymentType = PaymentType.cash,
+            //PaymentType = PaymentType.cash,
             IdCompany = idCompany,
             IdSalesman = idSeller,
             IdProduct = item.IdProduct == 0 ? null : item.IdProduct,

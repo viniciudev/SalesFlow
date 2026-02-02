@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Repository;
@@ -11,9 +12,11 @@ using Repository;
 namespace Repository.Migrations
 {
     [DbContext(typeof(ContextBase))]
-    partial class ContextBaseModelSnapshot : ModelSnapshot
+    [Migration("20260202195608_tablepaymentmethod")]
+    partial class tablepaymentmethod
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -321,7 +324,7 @@ namespace Repository.Migrations
                     b.Property<int>("Origin")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("PaymentMethodId")
+                    b.Property<int>("PaymentType")
                         .HasColumnType("integer");
 
                     b.Property<decimal>("Percentage")
@@ -350,8 +353,6 @@ namespace Repository.Migrations
                     b.HasIndex("IdSalesman");
 
                     b.HasIndex("IdService");
-
-                    b.HasIndex("PaymentMethodId");
 
                     b.ToTable("tb_financial", (string)null);
                 });
@@ -1201,10 +1202,6 @@ namespace Repository.Migrations
                         .WithMany("Financials")
                         .HasForeignKey("IdService");
 
-                    b.HasOne("Model.Registrations.PaymentMethod", "PaymentMethod")
-                        .WithMany("Financials")
-                        .HasForeignKey("PaymentMethodId");
-
                     b.Navigation("Box");
 
                     b.Navigation("Client");
@@ -1212,8 +1209,6 @@ namespace Repository.Migrations
                     b.Navigation("Company");
 
                     b.Navigation("CostCenter");
-
-                    b.Navigation("PaymentMethod");
 
                     b.Navigation("Product");
 
@@ -1611,11 +1606,6 @@ namespace Repository.Migrations
             modelBuilder.Entity("Model.Registrations.DescriptionFiles", b =>
                 {
                     b.Navigation("Files");
-                });
-
-            modelBuilder.Entity("Model.Registrations.PaymentMethod", b =>
-                {
-                    b.Navigation("Financials");
                 });
 
             modelBuilder.Entity("Model.Registrations.Product", b =>
