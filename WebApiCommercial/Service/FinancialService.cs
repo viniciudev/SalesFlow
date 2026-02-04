@@ -134,7 +134,7 @@ namespace Service
                 Financial financial = new Financial();
                 financial.Id = 0;
                 financial.FinancialStatus =i==0? FinancialStatus.paid:FinancialStatus.pending;
-                financial.FinancialType = FinancialType.recipe;
+                    financial.FinancialType = FinancialType.recipe;
                 financial.Origin = OriginFinancial.renegotiation;
                     financial.PaymentMethodId = request.PaymentMethodId;
                 financial.CreationDate = DateTime.Now;

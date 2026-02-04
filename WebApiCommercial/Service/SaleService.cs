@@ -125,6 +125,7 @@ namespace Service
                 item.CreationDate = DateTime.Now;
                 item.DueDate = DateTime.Now;
                 item.IdCompany = IdCompany;
+                item.PaymentMethodId = item.PaymentMethodId;
                 item.Description = $"Venda no dia:{DateTime.Now}";
                 item.IdCostCenter= listCostCenter.FirstOrDefault()?.Id;
                 item.IdClient= IdClient;

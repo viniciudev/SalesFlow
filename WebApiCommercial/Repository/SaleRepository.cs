@@ -52,7 +52,22 @@ namespace Repository
                                    }).ToList(),
                                    NameClient = sale.Client.Name,
                                    IdClient = sale.IdClient,
-                                   Financials = sale.Financials
+                                   Financials = sale.Financials.Select(x=>new Financial
+                                   {
+                                       Id = x.Id,
+                                       CreationDate = x.CreationDate,
+                                       Value = x.Value,
+                                       DueDate = x.DueDate,
+                                       Origin = x.Origin,
+                                       FinancialStatus = x.FinancialStatus,
+                                       PaymentMethodName = x.PaymentMethod.Name,
+                                       PaymentMethodId = x.PaymentMethod.Id,
+                                       Description = x.Description,
+                                       FinancialType = x.FinancialType,
+                                       IdCompany = x.IdCompany,
+                                       ClientName = x.Client.Name,
+                                       IdClient = x.Client.Id,
+                                   }).ToList(),
                                })
                                .AsNoTracking()
                                .GetPagedAsync<Sale>(filters.PageNumber, filters.PageSize);

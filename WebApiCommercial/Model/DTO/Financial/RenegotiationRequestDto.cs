@@ -116,6 +116,7 @@ namespace YourNamespace.DTOs
         public List<OriginalInstallmentDetailDto> OriginalInstallmentsDetails { get; set; } = new List<OriginalInstallmentDetailDto>();
         public int IdCompany { get; set; }
         public int? PaymentMethodId { get; set; }
+        public FinancialType FinancialType { get; set; }
     }
 
     public class NewInstallmentDto

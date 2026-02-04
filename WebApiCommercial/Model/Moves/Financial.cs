@@ -40,6 +40,10 @@ namespace Model.Moves
         public Client Client { get; set; }
         [NotMapped]
         public string ?PaymentType { get; set; }
+        [NotMapped]
+        public string PaymentMethodName { get; set; }
+        [NotMapped]
+        public string ClientName { get; set; }
     }
 
 

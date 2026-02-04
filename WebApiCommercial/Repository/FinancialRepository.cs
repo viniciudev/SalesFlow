@@ -186,6 +186,7 @@ namespace Repository
                                   where (fin.IdCompany == filters.IdCompany)
                                   && (fin.IdClient == filters.IdClient)
                                  && (fin.FinancialStatus == FinancialStatus.pending)
+                                 &&(fin.FinancialType== FinancialType.recipe)
                                   select new Financial
                                   {
                                       Id = fin.Id,
@@ -193,9 +194,10 @@ namespace Repository
                                       DueDate = fin.DueDate,
                                       Description = fin.Description,
                                       FinancialType = fin.FinancialType,
-                                      PaymentType = fin.PaymentMethod.Name,
+                                      PaymentMethodName = fin.PaymentMethod.Name,
                                       CreationDate = fin.CreationDate,
-                                      FinancialStatus = fin.FinancialStatus
+                                      FinancialStatus = fin.FinancialStatus,
+                                      
                                   }).AsNoTracking()
                            .GetPagedAsync(filters.PageNumber, filters.PageSize);
 
