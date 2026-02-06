@@ -8,6 +8,7 @@ namespace Model.Registrations
 {
     public class UserPermission:BaseEntity
     {
+
         public int UserId { get; set; }
         public int PermissionId { get; set; }
         public User User { get; set; }

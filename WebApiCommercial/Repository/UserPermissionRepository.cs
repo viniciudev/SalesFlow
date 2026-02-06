@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Model.Enums;
 using Model.Registrations;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Repository
@@ -25,10 +27,18 @@ namespace Repository
                 .AnyAsync(up => up.UserId == int.Parse(userId) &&
                up.Permission.Code == permissionCode);
         }
+        public async Task<List<UserPermission>> UserPermissions(int userId)
+        {
+            return await _dbContext.Set<UserPermission>()
+                .Where(up => up.UserId == userId)
+                .AsNoTracking()
+                .ToListAsync();
+        }
     }
     public interface IUserPermissionRepository : IGenericRepository<UserPermission>
     {
         //Task<List<UserPermission>> GetAllPage(Filters filter);
         Task<bool> UserPermissions(string userId, PermissionEnum permissionCode);
+        Task<List<UserPermission>> UserPermissions(int userId);
     }
 }
