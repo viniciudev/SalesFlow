@@ -226,6 +226,18 @@ namespace WebAppCommercial
             services.AddTransient<IGenericRepository<PaymentMethod>, PaymentMethodRepository>();
             services.AddTransient<IPaymentMethodRepository, PaymentMethodRepository>();
             //services.AddTransient<IBaseService<PaymentMethod>, PaymentMethodService>();
+
+            //Permission
+            services.AddTransient<IPermissionService, PermissionService>();
+            services.AddTransient<IGenericRepository<Permission>, PermissionRepository>();
+            services.AddTransient<IPermissionRepository, PermissionRepository>();
+            services.AddTransient<IBaseService<Permission>, PermissionService>();
+
+            //UserPermission
+            //services.AddTransient<IUserPermissionService, UserPermissionService>();
+            services.AddTransient<IGenericRepository<UserPermission>, UserPermissionRepository>();
+            services.AddTransient<IUserPermissionRepository, UserPermissionRepository>();
+            //services.AddTransient<IBaseService<UserPermission>, UserPermissionService>();
             services.AddCors(options =>
             {
                 options.AddPolicy("EnableCORS", builder =>

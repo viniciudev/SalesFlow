@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Model;
 using Model.DTO;
+using Model.Enums;
 using Model.Moves;
 using Repository;
 using Service;
@@ -28,6 +29,7 @@ namespace WebApiCommercial.Controllers
             filters.IdCompany = tenantid;
             return Ok(await saleService.GetAllPaged(filters));
         }
+
         [HttpGet("GetByMonthAllSales")]
         public async Task<ActionResult<SaleInfoResponse>> GetByMonthAllSales([FromQuery] Filters filters,
         [FromHeader] int tenantid)
@@ -71,7 +73,7 @@ namespace WebApiCommercial.Controllers
             await saleService.Alter(sale);
             return Ok(true);
         }
-
+        //[RequirePermission(PermissionEnum.VENDA_ALTER)]
         [HttpPut("PutWithItems")]
         public async Task<ActionResult<dynamic>> PutWithItems([FromBody] Sale sale,
           [FromHeader] int tenantid)

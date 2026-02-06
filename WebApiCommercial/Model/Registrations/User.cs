@@ -1,5 +1,6 @@
 ﻿using Model.Registrations;
 using System;
+using System.Collections.Generic;
 
 namespace Model
 {
@@ -17,6 +18,7 @@ namespace Model
         public TypeUser TypeUser { get; set; }
         public bool VerifiedEmail { get; set; } = false;
         public string TokenVerify { get; set; }
+        public ICollection<UserPermission> UserPermissions { get; set; }
     }
     public enum TypeUser
     {

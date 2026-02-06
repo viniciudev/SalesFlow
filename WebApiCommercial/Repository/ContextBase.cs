@@ -3,10 +3,8 @@ using Model;
 using Model.Closure;
 using Model.Moves;
 using Model.Registrations;
-using Repository.Providers;
 using System;
 using System.Linq;
-using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,12 +13,12 @@ namespace Repository
 
     public class ContextBase : DbContext
     {
-       
+
         public ContextBase()
         { }
         public ContextBase(DbContextOptions<ContextBase> opcoes) : base(opcoes)
         {
-           
+
         }
         public virtual DbSet<User> User { get; set; }
 
@@ -66,7 +64,7 @@ namespace Repository
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-          
+
 
             ConfiguraCompany(modelBuilder);
             ConfiguraEmpresa(modelBuilder);
@@ -96,14 +94,47 @@ namespace Repository
             ConfiguraBox(modelBuilder);
             ConfiguraFinancialResources(modelBuilder);
             ConfiguraPaymentMethod(modelBuilder);
+            ConfiguraPermission(modelBuilder);
+            ConfiguraUserPermission(modelBuilder);
             var cascadeFKs = modelBuilder.Model.GetEntityTypes()
      .SelectMany(t => t.GetForeignKeys())
      .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
             foreach (var fk in cascadeFKs)
                 fk.DeleteBehavior = DeleteBehavior.Restrict;
 
-          
+
             base.OnModelCreating(modelBuilder);
+        }
+
+        private void ConfiguraUserPermission(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<UserPermission>(d =>
+            {
+                d.ToTable("tb_userPermission");
+                d.HasKey(c => c.Id);
+                d.Property(c => c.Id).ValueGeneratedOnAdd();
+
+            });
+            modelBuilder.Entity<UserPermission>()
+            .HasOne(dc => dc.User)
+            .WithMany(c => c.UserPermissions)
+            .HasForeignKey(dc => dc.UserId);
+                        modelBuilder.Entity<UserPermission>()
+            .HasOne(dc => dc.Permission)
+            .WithMany(c => c.UserPermissions)
+            .HasForeignKey(dc => dc.PermissionId);
+        }
+
+        private void ConfiguraPermission(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Permission>(d =>
+            {
+                d.ToTable("tb_permission");
+                d.HasKey(c => c.Id);
+                d.Property(c => c.Id).ValueGeneratedOnAdd();
+
+            });
+
         }
 
         private void ConfiguraPaymentMethod(ModelBuilder modelBuilder)
@@ -119,7 +150,7 @@ namespace Repository
    .HasOne(dc => dc.Company)
    .WithMany(c => c.PaymentMethods)
    .HasForeignKey(dc => dc.IdCompany);
-            
+
         }
 
         private void ConfiguraFinancialResources(ModelBuilder modelBuilder)
@@ -484,7 +515,7 @@ namespace Repository
             .HasOne(dc => dc.SaleItems)
             .WithMany(c => c.Financials)
             .HasForeignKey(dc => dc.IdSaleItems);
-            
+
             builder.Entity<Financial>()
         .HasOne(dc => dc.Box)
         .WithMany(c => c.Movimentacoes)
