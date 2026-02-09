@@ -340,10 +340,12 @@ namespace WebAppCommercial
             });
 
             app.UseMiddleware<ExceptionMiddleware>();
+
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseMiddleware<PermissionMiddleware>();
             app.UseCors("EnableCORS");
             app.UseResponseCompression();
             app.UseStaticFiles();

@@ -123,6 +123,8 @@ namespace Repository
             .HasOne(dc => dc.Permission)
             .WithMany(c => c.UserPermissions)
             .HasForeignKey(dc => dc.PermissionId);
+
+
         }
 
         private void ConfiguraPermission(ModelBuilder modelBuilder)
@@ -131,10 +133,12 @@ namespace Repository
             {
                 d.ToTable("tb_permission");
                 d.HasKey(c => c.Id);
-                d.Property(c => c.Id).ValueGeneratedOnAdd();
-
+                d.Property(c => c.Id).ValueGeneratedNever().IsRequired();
+                d.HasIndex(c => c.Code)
+           .IsUnique();
+                d.HasData(SeedPermissions.GetDefaultPermissions());
             });
-
+            
         }
 
         private void ConfiguraPaymentMethod(ModelBuilder modelBuilder)

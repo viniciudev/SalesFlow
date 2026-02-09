@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Repository;
@@ -11,9 +12,11 @@ using Repository;
 namespace Repository.Migrations
 {
     [DbContext(typeof(ContextBase))]
-    partial class ContextBaseModelSnapshot : ModelSnapshot
+    [Migration("20260209131141_tablesdepermissaonovasper")]
+    partial class tablesdepermissaonovasper
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -868,7 +871,10 @@ namespace Repository.Migrations
             modelBuilder.Entity("Model.Registrations.Permission", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Category")
                         .HasColumnType("text");
@@ -906,140 +912,133 @@ namespace Repository.Migrations
                         },
                         new
                         {
-                            Id = 10,
+                            Id = 3,
                             Category = "Cadastros",
                             Code = 10,
                             Name = "Visualizar Produtos"
                         },
                         new
                         {
-                            Id = 11,
+                            Id = 4,
                             Category = "Cadastros",
                             Code = 11,
                             Name = "Criar Produto"
                         },
                         new
                         {
-                            Id = 12,
+                            Id = 5,
                             Category = "Cadastros",
                             Code = 12,
                             Name = "Editar Produto"
                         },
                         new
                         {
-                            Id = 13,
+                            Id = 6,
                             Category = "Cadastros",
                             Code = 13,
                             Name = "Excluir Produto"
                         },
                         new
                         {
-                            Id = 20,
+                            Id = 7,
                             Category = "Cadastros",
                             Code = 20,
                             Name = "Visualizar Clientes"
                         },
                         new
                         {
-                            Id = 21,
+                            Id = 8,
                             Category = "Cadastros",
                             Code = 21,
                             Name = "Criar Cliente"
                         },
                         new
                         {
-                            Id = 22,
+                            Id = 9,
                             Category = "Cadastros",
                             Code = 22,
                             Name = "Editar Cliente"
                         },
                         new
                         {
-                            Id = 30,
+                            Id = 10,
                             Category = "Vendas",
                             Code = 30,
                             Name = "Visualizar Vendas"
                         },
                         new
                         {
-                            Id = 31,
+                            Id = 11,
                             Category = "Vendas",
                             Code = 31,
                             Name = "Criar Venda"
                         },
                         new
                         {
-                            Id = 32,
+                            Id = 12,
                             Category = "Vendas",
                             Code = 32,
                             Name = "Cancelar Venda"
                         },
                         new
                         {
-                            Id = 82,
-                            Category = "Vendas",
-                            Code = 82,
-                            Name = "Alterar Venda"
-                        },
-                        new
-                        {
-                            Id = 40,
+                            Id = 13,
                             Category = "Financeiro",
                             Code = 40,
                             Name = "Visualizar Financeiro"
                         },
                         new
                         {
-                            Id = 41,
+                            Id = 14,
                             Category = "Financeiro",
                             Code = 41,
                             Name = "Editar Financeiro"
                         },
                         new
                         {
-                            Id = 50,
+                            Id = 15,
                             Category = "Estoque",
                             Code = 50,
                             Name = "Visualizar Estoque"
                         },
                         new
                         {
-                            Id = 51,
+                            Id = 16,
                             Category = "Estoque",
                             Code = 51,
                             Name = "Ajustar Estoque"
                         },
                         new
                         {
-                            Id = 60,
+                            Id = 17,
                             Category = "Renegociação",
                             Code = 60,
                             Name = "Visualizar Renegociações"
                         },
                         new
                         {
-                            Id = 61,
+                            Id = 18,
                             Category = "Renegociação",
                             Code = 61,
                             Name = "Criar Renegociação"
                         },
                         new
                         {
-                            Id = 70,
+                            Id = 19,
                             Category = "Usuários",
                             Code = 70,
                             Name = "Visualizar Usuários"
                         },
                         new
                         {
-                            Id = 71,
+                            Id = 20,
                             Category = "Usuários",
                             Code = 71,
                             Name = "Gerenciar Usuários"
                         },
                         new
                         {
-                            Id = 72,
+                            Id = 21,
                             Category = "Usuários",
                             Code = 72,
                             Description = "Pode atribuir permissões a outros usuários",
@@ -1047,14 +1046,21 @@ namespace Repository.Migrations
                         },
                         new
                         {
-                            Id = 80,
+                            Id = 22,
                             Category = "Cadastros",
                             Code = 80,
                             Name = "Visualizar Formas de Pagamento"
                         },
                         new
                         {
-                            Id = 81,
+                            Id = 23,
+                            Category = "Cadastros",
+                            Code = 81,
+                            Name = "Gerenciar Formas de Pagamento"
+                        },
+                        new
+                        {
+                            Id = 24,
                             Category = "Cadastros",
                             Code = 81,
                             Name = "Gerenciar Formas de Pagamento"

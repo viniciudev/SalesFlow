@@ -13,6 +13,8 @@ namespace Model.Registrations
         public string Name { get; set; }
         public PermissionEnum Code { get; set; } // Ex: "CADASTRO_EMPRESA", "VENDA_CREATE"
         public string Description { get; set; }
+        public string Category { get; set; }
         public ICollection<UserPermission> UserPermissions { get; set; }
+
     }
 }

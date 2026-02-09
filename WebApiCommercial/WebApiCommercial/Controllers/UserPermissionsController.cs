@@ -27,7 +27,7 @@ public class UserPermissionsController : ControllerBase
     [RequirePermission(PermissionEnum.USUARIO_VIEW)]
     public async Task<IActionResult> GetUserPermissions(int userId)
     {
-        var permissions = await _userPermissionRepository.UserPermissions(userId);
+        var permissions = await _userPermissionRepository.GetCodePermissions(userId);
             
 
         return Ok(permissions);
@@ -48,45 +48,37 @@ public class UserPermissionsController : ControllerBase
     public async Task<IActionResult> UpdateUserPermissions(int userId, [FromBody] UpdatePermissionsDto dto)
     {
         // Remove todas as permissões atuais
-        //var currentPermissions = await _context.UserPermissions
-        //    .Where(up => up.UserId == userId)
-        //    .ToListAsync();
-
-        //_context.UserPermissions.RemoveRange(currentPermissions);
-
+        var userPermissions = await _userPermissionRepository.UserPermissions(userId);
+        foreach (var item in userPermissions)
+        {
+            await _userPermissionRepository.DeleteAsync(item.Id);
+        }
         //// Adiciona as novas permissões
-        //foreach (var permissionCode in dto.Permissions)
-        //{
-        //    if (Enum.TryParse<PermissionEnum>(permissionCode, out var permissionEnum))
-        //    {
-        //        _context.UserPermissions.Add(new UserPermission
-        //        {
-        //            UserId = userId,
-        //            PermissionId = permissionEnum
-        //        });
-        //    }
-        //}
-
-        //await _context.SaveChangesAsync();
+        foreach (var permissionCode in dto.Permissions)
+        {
+                await _userPermissionRepository.CreateAsync(new UserPermission
+                {
+                    UserId = userId,
+                    PermissionId = permissionCode
+                });
+        }
         return Ok();
     }
 
     // GET: api/userpermissions/my-permissions
     [HttpGet("my-permissions")]
     public async Task<IActionResult> GetMyPermissions()
+
     {
-        //var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+        var userId = int.Parse(User.FindFirst("UserId")?.Value);
 
-        //var permissions = await _context.UserPermissions
-        //    .Where(up => up.UserId == userId)
-        //    .Select(up => up.Permission.Id.ToString())
-        //    .ToListAsync();
-
-        return Ok();
+        List<PermissionEnum> permissions = await _userPermissionRepository.GetCodePermissions(userId);
+           
+        return Ok(permissions);
     }
 }
 
 public class UpdatePermissionsDto
 {
-    public List<string> Permissions { get; set; } = new();
+    public List<int> Permissions { get; set; } = new();
 }
