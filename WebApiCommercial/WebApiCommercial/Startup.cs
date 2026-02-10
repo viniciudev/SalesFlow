@@ -238,16 +238,34 @@ namespace WebAppCommercial
             services.AddTransient<IGenericRepository<UserPermission>, UserPermissionRepository>();
             services.AddTransient<IUserPermissionRepository, UserPermissionRepository>();
             //services.AddTransient<IBaseService<UserPermission>, UserPermissionService>();
+            //services.AddCors(options =>
+            //{
+            //    options.AddPolicy("EnableCORS", builder =>
+            //    {
+            //        builder.AllowAnyOrigin().AllowAnyHeader().WithOrigins(
+            //          new[] {"http://localhost:3000", "http://localhost:3001",
+            //"http://appservicebox.link","https://appservicebox.link",
+            //"https://tractuscommissions.com.br",
+            //              "http://localhost:9002",
+            //              "https://studio-to69.onrender.com"}
+            //          ).AllowAnyMethod().Build();
+            //    });
+            //});
             services.AddCors(options =>
             {
-                options.AddPolicy("EnableCORS", builder =>
-                {
-                    builder.AllowAnyOrigin().AllowAnyHeader().WithOrigins(
-                      new[] {"http://localhost:3000", "http://localhost:3001",
-            "http://appservicebox.link","https://appservicebox.link",
-            "https://tractuscommissions.com.br","http://localhost:9002","https://studio-to69.onrender.com"}
-                      ).AllowAnyMethod().Build();
-                });
+                options.AddPolicy("AllowSpecificOrigin",
+                    builder =>
+                    {
+                        builder.WithOrigins(
+                                "http://localhost:3000",
+                                "http://localhost:9002",
+                                "https://localhost:44365",
+                                "https://studio-to69.onrender.com"// Adicione também o próprio backend
+                            )
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials(); // Importante para cookies/auth
+                    });
             });
 
             var key = Encoding.ASCII.GetBytes(Settings.Secret);
@@ -338,15 +356,15 @@ namespace WebAppCommercial
                 c.RoutePrefix = "swagger"; // Isso faz com que acesse em /swagger
                 c.DocumentTitle = "ProfControl API Documentation";
             });
-
+            app.UseCors("AllowSpecificOrigin");
             app.UseMiddleware<ExceptionMiddleware>();
-
+           
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseMiddleware<PermissionMiddleware>();
-            app.UseCors("EnableCORS");
+           
             app.UseResponseCompression();
             app.UseStaticFiles();
 

@@ -9,6 +9,20 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
+
+
+// Middleware/PermissionMiddleware.cs (CORREÇÃO CRÍTICA)
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Model.Enums;
+using Repository;
+using System;
+using System.Linq;
+using System.Security.Claims;
+using System.Text.Json;
+using System.Threading.Tasks;
+
 public class PermissionMiddleware
 {
     private readonly RequestDelegate _next;
@@ -27,34 +41,32 @@ public class PermissionMiddleware
 
         if (permissionAttribute != null)
         {
-            _logger.LogInformation($"Validando permissão: {permissionAttribute.PermissionCode} para rota: {context.Request.Path}");
-
-            // Verifica se o usuário está autenticado
-            if (!context.User.Identity?.IsAuthenticated ?? true)
-            {
-                _logger.LogWarning("Tentativa de acesso não autenticada");
-                await ReturnErrorResponse(context, 401, "Autenticação necessária",
-                    "Você precisa fazer login para acessar este recurso.");
-                return;
-            }
-
-            // Tenta obter o ID do usuário de várias claims possíveis
-            var userId = GetUserIdFromClaims(context.User);
-
-            if (string.IsNullOrEmpty(userId))
-            {
-                _logger.LogWarning("ID do usuário não encontrado nas claims");
-                await ReturnErrorResponse(context, 401, "Informações do usuário incompletas",
-                    "Não foi possível identificar o usuário. Faça login novamente.");
-                return;
-            }
-
-            // Obtém o repositório via service provider
-            using var scope = context.RequestServices.CreateScope();
-            var repository = scope.ServiceProvider.GetRequiredService<IUserPermissionRepository>();
-
             try
             {
+                _logger.LogInformation($"Validando permissão: {permissionAttribute.PermissionCode} para rota: {context.Request.Path}");
+
+                // Verifica se o usuário está autenticado
+                if (!context.User.Identity?.IsAuthenticated ?? true)
+                {
+                    await ReturnJsonErrorResponse(context, 401, "Autenticação necessária",
+                        "Você precisa fazer login para acessar este recurso.");
+                    return;
+                }
+
+                // Tenta obter o ID do usuário
+                var userId = GetUserIdFromClaims(context.User);
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    await ReturnJsonErrorResponse(context, 401, "Informações do usuário incompletas",
+                        "Não foi possível identificar o usuário. Faça login novamente.");
+                    return;
+                }
+
+                // Obtém o repositório via service provider
+                using var scope = context.RequestServices.CreateScope();
+                var repository = scope.ServiceProvider.GetRequiredService<IUserPermissionRepository>();
+
                 // Verifica se usuário tem a permissão
                 var hasPermission = await repository.UserPermissions(userId, permissionAttribute.PermissionCode);
 
@@ -64,24 +76,33 @@ public class PermissionMiddleware
 
                     _logger.LogWarning($"Acesso negado para usuário {userId}. Permissão necessária: {permissionAttribute.PermissionCode}");
 
-                    await ReturnErrorResponse(context, 403, "Acesso negado",
+                    await ReturnJsonErrorResponse(context, 403, "Acesso negado",
                         $"Você não tem permissão para executar esta ação. Permissão necessária: {permissionName}",
                         new
                         {
                             requiredPermission = permissionAttribute.PermissionCode.ToString(),
                             requiredPermissionName = permissionName,
-                            userId = userId
+                            userId = userId,
+                            userEmail = context.User.FindFirst(ClaimTypes.Email)?.Value,
+                            endpointPath = context.Request.Path,
+                            httpMethod = context.Request.Method,
+                            suggestion = "Entre em contato com o administrador do sistema para solicitar esta permissão."
                         });
                     return;
                 }
 
-                _logger.LogInformation($"Permissão validada com sucesso para usuário {userId}");
+                _logger.LogDebug($"Permissão validada com sucesso para usuário {userId}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Erro ao validar permissão para usuário {userId}");
-                await ReturnErrorResponse(context, 500, "Erro interno",
-                    "Ocorreu um erro ao verificar suas permissões. Tente novamente mais tarde.");
+                _logger.LogError(ex, $"Erro ao validar permissão");
+                await ReturnJsonErrorResponse(context, 500, "Erro interno",
+                    "Ocorreu um erro ao verificar suas permissões. Tente novamente mais tarde.",
+                    new
+                    {
+                        errorMessage = ex.Message,
+                        innerException = ex.InnerException?.Message
+                    });
                 return;
             }
         }
@@ -91,14 +112,13 @@ public class PermissionMiddleware
 
     private string GetUserIdFromClaims(ClaimsPrincipal user)
     {
-        // Ordem de prioridade para buscar o ID do usuário
         var possibleClaimTypes = new[]
         {
-            "UserId",                    // Claim personalizada
-            ClaimTypes.NameIdentifier,   // Claim padrão do ASP.NET
-            "sub",                       // Claim padrão JWT
-            "userId",                    // Outra variação comum
-            "uid"                        // Mais uma variação
+            "UserId",
+            ClaimTypes.NameIdentifier,
+            "sub",
+            "userId",
+            "uid"
         };
 
         foreach (var claimType in possibleClaimTypes)
@@ -115,7 +135,6 @@ public class PermissionMiddleware
 
     private string GetPermissionFriendlyName(PermissionEnum permission)
     {
-        // Mapeia códigos de permissão para nomes amigáveis
         return permission switch
         {
             PermissionEnum.CADASTRO_EMPRESA_VIEW => "Visualizar Empresa",
@@ -142,11 +161,11 @@ public class PermissionMiddleware
             PermissionEnum.USUARIO_PERMISSION_MANAGER => "Gerenciar Permissões",
             PermissionEnum.FORMA_PAGAMENTO_VIEW => "Visualizar Formas de Pagamento",
             PermissionEnum.FORMA_PAGAMENTO_MANAGER => "Gerenciar Formas de Pagamento",
-            _ => permission.ToString()
+            _ => permission.ToString().Replace("_", " ")
         };
     }
 
-    private async Task ReturnErrorResponse(HttpContext context, int statusCode, string title, string message, object details = null)
+    private async Task ReturnJsonErrorResponse(HttpContext context, int statusCode, string title, string message, object details = null)
     {
         context.Response.StatusCode = statusCode;
         context.Response.ContentType = "application/json";
@@ -157,16 +176,36 @@ public class PermissionMiddleware
             error = new
             {
                 code = statusCode,
+                type = GetErrorType(statusCode),
                 title = title,
                 message = message,
                 details = details,
-                timestamp = DateTime.UtcNow,
+                timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                 path = context.Request.Path,
+                method = context.Request.Method,
                 traceId = context.TraceIdentifier
             }
         };
 
-        await context.Response.WriteAsJsonAsync(response);
+        var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        await context.Response.WriteAsync(jsonResponse);
+    }
+
+    private string GetErrorType(int statusCode)
+    {
+        return statusCode switch
+        {
+            401 => "authentication_error",
+            403 => "permission_error",
+            404 => "not_found_error",
+            422 => "validation_error",
+            500 => "internal_server_error",
+            _ => "http_error"
+        };
     }
 }
 
