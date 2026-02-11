@@ -363,7 +363,7 @@ namespace WebAppCommercial
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseMiddleware<PermissionMiddleware>();
+            app.UseMiddleware<ConventionPermissionMiddleware>();
            
             app.UseResponseCompression();
             app.UseStaticFiles();

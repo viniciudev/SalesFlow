@@ -7,21 +7,9 @@ using Repository;
 using System;
 using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
-
-
-
-// Middleware/PermissionMiddleware.cs (CORREÇÃO CRÍTICA)
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Model.Enums;
-using Repository;
-using System;
-using System.Linq;
-using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
+
 
 public class PermissionMiddleware
 {

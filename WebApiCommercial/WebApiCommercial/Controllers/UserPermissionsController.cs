@@ -24,7 +24,6 @@ public class UserPermissionsController : ControllerBase
 
     // GET: api/userpermissions/{userId}
     [HttpGet("{userId}")]
-    [RequirePermission(PermissionEnum.USUARIO_VIEW)]
     public async Task<IActionResult> GetUserPermissions(int userId)
     {
         var permissions = await _userPermissionRepository.GetCodePermissions(userId);
@@ -35,7 +34,7 @@ public class UserPermissionsController : ControllerBase
 
     // GET: api/userpermissions/all
     [HttpGet("all")]
-    [RequirePermission(PermissionEnum.USUARIO_PERMISSION_MANAGER)]
+
     public async Task<IActionResult> GetAllPermissions()
     {
         var permissions = await _userPermissionRepository.GetAll();
@@ -44,7 +43,7 @@ public class UserPermissionsController : ControllerBase
 
     // POST: api/userpermissions/{userId}
     [HttpPost("{userId}")]
-    [RequirePermission(PermissionEnum.USUARIO_PERMISSION_MANAGER)]
+ 
     public async Task<IActionResult> UpdateUserPermissions(int userId, [FromBody] UpdatePermissionsDto dto)
     {
         // Remove todas as permissões atuais
