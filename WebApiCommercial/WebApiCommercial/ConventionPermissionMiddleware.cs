@@ -50,7 +50,8 @@ public class ConventionPermissionMiddleware
     {
         "SearchZipCode",
         "Email",
-        "Home"
+        "Home",
+     
     };
 
     // 🔥 Ações que NÃO exigem permissão (endpoints públicos)
@@ -59,7 +60,8 @@ public class ConventionPermissionMiddleware
         "verify-email",
         "forgot-password",
         "reset-password",
-        "authenticate"
+        "authenticate",
+        ""
     };
 
     public ConventionPermissionMiddleware(RequestDelegate next, ILogger<ConventionPermissionMiddleware> logger)

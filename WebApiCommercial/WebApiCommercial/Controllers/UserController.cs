@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Model;
 using Model.DTO;
 using Model.DTO.User;
@@ -152,7 +153,7 @@ namespace WebAppCommercial.Controllers
         {
         }
 
-
+        [AllowAnonymous]
         [HttpPost]
         public async Task<ActionResult<dynamic>> Create([FromBody] User user)
         {

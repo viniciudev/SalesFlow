@@ -136,24 +136,7 @@ namespace Service
 
         private async Task MethodPermissions(User user)
         {
-        //    List<UserPermission> userPermissions = new();
-
-        //    var permission = new UserPermission
-        //    {
-        //        UserId = user.Id,
-        //        PermissionId = (int)PermissionEnum.USUARIO_PERMISSION_MANAGER
-        //    };
-        //    var permission = new UserPermission
-        //    {
-        //        UserId = user.Id,
-        //        PermissionId = (int)PermissionEnum.USUARIO_MANAGER
-        //    };
-        //    var permission = new UserPermission
-        //    {
-        //        UserId = user.Id,
-        //        PermissionId = (int)PermissionEnum.USUARIO_PERMISSION_MANAGER
-        //    };
-        //    userPermissions.Add(permission);
+        
          var permissions = new List<int>
             {
                 (int)PermissionEnum.USUARIO_MANAGER,
