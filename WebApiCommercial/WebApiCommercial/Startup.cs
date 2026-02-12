@@ -1,4 +1,4 @@
-
+﻿
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -76,7 +76,7 @@ namespace WebAppCommercial
             });
 
             #region Registions
-            //Usu�rio
+            //Usuário
             services.AddTransient<IUserService, UserService>();
             services.AddTransient<IGenericRepository<User>, UserRepository>();
             services.AddTransient<IUserRepository, UserRepository>();
@@ -260,7 +260,7 @@ namespace WebAppCommercial
                                 "http://localhost:3000",
                                 "http://localhost:9002",
                                 "https://localhost:44365",
-                                "https://studio-to69.onrender.com"// Adicione tamb�m o pr�prio backend
+                                "https://studio-to69.onrender.com"// Adicione também o próprio backend
                             )
                             .AllowAnyHeader()
                             .AllowAnyMethod()
@@ -287,7 +287,7 @@ namespace WebAppCommercial
                 };
             });
 
-            // CONFIGURA��O DO SWAGGER CORRIGIDA
+            // CONFIGURAÇÃO DO SWAGGER CORRIGIDA
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen(c =>
             {
@@ -295,7 +295,7 @@ namespace WebAppCommercial
                 {
                     Version = "v1",
                     Title = "Sales flow",
-                    Description = "API para gest�o comercial",
+                    Description = "API para gestão comercial",
                     TermsOfService = new Uri("https://example.com/terms"),
                     Contact = new OpenApiContact
                     {
@@ -304,7 +304,7 @@ namespace WebAppCommercial
                     },
                     License = new OpenApiLicense
                     {
-                        Name = "Licen�a",
+                        Name = "Licença",
                         Url = new Uri("https://example.com/license")
                     }
                 });
@@ -335,6 +335,7 @@ namespace WebAppCommercial
           }
         });
             });
+            ConfigurePermissionMappings();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -348,7 +349,7 @@ namespace WebAppCommercial
                 app.UseDeveloperExceptionPage();
             }
 
-            // Configura��o do Swagger
+            // Configuração do Swagger
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
@@ -376,12 +377,52 @@ namespace WebAppCommercial
                 {
                     context.Response.Redirect("/swagger");
                     return Task.CompletedTask;
-                });
+                }
+                );
             });
 
             UpdateDatabase(app);
-        }
 
+        }
+        private static void ConfigurePermissionMappings()
+        {
+            // === CONTROLLERS DE CADASTRO ===
+            ConventionPermissionMiddleware.RegisterControllerPermission("Client", "CADASTRO_CLIENTE");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Product", "CADASTRO_PRODUTO");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Company", "CADASTRO_EMPRESA");
+            ConventionPermissionMiddleware.RegisterControllerPermission("PaymentMethod", "FORMA_PAGAMENTO");
+
+            // === CONTROLLERS DE USUÁRIOS ===
+            ConventionPermissionMiddleware.RegisterControllerPermission("User", "USUARIO");
+            ConventionPermissionMiddleware.RegisterControllerPermission("UserPermissions", "USUARIO_PERMISSION");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Permission", "USUARIO_PERMISSION");
+
+            // === CONTROLLERS OPERACIONAIS ===
+            ConventionPermissionMiddleware.RegisterControllerPermission("Sale", "VENDA");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Financial", "FINANCEIRO");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Stock", "ESTOQUE");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Box", "CAIXA");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Budget", "ORCAMENTO");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Commission", "COMISSAO");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Dashboard", "DASHBOARD");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Closures", "FECHAMENTO");
+            ConventionPermissionMiddleware.RegisterControllerPermission("ServicesProvision", "SERVICO");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Prospects", "PROSPECCAO");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Salesman", "VENDEDOR");
+
+            // === CONTROLLERS PÚBLICOS ===
+            ConventionPermissionMiddleware.RegisterPublicController("SearchZipCode");
+            ConventionPermissionMiddleware.RegisterPublicController("Email");
+            ConventionPermissionMiddleware.RegisterPublicController("Home");
+
+            // === AÇÕES PÚBLICAS (endpoints sem autenticação) ===
+            ConventionPermissionMiddleware.RegisterPublicAction("verify-email");
+            ConventionPermissionMiddleware.RegisterPublicAction("forgot-password");
+            ConventionPermissionMiddleware.RegisterPublicAction("reset-password");
+            ConventionPermissionMiddleware.RegisterPublicAction("authenticate");
+
+            Console.WriteLine("✅ Permission mappings configured successfully!");
+        }
         private static void UpdateDatabase(IApplicationBuilder app)
         {
             using (var serviceScope = app.ApplicationServices

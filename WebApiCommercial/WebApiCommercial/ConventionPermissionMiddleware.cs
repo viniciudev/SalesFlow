@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Model.Enums;
+using Model.Registrations;
 using Repository;
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,50 @@ public class ConventionPermissionMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<ConventionPermissionMiddleware> _logger;
 
+    private static readonly Dictionary<string, string> _controllerPermissionMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        // === CADASTROS BÁSICOS ===
+        { "Client", "CADASTRO_CLIENTE" },
+        { "Product", "CADASTRO_PRODUTO" },
+        { "Company", "CADASTRO_EMPRESA" },
+        { "User", "USUARIO" },
+        { "PaymentMethod", "FORMA_PAGAMENTO" },
+        
+        // === OPERACIONAIS ===
+        { "Sale", "VENDA" },
+        { "Financial", "FINANCEIRO" },
+        { "Stock", "ESTOQUE" },
+        { "Budget", "ORCAMENTO" }, // Se tiver no enum
+        { "Commission", "COMISSAO" }, // Se tiver no enum
+        
+        // === PERMISSÕES ===
+        { "Permission", "USUARIO_PERMISSION" },
+        { "UserPermissions", "USUARIO_PERMISSION" },
+        
+        // === CAIXA ===
+        { "Box", "CAIXA" }, // Se tiver no enum
+        
+        // === DASHBOARD ===
+        { "Dashboard", "DASHBOARD" }, // Se tiver no enum
+    };
+
+    // 🔥 Controllers que NÃO exigem permissão (públicos)
+    private static readonly HashSet<string> _publicControllers = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "SearchZipCode",
+        "Email",
+        "Home"
+    };
+
+    // 🔥 Ações que NÃO exigem permissão (endpoints públicos)
+    private static readonly HashSet<string> _publicActions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "verify-email",
+        "forgot-password",
+        "reset-password",
+        "authenticate"
+    };
+
     public ConventionPermissionMiddleware(RequestDelegate next, ILogger<ConventionPermissionMiddleware> logger)
     {
         _next = next;
@@ -27,85 +72,176 @@ public class ConventionPermissionMiddleware
     {
         var endpoint = context.GetEndpoint();
 
-        // Ignora endpoints sem Authorize ou AllowAnonymous
+        // === PASSO 1: IGNORA ENDPOINTS ALLOWANONYMOUS ===
         if (endpoint?.Metadata.GetMetadata<Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute>() != null)
         {
             await _next(context);
             return;
         }
 
-        var authorizeAttribute = endpoint?.Metadata.GetMetadata<Microsoft.AspNetCore.Authorization.AuthorizeAttribute>();
-        if (authorizeAttribute == null)
+        var routeData = context.GetRouteData();
+        var controller = routeData.Values["controller"]?.ToString();
+        var action = routeData.Values["action"]?.ToString();
+        var httpMethod = context.Request.Method;
+
+        // === PASSO 2: DEBUG LOG ===
+        _logger.LogDebug($"🔍 Request: Controller={controller}, Action={action}, Method={httpMethod}, Path={context.Request.Path}");
+
+        // === PASSO 3: VERIFICA SE É CONTROLLER PÚBLICO ===
+        if (!string.IsNullOrEmpty(controller) && _publicControllers.Contains(controller))
         {
+            _logger.LogDebug($"✅ Controller público: {controller}");
             await _next(context);
             return;
         }
 
-        try
+        // === PASSO 4: VERIFICA SE É AÇÃO PÚBLICA ===
+        if (!string.IsNullOrEmpty(action) && _publicActions.Contains(action))
         {
-            // 1. Verifica autenticação
-            if (!context.User.Identity?.IsAuthenticated ?? true)
-            {
-                await ReturnJsonErrorResponse(context, 401, "Autenticação necessária",
-                    "Você precisa fazer login para acessar este recurso.");
-                return;
-            }
-
-            // 2. Obtém ID do usuário
-            var userId = GetUserIdFromClaims(context.User);
-            if (string.IsNullOrEmpty(userId))
-            {
-                await ReturnJsonErrorResponse(context, 401, "Informações do usuário incompletas",
-                    "Não foi possível identificar o usuário. Faça login novamente.");
-                return;
-            }
-
-            // 3. Determina a permissão necessária baseada na convenção
-            var requiredPermission = DetermineRequiredPermission(context);
-            if (requiredPermission == null)
-            {
-                // Se não conseguiu determinar a permissão, permite acesso
-                await _next(context);
-                return;
-            }
-
-            // 4. Verifica se usuário tem a permissão
-            using var scope = context.RequestServices.CreateScope();
-            var repository = scope.ServiceProvider.GetRequiredService<IUserPermissionRepository>();
-
-            var hasPermission = await repository.UserPermissions(userId, requiredPermission.Value);
-
-            if (!hasPermission)
-            {
-                var permissionName = GetPermissionFriendlyName(requiredPermission.Value);
-
-                _logger.LogWarning($"Acesso negado para usuário {userId}. Permissão necessária: {requiredPermission}");
-
-                await ReturnJsonErrorResponse(context, 403, "Acesso negado",
-                    $"Você não tem permissão para executar esta ação. Permissão necessária: {permissionName}",
-                    new
-                    {
-                        requiredPermission = requiredPermission.Value.ToString(),
-                        requiredPermissionName = permissionName,
-                        userId = userId,
-                        endpointPath = context.Request.Path,
-                        httpMethod = context.Request.Method,
-                    });
-                return;
-            }
-
-            _logger.LogDebug($"Permissão {requiredPermission} validada para usuário {userId}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Erro ao validar permissão");
-            await ReturnJsonErrorResponse(context, 500, "Erro interno",
-                "Ocorreu um erro ao verificar suas permissões.");
+            _logger.LogDebug($"✅ Ação pública: {action}");
+            await _next(context);
             return;
         }
 
+        // === PASSO 5: VERIFICA AUTENTICAÇÃO ===
+        if (!context.User.Identity?.IsAuthenticated ?? true)
+        {
+            await ReturnJsonErrorResponse(context, 401, "Autenticação necessária",
+                "Você precisa fazer login para acessar este recurso.");
+            return;
+        }
+
+        // === PASSO 6: OBTÉM ID DO USUÁRIO ===
+        var userId = GetUserIdFromClaims(context.User);
+        if (string.IsNullOrEmpty(userId))
+        {
+            await ReturnJsonErrorResponse(context, 401, "Informações do usuário incompletas",
+                "Não foi possível identificar o usuário. Faça login novamente.");
+            return;
+        }
+
+        // === PASSO 7: DETERMINA PERMISSÃO NECESSÁRIA ===
+        var requiredPermission = DetermineRequiredPermission(controller, action, httpMethod);
+
+        if (requiredPermission == null)
+        {
+            // Se não encontrou permissão, NÃO PERMITE por segurança
+            _logger.LogWarning($"⚠️ Permissão não mapeada para {controller}.{action} - BLOQUEADO!");
+            await ReturnJsonErrorResponse(context, 403, "Acesso negado",
+                $"Acesso negado. Recurso não configurado: {controller}.{action}");
+            return;
+        }
+
+        // === PASSO 8: VERIFICA PERMISSÃO NO BANCO ===
+        using var scope = context.RequestServices.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<IUserPermissionRepository>();
+        if(requiredPermission.Value== PermissionEnum.USUARIO_MANAGER)
+        {
+
+        }
+        var hasPermission = await repository.UserPermissions(userId, requiredPermission.Value);
+
+        if (!hasPermission)
+        {
+            var permissionName = GetPermissionFriendlyName(requiredPermission.Value);
+
+            _logger.LogWarning($"❌ Acesso negado para usuário {userId}. Permissão necessária: {requiredPermission}");
+
+            await ReturnJsonErrorResponse(context, 403, "Acesso negado",
+                $"Você não tem permissão para executar esta ação. Permissão necessária: {permissionName}",
+                new
+                {
+                    requiredPermission = requiredPermission.Value.ToString(),
+                    requiredPermissionName = permissionName,
+                    userId = userId,
+                    endpointPath = context.Request.Path,
+                    httpMethod = context.Request.Method,
+                });
+            return;
+        }
+
+        _logger.LogDebug($"✅ Permissão {requiredPermission} validada para usuário {userId}");
         await _next(context);
     }
+
+    // 🔥 DETERMINA A PERMISSÃO BASEADA NO CONTROLLER E MÉTODO HTTP
+    private PermissionEnum? DetermineRequiredPermission(string controller, string action, string httpMethod)
+    {
+        if (string.IsNullOrEmpty(controller)) return null;
+
+        // === PASSO 1: OBTÉM O PREFIXO DO CONTROLLER ===
+        if (!_controllerPermissionMap.TryGetValue(controller, out var prefix))
+        {
+            _logger.LogWarning($"⚠️ Controller não mapeado: {controller}");
+            return null;
+        }
+
+        // === PASSO 2: DETERMINA O SUFIXO BASEADO NO MÉTODO HTTP ===
+        // IMPORTANTE: IGNORA O NOME DA ACTION! Usa apenas o verbo HTTP
+        var suffix = httpMethod.ToUpper() switch
+        {
+            "GET" => "VIEW",
+            "POST" => "CREATE",
+            "PUT" => "EDIT",
+            "PATCH" => "EDIT",
+            "DELETE" => "DELETE",
+            _ => "ACCESS"
+        };
+
+        // === PASSO 3: TENTA A PERMISSÃO PRINCIPAL ===
+        var permissionName = $"{prefix}_{suffix}";
+        _logger.LogDebug($"🔍 Tentando permissão: {permissionName}");
+
+        if (Enum.TryParse<PermissionEnum>(permissionName, true, out var permission))
+        {
+            return permission;
+        }
+
+        // === PASSO 4: TENTA ALTERNATIVAS COMUNS ===
+        return TryFindAlternativePermission(prefix, httpMethod);
+    }
+
+    // 🔥 ALTERNATIVAS DE PERMISSÃO PARA O MESMO PREFIXO
+    private PermissionEnum? TryFindAlternativePermission(string prefix, string httpMethod)
+    {
+        var alternatives = httpMethod.ToUpper() switch
+        {
+            "GET" => new[] { "VIEW", "READ", "ACCESS", "LIST", "GET", "MANAGER" },
+            "POST" => new[] { "CREATE", "ADD", "INSERT", "NEW", "POST", "MANAGER" },
+            "PUT" or "PATCH" => new[] { "EDIT", "UPDATE", "MODIFY", "ALTER", "PUT", "MANAGER" },
+            "DELETE" => new[] { "DELETE", "REMOVE", "EXCLUDE", "DEL", "MANAGER" },
+            _ => new[] { "ACCESS" }
+        };
+
+        foreach (var alt in alternatives)
+        {
+            var permissionName = $"{prefix}_{alt}";
+            if (Enum.TryParse<PermissionEnum>(permissionName, true, out var permission))
+            {
+                _logger.LogDebug($"✅ Permissão alternativa encontrada: {permissionName}");
+                return permission;
+            }
+        }
+
+        return null;
+    }
+
+    // 🔥 MÉTODO PARA ADICIONAR NOVOS MAPEAMENTOS EM TEMPO DE EXECUÇÃO
+    public static void RegisterControllerPermission(string controller, string permissionPrefix)
+    {
+        _controllerPermissionMap[controller] = permissionPrefix;
+    }
+
+    public static void RegisterPublicController(string controller)
+    {
+        _publicControllers.Add(controller);
+    }
+
+    public static void RegisterPublicAction(string action)
+    {
+        _publicActions.Add(action);
+    }
+
     private string GetPermissionFriendlyName(PermissionEnum permission)
     {
         return permission switch
@@ -159,154 +295,7 @@ public class ConventionPermissionMiddleware
 
         return null;
     }
-    private PermissionEnum? DetermineRequiredPermission(HttpContext context)
-    {
-        var route = context.GetRouteData();
-        var controller = route.Values["controller"]?.ToString();
-        var action = route.Values["action"]?.ToString();
-        var httpMethod = context.Request.Method;
-
-        // Mapeamento automático baseado em convenção
-        return DeterminePermissionByConvention(controller, action, httpMethod);
-    }
-
-    private PermissionEnum? DeterminePermissionByConvention(string controller, string action, string httpMethod)
-    {
-        if (string.IsNullOrEmpty(controller)) return null;
-
-        // Converte controller name para formato padronizado
-        var controllerKey = controller.ToUpper();
-
-        // Mapeamento principal de controllers para prefixos de permissão
-        var controllerPrefixMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            // Cadastros
-            { "Company", "CADASTRO_EMPRESA" },
-            { "Product", "CADASTRO_PRODUTO" },
-            { "Client", "CADASTRO_CLIENTE" },
-            { "Usuario", "USUARIO" },
-            { "User", "USUARIO" },
-            { "FormaPagamento", "FORMA_PAGAMENTO" },
-            { "PaymentMethod", "FORMA_PAGAMENTO" },
-            
-            // Operacionais
-            { "Venda", "VENDA" },
-            { "Sale", "VENDA" },
-            { "Financeiro", "FINANCEIRO" },
-            { "Financial", "FINANCEIRO" },
-            { "Estoque", "ESTOQUE" },
-            { "Stock", "ESTOQUE" },
-            { "Renegociacao", "RENEGOCIACAO" },
-            { "Renegotiation", "RENEGOCIACAO" },
-            
-            // Configurações
-            { "Permission", "USUARIO_PERMISSION" },
-            { "UserPermissions", "USUARIO_PERMISSION" },
-            { "Configuracao", "CONFIGURACAO" },
-            { "Configuration", "CONFIGURACAO" },
-        };
-
-        if (!controllerPrefixMap.TryGetValue(controller, out var prefix))
-        {
-            // Tenta encontrar por contém
-            var matchingKey = controllerPrefixMap.Keys.FirstOrDefault(k =>
-                controller.Contains(k, StringComparison.OrdinalIgnoreCase));
-
-            if (matchingKey != null)
-            {
-                prefix = controllerPrefixMap[matchingKey];
-            }
-            else
-            {
-                // Se não encontrar, usa o nome do controller em uppercase
-                prefix = controller.ToUpper();
-            }
-        }
-
-        // Mapeamento de ações HTTP para sufixos de permissão
-        var actionSuffix = DetermineActionSuffix(action, httpMethod);
-
-        // Tenta encontrar a permissão correspondente no enum
-        var permissionName = $"{prefix}_{actionSuffix}";
-
-        if (Enum.TryParse<PermissionEnum>(permissionName, true, out var permission))
-        {
-            return permission;
-        }
-
-        // Se não encontrar, tenta alternativas
-        return TryFindAlternativePermission(prefix, action, httpMethod);
-    }
-
-    private string DetermineActionSuffix(string action, string httpMethod)
-    {
-        // Se action for fornecida, usa ela
-        if (!string.IsNullOrEmpty(action))
-        {
-            return action.ToUpper();
-        }
-
-        // Baseado no método HTTP
-        return httpMethod.ToUpper() switch
-        {
-            "GET" => "VIEW",
-            "POST" => "CREATE",
-            "PUT" => "EDIT",
-            "PATCH" => "EDIT",
-            "DELETE" => "DELETE",
-            _ => "ACCESS"
-        };
-    }
-
-    private PermissionEnum? TryFindAlternativePermission(string prefix, string action, string httpMethod)
-    {
-        // Tenta combinações alternativas
-        var possiblePermissions = new List<string>();
-
-        // Baseado no método HTTP
-        if (httpMethod.Equals("GET", StringComparison.OrdinalIgnoreCase))
-        {
-            possiblePermissions.Add($"{prefix}_VIEW");
-            possiblePermissions.Add($"{prefix}_READ");
-            possiblePermissions.Add($"{prefix}_ACCESS");
-        }
-        else if (httpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
-        {
-            possiblePermissions.Add($"{prefix}_CREATE");
-            possiblePermissions.Add($"{prefix}_ADD");
-            possiblePermissions.Add($"{prefix}_INSERT");
-        }
-        else if (httpMethod.Equals("PUT", StringComparison.OrdinalIgnoreCase) ||
-                 httpMethod.Equals("PATCH", StringComparison.OrdinalIgnoreCase))
-        {
-            possiblePermissions.Add($"{prefix}_EDIT");
-            possiblePermissions.Add($"{prefix}_UPDATE");
-            possiblePermissions.Add($"{prefix}_MODIFY");
-        }
-        else if (httpMethod.Equals("DELETE", StringComparison.OrdinalIgnoreCase))
-        {
-            possiblePermissions.Add($"{prefix}_DELETE");
-            possiblePermissions.Add($"{prefix}_REMOVE");
-        }
-
-        // Se action for fornecida, tenta combinar com prefixo
-        if (!string.IsNullOrEmpty(action))
-        {
-            possiblePermissions.Add($"{prefix}_{action.ToUpper()}");
-        }
-
-        // Tenta cada permissão possível
-        foreach (var permissionName in possiblePermissions)
-        {
-            if (Enum.TryParse<PermissionEnum>(permissionName, true, out var permission))
-            {
-                return permission;
-            }
-        }
-
-        return null;
-    }
-    private async Task ReturnJsonErrorResponse(HttpContext context, int statusCode, string title, string message, object details = null)
+   private async Task ReturnJsonErrorResponse(HttpContext context, int statusCode, string title, string message, object details = null)
     {
         context.Response.StatusCode = statusCode;
         context.Response.ContentType = "application/json";

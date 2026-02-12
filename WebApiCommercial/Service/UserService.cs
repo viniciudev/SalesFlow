@@ -3,12 +3,15 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Model;
 using Model.DTO;
+using Model.Enums;
 using Model.Moves;
 using Model.Registrations;
 using Repository;
 using SendGrid.Helpers.Mail;
 using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
@@ -22,12 +25,14 @@ namespace Service
         private ICostCenterService costCenterService;
         private IEmailService emailService;
         private readonly IWebHostEnvironment _environment;
+        private readonly IUserPermissionRepository _userPermissionRepository;
         public UserService(IGenericRepository<User> repository,
           ICompanyService companyService,
           IPlanCompanyService planCompanyService,
           ICostCenterService costCenterService,
           IEmailService emailService,
-          IWebHostEnvironment environment) : base(repository)
+          IWebHostEnvironment environment,
+          IUserPermissionRepository userPermissionRepository) : base(repository)
 
         {
             this.companyService = companyService;
@@ -35,6 +40,7 @@ namespace Service
             this.costCenterService = costCenterService;
             this.emailService = emailService;
             this._environment = environment;
+            _userPermissionRepository = userPermissionRepository;
         }
         public Task<User> GetUser(AuthenticateModel model)
         {
@@ -110,8 +116,8 @@ namespace Service
             user.VerifiedEmail = false;
             user.TokenVerify = Guid.NewGuid().ToString();
             await base.Create(user);
-            //if (_environment.IsProduction())
-            //{
+            if (_environment.IsProduction())
+            {
                 EmailResponse emailResp = await emailService.SendVerificationEmailAsync(new EmailRequest
                 {
                     Email = user.Email,
@@ -122,9 +128,55 @@ namespace Service
 
                 if (!emailResp.Success)
                     return emailResp.Message;
-            //}
+            }
+            await MethodPermissions(user);
+
             return "Salvo com Sucesso!";
         }
+
+        private async Task MethodPermissions(User user)
+        {
+        //    List<UserPermission> userPermissions = new();
+
+        //    var permission = new UserPermission
+        //    {
+        //        UserId = user.Id,
+        //        PermissionId = (int)PermissionEnum.USUARIO_PERMISSION_MANAGER
+        //    };
+        //    var permission = new UserPermission
+        //    {
+        //        UserId = user.Id,
+        //        PermissionId = (int)PermissionEnum.USUARIO_MANAGER
+        //    };
+        //    var permission = new UserPermission
+        //    {
+        //        UserId = user.Id,
+        //        PermissionId = (int)PermissionEnum.USUARIO_PERMISSION_MANAGER
+        //    };
+        //    userPermissions.Add(permission);
+         var permissions = new List<int>
+            {
+                (int)PermissionEnum.USUARIO_MANAGER,
+                (int)PermissionEnum.USUARIO_PERMISSION_MANAGER,
+                (int)PermissionEnum.USUARIO_VIEW
+            };
+
+        var userPermissions = permissions.Select(permissionId => new UserPermission
+        {
+            UserId = user.Id,
+            PermissionId = permissionId
+        });
+
+            foreach (var item in userPermissions)
+            {
+                await _userPermissionRepository.CreateAsync(new UserPermission
+                {
+                    UserId = item.UserId,
+                    PermissionId = item.PermissionId
+                });
+            }
+        }
+
         public async Task<User> GetByToken(string token)
         {
             return await (repository as IUserRepository).GetByToken(token);
