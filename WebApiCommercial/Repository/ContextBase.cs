@@ -96,6 +96,7 @@ namespace Repository
             ConfiguraPaymentMethod(modelBuilder);
             ConfiguraPermission(modelBuilder);
             ConfiguraUserPermission(modelBuilder);
+            ConfiguraBankAccount(modelBuilder);
             var cascadeFKs = modelBuilder.Model.GetEntityTypes()
      .SelectMany(t => t.GetForeignKeys())
      .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
@@ -104,6 +105,21 @@ namespace Repository
 
 
             base.OnModelCreating(modelBuilder);
+        }
+
+        private void ConfiguraBankAccount(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<BankAccount>(d =>
+            {
+                d.ToTable("tb_bankAccount");
+                d.HasKey(c => c.Id);
+                d.Property(c => c.Id).ValueGeneratedOnAdd();
+
+            });
+            modelBuilder.Entity<BankAccount>()
+            .HasOne(dc => dc.Company)
+            .WithMany(c => c.BankAccounts)
+            .HasForeignKey(dc => dc.IdCompany);
         }
 
         private void ConfiguraUserPermission(ModelBuilder modelBuilder)

@@ -238,6 +238,11 @@ namespace WebAppCommercial
             services.AddTransient<IGenericRepository<UserPermission>, UserPermissionRepository>();
             services.AddTransient<IUserPermissionRepository, UserPermissionRepository>();
             //services.AddTransient<IBaseService<UserPermission>, UserPermissionService>();
+            //BankAccount
+            services.AddTransient<IBankAccountService, BankAccountService>();
+            services.AddTransient<IGenericRepository<BankAccount>, BankAccountRepository>();
+            services.AddTransient<IBankAccountRepository, BankAccountRepository>();
+            services.AddTransient<IBaseService<BankAccount>, BankAccountService>();
             //services.AddCors(options =>
             //{
             //    options.AddPolicy("EnableCORS", builder =>
