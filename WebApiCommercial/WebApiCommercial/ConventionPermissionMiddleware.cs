@@ -26,6 +26,7 @@ public class ConventionPermissionMiddleware
         { "Company", "CADASTRO_EMPRESA" },
         { "User", "USUARIO" },
         { "PaymentMethod", "FORMA_PAGAMENTO" },
+         { "BankAccount", "CONTA_BANCARIA" },
         
         // === OPERACIONAIS ===
         { "Sale", "VENDA" },
@@ -272,6 +273,9 @@ public class ConventionPermissionMiddleware
             PermissionEnum.USUARIO_PERMISSION_MANAGER => "Gerenciar Permissões",
             PermissionEnum.FORMA_PAGAMENTO_VIEW => "Visualizar Formas de Pagamento",
             PermissionEnum.FORMA_PAGAMENTO_MANAGER => "Gerenciar Formas de Pagamento",
+            PermissionEnum.CONTA_BANCARIA_CREATE=>"Criar conta bancária",
+            PermissionEnum.CONTA_BANCARIA_EDIT=>"Editar conta bancária",
+            PermissionEnum.CONTA_BANCARIA_VIEW=>"Visualizar conta bancária",
             _ => permission.ToString().Replace("_", " ")
         };
     }

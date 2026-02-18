@@ -196,6 +196,28 @@ namespace Model
                     Code = PermissionEnum.FORMA_PAGAMENTO_MANAGER,
                     Name = "Gerenciar Formas de Pagamento",
                     Category = "Cadastros"
+                },
+                // Contas Bancárias
+                new Permission
+                {
+                    Id = (int)PermissionEnum.CONTA_BANCARIA_CREATE, 
+                    Code = PermissionEnum.CONTA_BANCARIA_CREATE,
+                    Name = "Criar conta bancária",
+                    Category = "Cadastros"
+                },
+                 new Permission
+                {
+                    Id = (int)PermissionEnum.CONTA_BANCARIA_EDIT,
+                    Code = PermissionEnum.CONTA_BANCARIA_EDIT,
+                    Name = "editar conta bancária",
+                    Category = "Cadastros"
+                },
+                  new Permission
+                {
+                    Id = (int)PermissionEnum.CONTA_BANCARIA_VIEW,
+                    Code = PermissionEnum.CONTA_BANCARIA_VIEW,
+                    Name = "visualizar conta bancária",
+                    Category = "Cadastros"
                 }
             };
         }

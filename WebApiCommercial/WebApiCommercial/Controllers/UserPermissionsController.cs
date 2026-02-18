@@ -53,6 +53,10 @@ public class UserPermissionsController : ControllerBase
             await _userPermissionRepository.DeleteAsync(item.Id);
         }
         //// Adiciona as novas permissões
+        try
+        {
+
+      
         foreach (var permissionCode in dto.Permissions)
         {
                 await _userPermissionRepository.CreateAsync(new UserPermission
@@ -60,6 +64,12 @@ public class UserPermissionsController : ControllerBase
                     UserId = userId,
                     PermissionId = permissionCode
                 });
+        }
+        }
+        catch (Exception ex)
+        {
+
+            throw;
         }
         return Ok();
     }

@@ -47,6 +47,13 @@ namespace Model.Enums
         // Forma de Pagamento
         FORMA_PAGAMENTO_VIEW = 80,
         FORMA_PAGAMENTO_MANAGER = 81,
-        VENDA_ALTER = 82
+        VENDA_ALTER = 82,
+
+            //contas bancárias
+            CONTA_BANCARIA_VIEW=83,
+            CONTA_BANCARIA_CREATE=84,
+            CONTA_BANCARIA_EDIT=85
+
+
     }
 }
