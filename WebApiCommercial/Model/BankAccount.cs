@@ -1,4 +1,6 @@
-﻿using Model.Registrations;
+﻿
+using Model.Moves;
+using Model.Registrations;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -54,6 +56,7 @@ namespace Model
 
         [Required]
         public bool IsActive { get; set; }
+        public ICollection<Financial> Financials { get; set; }
     }
 
 

@@ -37,6 +37,8 @@ namespace Model.Moves
         public int? BoxId { get; set; }
         public Box Box { get; set; }
         public int? IdClient { get; set; }
+        public BankAccount BankAccount { get; set; }
+        public int? BankAccountId { get; set; }
         public Client Client { get; set; }
         [NotMapped]
         public string ?PaymentType { get; set; }
@@ -44,6 +46,7 @@ namespace Model.Moves
         public string PaymentMethodName { get; set; }
         [NotMapped]
         public string ClientName { get; set; }
+
     }
 
 

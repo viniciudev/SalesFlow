@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Model.Enums
+﻿namespace Model.Enums
 {
     // Models/Enums/PermissionEnum.cs
     public enum PermissionEnum
@@ -30,6 +24,7 @@ namespace Model.Enums
         // Financeiro
         FINANCEIRO_VIEW = 40,
         FINANCEIRO_EDIT = 41,
+        FINANCEIRO_CREATE=88,
 
         // Estoque
         ESTOQUE_VIEW = 50,
@@ -49,11 +44,13 @@ namespace Model.Enums
         FORMA_PAGAMENTO_MANAGER = 81,
         VENDA_ALTER = 82,
 
-            //contas bancárias
-            CONTA_BANCARIA_VIEW=83,
-            CONTA_BANCARIA_CREATE=84,
-            CONTA_BANCARIA_EDIT=85
-
+        //contas bancárias
+        CONTA_BANCARIA_VIEW = 83,
+        CONTA_BANCARIA_CREATE = 84,
+        CONTA_BANCARIA_EDIT = 85,
+        //abertura de caixa
+        CAIXA_VIEW = 86,
+        CAIXA_CREATE = 87
 
     }
 }

@@ -549,6 +549,10 @@ namespace Repository
          .HasOne(dc => dc.PaymentMethod)
          .WithMany(c => c.Financials)
          .HasForeignKey(dc => dc.PaymentMethodId);
+            builder.Entity<Financial>()
+         .HasOne(dc => dc.BankAccount)
+         .WithMany(c => c.Financials)
+         .HasForeignKey(dc => dc.BankAccountId);
         }
         private void ConfiguraPlanCompany(ModelBuilder builder)
         {

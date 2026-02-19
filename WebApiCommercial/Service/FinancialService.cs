@@ -60,6 +60,7 @@ namespace Service
             financialData.DueDate = financial.DueDate;
             financialData.FinancialStatus = financial.FinancialStatus;
             financialData.PaymentMethodId = financial.PaymentMethodId;
+            financialData.BankAccountId= financial.BankAccountId;
             await base.Alter(financialData);
         }
         public async Task<bool> CreateFinancial(FinancialRequest financial)
@@ -69,9 +70,10 @@ namespace Service
             var listCostCenter = await _costCenterRepository.GetByIdCompany(financial.IdCompany);
             Financial fin = new Financial
             {
+                BankAccountId = financial.BankAccountId,
                 FinancialStatus = financial.FinancialStatus,
                 FinancialType = financial.FinancialType,
-                PaymentMethodId = financial.PaymentMethodId,
+                PaymentMethodId = financial.PaymentMethodId==0?null: financial.PaymentMethodId,
                 CreationDate = financial.CreationDate,
                 DueDate = financial.DueDate,
                 Description = financial.Description,

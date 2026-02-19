@@ -276,6 +276,9 @@ public class ConventionPermissionMiddleware
             PermissionEnum.CONTA_BANCARIA_CREATE=>"Criar conta bancária",
             PermissionEnum.CONTA_BANCARIA_EDIT=>"Editar conta bancária",
             PermissionEnum.CONTA_BANCARIA_VIEW=>"Visualizar conta bancária",
+            PermissionEnum.CAIXA_CREATE=>"Abrir o caixa",
+            PermissionEnum.CAIXA_VIEW=>"Ver caixa",
+            PermissionEnum.FINANCEIRO_CREATE=>"Criar Financeiro",
             _ => permission.ToString().Replace("_", " ")
         };
     }

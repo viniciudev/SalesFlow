@@ -20,6 +20,7 @@ namespace Model.DTO
         public string ?ClientName { get; set; }
         public int? ClientId { get; set; }
         public  ICollection<FinancialResourcesResponse> FinancialResourcesResponseList { get; set; }
+        public int? BankAccountId { get; set; }
     }
     public class FinancialResourcesResponse {
         public int Id { get; set; }

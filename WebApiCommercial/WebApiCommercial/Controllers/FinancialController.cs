@@ -77,7 +77,9 @@ namespace WebApiCommercial.Controllers
             {
                 financial.IdCompany = tenantid;
                 bool resp = await financialService.CreateFinancial(financial);
-                return Ok("Salvo com sucesso!");
+                if (resp)
+                    return Ok("Salvo com sucesso!");
+                else return BadRequest("Não foi possível salvar o financeiro");
             }
             catch (System.Exception ex)
             {

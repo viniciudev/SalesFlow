@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Model;
 using Service;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ namespace WebApiCommercial.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [AllowAnonymous]
     public class DashboardController : ControllerBase
     {
         private readonly IDashboardService _dashboardService;

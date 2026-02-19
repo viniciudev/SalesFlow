@@ -125,6 +125,13 @@ namespace Model
                     Name = "Editar Financeiro",
                     Category = "Financeiro"
                 },
+                 new Permission
+                {
+                    Id = (int)PermissionEnum.FINANCEIRO_CREATE,
+                    Code = PermissionEnum.FINANCEIRO_CREATE,
+                    Name = "Criar financeiro",
+                    Category = "Financeiro"
+                },
                 
                 // Estoque
                 new Permission
@@ -218,7 +225,23 @@ namespace Model
                     Code = PermissionEnum.CONTA_BANCARIA_VIEW,
                     Name = "visualizar conta bancária",
                     Category = "Cadastros"
-                }
+                },
+                  //CAIXA
+                    new Permission
+                {
+                    Id = (int)PermissionEnum.CAIXA_VIEW,
+                    Code = PermissionEnum.CAIXA_VIEW,
+                    Name = "Ver caixa",
+                    Category = "Financeiro"
+                },
+                  new Permission
+                {
+                    Id = (int)PermissionEnum.CAIXA_CREATE,
+                    Code = PermissionEnum.CAIXA_CREATE,
+                    Name = "Abrir caixa",
+                    Category = "Financeiro"
+                },
+                 
             };
         }
     }

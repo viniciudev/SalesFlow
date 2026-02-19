@@ -93,6 +93,7 @@ namespace Repository
                           .Include(x => x.ServiceProvided)
                           .Include(x => x.Client)
                           .Include(x=>x.PaymentMethod)
+
                                   where
                                   fin.IdCompany == filters.IdCompany
                                   && (string.IsNullOrEmpty(filters.TextOption) || fin.Description.Contains(filters.TextOption))
@@ -108,6 +109,7 @@ namespace Repository
                                       FinancialStatus = fin.FinancialStatus,
                                       PaymentMethodName = fin.PaymentMethod.Name,
                                       PaymentMethodId=fin.PaymentMethod.Id,
+                                      BankAccountId=fin.BankAccountId,
                                       Description = fin.Description,
                                       FinancialType = fin.FinancialType,
                                       IdCompany = fin.IdCompany,

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Repository;
@@ -11,9 +12,11 @@ using Repository;
 namespace Repository.Migrations
 {
     [DbContext(typeof(ContextBase))]
-    partial class ContextBaseModelSnapshot : ModelSnapshot
+    [Migration("20260219141153_novapermissaocaixa")]
+    partial class novapermissaocaixa
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -346,9 +349,6 @@ namespace Repository.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("BankAccountId")
-                        .HasColumnType("integer");
-
                     b.Property<int?>("BoxId")
                         .HasColumnType("integer");
 
@@ -407,8 +407,6 @@ namespace Repository.Migrations
                         .HasColumnType("boolean");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("BankAccountId");
 
                     b.HasIndex("IdClient");
 
@@ -1072,13 +1070,6 @@ namespace Repository.Migrations
                         },
                         new
                         {
-                            Id = 88,
-                            Category = "Financeiro",
-                            Code = 88,
-                            Name = "Criar financeiro"
-                        },
-                        new
-                        {
                             Id = 50,
                             Category = "Estoque",
                             Code = 50,
@@ -1510,10 +1501,6 @@ namespace Repository.Migrations
 
             modelBuilder.Entity("Model.Moves.Financial", b =>
                 {
-                    b.HasOne("Model.BankAccount", "BankAccount")
-                        .WithMany("Financials")
-                        .HasForeignKey("BankAccountId");
-
                     b.HasOne("Model.Client", "Client")
                         .WithMany("Financials")
                         .HasForeignKey("IdClient");
@@ -1555,8 +1542,6 @@ namespace Repository.Migrations
                     b.HasOne("Model.Registrations.PaymentMethod", "PaymentMethod")
                         .WithMany("Financials")
                         .HasForeignKey("PaymentMethodId");
-
-                    b.Navigation("BankAccount");
 
                     b.Navigation("Box");
 
@@ -1889,11 +1874,6 @@ namespace Repository.Migrations
                         .IsRequired();
 
                     b.Navigation("Company");
-                });
-
-            modelBuilder.Entity("Model.BankAccount", b =>
-                {
-                    b.Navigation("Financials");
                 });
 
             modelBuilder.Entity("Model.Client", b =>
