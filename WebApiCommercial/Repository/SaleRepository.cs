@@ -67,6 +67,8 @@ namespace Repository
                                        IdCompany = x.IdCompany,
                                        ClientName = x.Client.Name,
                                        IdClient = x.Client.Id,
+                                       BankAccountId=x.BankAccountId,
+                                       BankAccountName=x.BankAccount.BankName
                                    }).ToList(),
                                })
                                .AsNoTracking()

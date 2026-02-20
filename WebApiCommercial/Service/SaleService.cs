@@ -130,6 +130,7 @@ namespace Service
                 item.IdCostCenter= listCostCenter.FirstOrDefault()?.Id;
                 item.IdClient= IdClient;
                 item.Value = item.Value;
+                item.BankAccountId = item.BankAccountId;
                 try
                 {
                     await _financialService.Create(item);
