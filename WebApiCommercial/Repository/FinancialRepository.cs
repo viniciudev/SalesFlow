@@ -98,7 +98,8 @@ namespace Repository
                                   fin.IdCompany == filters.IdCompany
                                   && (string.IsNullOrEmpty(filters.TextOption) || fin.Description.Contains(filters.TextOption))
                                   && (filters.FinancialStatus == null || fin.FinancialStatus == filters.FinancialStatus)
-                                  orderby fin.Id descending
+                                  &&(fin.FinancialType==filters.FinancialType)
+                                  orderby fin.DueDate 
                                   select new FinancialResponse
                                   {
                                       Id = fin.Id,
