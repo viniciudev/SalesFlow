@@ -59,8 +59,11 @@ public class ConventionPermissionMiddleware
     private static readonly HashSet<string> _publicActions = new(StringComparer.OrdinalIgnoreCase)
     {
         "verify-email",
+        "verifyEmail",
         "forgot-password",
+        "forgotPassword",
         "reset-password",
+        "resetPassword",
         "authenticate",
         ""
     };
