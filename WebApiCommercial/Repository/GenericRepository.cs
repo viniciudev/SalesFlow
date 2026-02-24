@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Model;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -61,7 +62,12 @@ namespace Repository
     {
       return await _dbContext.Database.BeginTransactionAsync();
     }
-  }
+
+        internal object Set<T>()
+        {
+            throw new NotImplementedException();
+        }
+    }
 
   public interface IGenericRepository<TEntity> where TEntity : class, IEntity, new()
   {

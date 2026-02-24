@@ -36,5 +36,6 @@ namespace Model.Registrations
         public ICollection<Box> Boxes { get; set; } = new List<Box>();
         public ICollection<PaymentMethod> PaymentMethods { get; set; } = new List<PaymentMethod>();
         public ICollection<BankAccount> BankAccounts { get; set; } = new List<BankAccount>();
+        public ICollection<NaturezaOperacao> NaturezaOperacoes { get; set; } = new List<NaturezaOperacao>();
     }
 }

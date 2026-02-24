@@ -97,6 +97,7 @@ namespace Repository
             ConfiguraPermission(modelBuilder);
             ConfiguraUserPermission(modelBuilder);
             ConfiguraBankAccount(modelBuilder);
+            ConfiguraNaturezaOperacao(modelBuilder);
             var cascadeFKs = modelBuilder.Model.GetEntityTypes()
      .SelectMany(t => t.GetForeignKeys())
      .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
@@ -641,6 +642,69 @@ namespace Repository
            .HasOne(dc => dc.Salesman)
            .WithMany(c => c.Closures)
            .HasForeignKey(dc => dc.IdSalesman);
+        }
+
+        private void ConfiguraNaturezaOperacao(ModelBuilder builder)
+        {
+            builder.Entity<NaturezaOperacao>(entity =>
+            {
+                entity.ToTable("tb_naturezaOperacao");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.Descricao).HasMaxLength(150).IsRequired();
+                entity.Property(e => e.Cfop).HasMaxLength(10).IsRequired();
+
+                // Enums como string
+                entity.Property(e => e.TipoDocumento).HasConversion<string>().HasMaxLength(50).IsRequired();
+                entity.Property(e => e.Finalidade).HasConversion<string>().HasMaxLength(50).IsRequired();
+
+                entity.Property(e => e.ConsumidorFinal).IsRequired();
+                entity.Property(e => e.MovimentaEstoque).IsRequired();
+                entity.Property(e => e.Ativo).IsRequired();
+
+                // Owned type configuracaoTributaria (colunas na mesma tabela)
+                entity.OwnsOne(e => e.ConfiguracaoTributaria, tb =>
+                {
+                    tb.Property(p => p.AplicarICMS).HasColumnName("AplicarICMS");
+                    tb.Property(p => p.CstICMS).HasColumnName("CstICMS").HasMaxLength(50);
+                    tb.Property(p => p.AliquotaICMS).HasColumnName("AliquotaICMS").HasColumnType("decimal(18,4)");
+                    tb.Property(p => p.ReduzirBaseICMS).HasColumnName("ReduzirBaseICMS");
+
+                    tb.Property(p => p.AplicarIPI).HasColumnName("AplicarIPI");
+                    tb.Property(p => p.CstIPI).HasColumnName("CstIPI").HasMaxLength(50);
+                    tb.Property(p => p.AliquotaIPI).HasColumnName("AliquotaIPI").HasColumnType("decimal(18,4)");
+
+                    tb.Property(p => p.AplicarPIS).HasColumnName("AplicarPIS");
+                    tb.Property(p => p.CstPIS).HasColumnName("CstPIS").HasMaxLength(50);
+                    tb.Property(p => p.AliquotaPIS).HasColumnName("AliquotaPIS").HasColumnType("decimal(18,4)");
+
+                    tb.Property(p => p.AplicarCOFINS).HasColumnName("AplicarCOFINS");
+                    tb.Property(p => p.CstCOFINS).HasColumnName("CstCOFINS").HasMaxLength(50);
+                    tb.Property(p => p.AliquotaCOFINS).HasColumnName("AliquotaCOFINS").HasColumnType("decimal(18,4)");
+
+                    tb.Property(p => p.AplicarISSQN).HasColumnName("AplicarISSQN");
+                    tb.Property(p => p.AliquotaISSQN).HasColumnName("AliquotaISSQN").HasColumnType("decimal(18,4)");
+
+                    tb.Property(p => p.AplicarIBS).HasColumnName("AplicarIBS");
+                    tb.Property(p => p.CstIBS).HasColumnName("CstIBS").HasMaxLength(50);
+                    tb.Property(p => p.AliquotaIBS).HasColumnName("AliquotaIBS").HasColumnType("decimal(18,4)");
+
+                    tb.Property(p => p.AplicarCBS).HasColumnName("AplicarCBS");
+                    tb.Property(p => p.CstCBS).HasColumnName("CstCBS").HasMaxLength(50);
+                    tb.Property(p => p.AliquotaCBS).HasColumnName("AliquotaCBS").HasColumnType("decimal(18,4)");
+
+                    tb.Property(p => p.AplicarIS).HasColumnName("AplicarIS");
+                    tb.Property(p => p.AliquotaIS).HasColumnName("AliquotaIS").HasColumnType("decimal(18,4)");
+                });
+
+                entity.HasIndex(e => new { e.Cfop, e.TipoDocumento }).IsUnique();
+            });
+            builder.Entity<NaturezaOperacao>()
+               .HasOne(dc => dc.Company)
+               .WithMany(c => c.NaturezaOperacoes)
+               .HasForeignKey(dc => dc.CompanyId);
         }
     }
 }

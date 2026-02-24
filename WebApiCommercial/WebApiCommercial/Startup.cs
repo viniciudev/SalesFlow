@@ -243,6 +243,11 @@ namespace WebAppCommercial
             services.AddTransient<IGenericRepository<BankAccount>, BankAccountRepository>();
             services.AddTransient<IBankAccountRepository, BankAccountRepository>();
             services.AddTransient<IBaseService<BankAccount>, BankAccountService>();
+            //NaturezaOperacao
+            services.AddTransient<INaturezaOperacaoService, NaturezaOperacaoService>();
+            services.AddTransient<IGenericRepository<NaturezaOperacao>, NaturezaOperacaoRepository>();
+            services.AddTransient<INaturezaOperacaoRepository, NaturezaOperacaoRepository>();
+            services.AddTransient<IBaseService<NaturezaOperacao>, NaturezaOperacaoService>();
             //services.AddCors(options =>
             //{
             //    options.AddPolicy("EnableCORS", builder =>
