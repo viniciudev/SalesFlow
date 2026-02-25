@@ -116,6 +116,7 @@ namespace Service
             user.VerifiedEmail = false;
             user.TokenVerify = Guid.NewGuid().ToString();
             await base.Create(user);
+            await MethodPermissions(user);
             if (_environment.IsProduction())
             {
                 EmailResponse emailResp = await emailService.SendVerificationEmailAsync(new EmailRequest
@@ -129,8 +130,6 @@ namespace Service
                 if (!emailResp.Success)
                     return emailResp.Message;
             }
-            await MethodPermissions(user);
-
             return "Salvo com Sucesso!";
         }
 
