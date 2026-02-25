@@ -29,7 +29,8 @@
         // Estoque
         ESTOQUE_VIEW = 50,
         ESTOQUE_EDIT = 51,
-        ESTOQUE_CREATE=89,
+        ESTOQUE_CREATE=93,
+        ESTOQUE_DELETE=94,
 
         // Renegociação
         RENEGOCIACAO_VIEW = 60,

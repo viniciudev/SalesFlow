@@ -155,6 +155,13 @@ namespace Model
                     Name = "Criar Estoque",
                     Category = "Estoque"
                 },
+                                  new Permission
+                {
+                    Id = (int)PermissionEnum.ESTOQUE_DELETE,
+                    Code = PermissionEnum.ESTOQUE_DELETE,
+                    Name = "Deletar Estoque",
+                    Category = "Estoque"
+                },
                 
                 // Renegociação
                 new Permission

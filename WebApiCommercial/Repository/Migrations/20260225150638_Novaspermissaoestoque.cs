@@ -13,7 +13,7 @@ namespace Repository.Migrations
             migrationBuilder.InsertData(
                 table: "tb_permission",
                 columns: new[] { "Id", "Category", "Code", "Description", "Name" },
-                values: new object[] { 89, "Estoque", 89, null, "Criar Estoque" });
+                values: new object[] { 93, "Estoque", 93, null, "Criar Estoque" });
         }
 
         /// <inheritdoc />
@@ -22,7 +22,7 @@ namespace Repository.Migrations
             migrationBuilder.DeleteData(
                 table: "tb_permission",
                 keyColumn: "Id",
-                keyValue: 89);
+                keyValue: 93);
         }
     }
 }
