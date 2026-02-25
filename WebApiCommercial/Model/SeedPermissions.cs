@@ -148,6 +148,13 @@ namespace Model
                     Name = "Ajustar Estoque",
                     Category = "Estoque"
                 },
+                 new Permission
+                {
+                    Id = (int)PermissionEnum.ESTOQUE_CREATE, 
+                    Code = PermissionEnum.ESTOQUE_CREATE,
+                    Name = "Criar Estoque",
+                    Category = "Estoque"
+                },
                 
                 // Renegociação
                 new Permission
