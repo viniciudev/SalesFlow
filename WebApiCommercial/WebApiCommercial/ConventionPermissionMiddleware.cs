@@ -27,7 +27,8 @@ public class ConventionPermissionMiddleware
         { "User", "USUARIO" },
         { "PaymentMethod", "FORMA_PAGAMENTO" },
          { "BankAccount", "CONTA_BANCARIA" },
-        
+        {"NaturezaOperacao", "CONF_NOTA_FISCAL" },
+
         // === OPERACIONAIS ===
         { "Sale", "VENDA" },
         { "Financial", "FINANCEIRO" },
@@ -282,6 +283,10 @@ public class ConventionPermissionMiddleware
             PermissionEnum.CAIXA_CREATE=>"Abrir o caixa",
             PermissionEnum.CAIXA_VIEW=>"Ver caixa",
             PermissionEnum.FINANCEIRO_CREATE=>"Criar Financeiro",
+            PermissionEnum.CONF_NOTA_FISCAL_VIEW=>"Visualizar configuração fiscal",
+            PermissionEnum.CONF_NOTA_FISCAL_CREATE=>"Criar configuração fiscal",
+            PermissionEnum.CONF_NOTA_FISCAL_EDIT=>"Editar configuração fiscal",
+            PermissionEnum.CONF_NOTA_FISCAL_DELETE=>"Cancelar configuração fiscal",
             _ => permission.ToString().Replace("_", " ")
         };
     }

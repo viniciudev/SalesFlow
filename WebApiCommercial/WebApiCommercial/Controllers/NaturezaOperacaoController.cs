@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace WebApiCommercial.Controllers
 {
     [ApiController]
-    [Route("api/natureza-operacao")]
+    [Route("api/[controller]")]
     public class NaturezaOperacaoController : ControllerBase
     {
         private readonly INaturezaOperacaoService _service;
@@ -20,10 +20,11 @@ namespace WebApiCommercial.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] NaturezaOperacaoCreateRequest request)
+        public async Task<IActionResult> Post([FromHeader]int tenantid,[FromBody] NaturezaOperacaoCreateRequest request)
         {
             try
             {
+                request.CompanyId = tenantid;
                 var id = await _service.CreateAsync(request);
                 return CreatedAtAction(nameof(GetById), new { id = id }, new { id = id });
             }

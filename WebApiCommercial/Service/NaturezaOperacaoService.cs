@@ -23,7 +23,7 @@ namespace Service
 
             var entity = new NaturezaOperacao
             {
-               
+               CompanyId=request.CompanyId,
                 Descricao = request.Descricao,
                 Cfop = request.Cfop,
                 TipoDocumento = request.TipoDocumento,
@@ -36,8 +36,16 @@ namespace Service
 
             ApplyTipoDocumentoRules(entity);
             NormalizeTributos(entity);
+            try
+            {
+                await base.Create(entity);
+            }
+            catch (System.Exception EX)
+            {
 
-            await base.Create(entity);
+                throw;
+            }
+           
             return entity.Id;
         }
 

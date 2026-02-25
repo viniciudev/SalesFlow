@@ -50,7 +50,11 @@
         CONTA_BANCARIA_EDIT = 85,
         //abertura de caixa
         CAIXA_VIEW = 86,
-        CAIXA_CREATE = 87
-
+        CAIXA_CREATE = 87,
+//configuração emissão de nota fiscal
+        CONF_NOTA_FISCAL_VIEW = 89,
+        CONF_NOTA_FISCAL_CREATE = 90,
+        CONF_NOTA_FISCAL_EDIT = 91,
+        CONF_NOTA_FISCAL_DELETE = 92
     }
 }

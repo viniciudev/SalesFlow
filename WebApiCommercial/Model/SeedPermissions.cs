@@ -207,7 +207,7 @@ namespace Model
                 // Contas Bancárias
                 new Permission
                 {
-                    Id = (int)PermissionEnum.CONTA_BANCARIA_CREATE, 
+                    Id = (int)PermissionEnum.CONTA_BANCARIA_CREATE,
                     Code = PermissionEnum.CONTA_BANCARIA_CREATE,
                     Name = "Criar conta bancária",
                     Category = "Cadastros"
@@ -241,7 +241,35 @@ namespace Model
                     Name = "Abrir caixa",
                     Category = "Financeiro"
                 },
-                 
+                  new Permission
+                  {
+                      Id = (int)PermissionEnum.CONF_NOTA_FISCAL_VIEW,
+                    Code = PermissionEnum.CONF_NOTA_FISCAL_VIEW,
+                    Name = "Visualizar Configurações de Nota Fiscal",
+                    Category = "Cadastros"
+                  }
+                  ,                  new Permission
+                  {
+                        Id = (int)PermissionEnum.CONF_NOTA_FISCAL_CREATE,
+                        Code = PermissionEnum.CONF_NOTA_FISCAL_CREATE,
+                        Name = "Criar Configurações de Nota Fiscal",
+                        Category = "Cadastros"
+                  },
+                  new Permission
+                  {
+                        Id = (int)PermissionEnum.CONF_NOTA_FISCAL_EDIT,
+                        Code = PermissionEnum.CONF_NOTA_FISCAL_EDIT,
+                        Name = "Editar Configurações de Nota Fiscal",
+                        Category = "Cadastros"
+                  },
+                    new Permission
+                    {
+                            Id = (int)PermissionEnum.CONF_NOTA_FISCAL_DELETE,
+                            Code = PermissionEnum.CONF_NOTA_FISCAL_DELETE,
+                            Name = "Cancelar Configurações de Nota Fiscal",
+                            Category = "Cadastros"
+                    }
+
             };
         }
     }

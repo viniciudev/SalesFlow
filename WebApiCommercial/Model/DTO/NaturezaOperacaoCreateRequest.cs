@@ -15,5 +15,6 @@ namespace Service.Dtos
         public bool MovimentaEstoque { get; set; }
         public bool Ativo { get; set; } = true;
         public ConfiguracaoTributaria ConfiguracaoTributaria { get; set; } = new();
+        public int CompanyId { get; set; }
     }
 }
