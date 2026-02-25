@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Repository;
@@ -11,9 +12,11 @@ using Repository;
 namespace Repository.Migrations
 {
     [DbContext(typeof(ContextBase))]
-    partial class ContextBaseModelSnapshot : ModelSnapshot
+    [Migration("20260225152748_Novaspermissaoestoquedelete")]
+    partial class Novaspermissaoestoquedelete
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -919,53 +922,6 @@ namespace Repository.Migrations
                     b.ToTable("tb_file", (string)null);
                 });
 
-            modelBuilder.Entity("Model.Registrations.NaturezaOperacao", b =>
-                {
-                    b.Property<int>("Id")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("Ativo")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Cfop")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("ConsumidorFinal")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Descricao")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<string>("Finalidade")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<bool>("MovimentaEstoque")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("TipoDocumento")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CompanyId");
-
-                    b.HasIndex("Cfop", "TipoDocumento")
-                        .IsUnique();
-
-                    b.ToTable("tb_naturezaOperacao", (string)null);
-                });
-
             modelBuilder.Entity("Model.Registrations.PaymentMethod", b =>
                 {
                     b.Property<int>("Id")
@@ -1236,34 +1192,6 @@ namespace Repository.Migrations
                             Category = "Financeiro",
                             Code = 87,
                             Name = "Abrir caixa"
-                        },
-                        new
-                        {
-                            Id = 89,
-                            Category = "Cadastros",
-                            Code = 89,
-                            Name = "Visualizar Configurações de Nota Fiscal"
-                        },
-                        new
-                        {
-                            Id = 90,
-                            Category = "Cadastros",
-                            Code = 90,
-                            Name = "Criar Configurações de Nota Fiscal"
-                        },
-                        new
-                        {
-                            Id = 91,
-                            Category = "Cadastros",
-                            Code = 91,
-                            Name = "Editar Configurações de Nota Fiscal"
-                        },
-                        new
-                        {
-                            Id = 92,
-                            Category = "Cadastros",
-                            Code = 92,
-                            Name = "Cancelar Configurações de Nota Fiscal"
                         });
                 });
 
@@ -1884,130 +1812,6 @@ namespace Repository.Migrations
                     b.Navigation("DescriptionFiles");
                 });
 
-            modelBuilder.Entity("Model.Registrations.NaturezaOperacao", b =>
-                {
-                    b.HasOne("Model.Registrations.Company", "Company")
-                        .WithMany("NaturezaOperacoes")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.OwnsOne("Model.Registrations.ConfiguracaoTributaria", "ConfiguracaoTributaria", b1 =>
-                        {
-                            b1.Property<int>("NaturezaOperacaoId")
-                                .HasColumnType("integer");
-
-                            b1.Property<decimal>("AliquotaCBS")
-                                .HasColumnType("decimal(18,4)")
-                                .HasColumnName("AliquotaCBS");
-
-                            b1.Property<decimal>("AliquotaCOFINS")
-                                .HasColumnType("decimal(18,4)")
-                                .HasColumnName("AliquotaCOFINS");
-
-                            b1.Property<decimal>("AliquotaIBS")
-                                .HasColumnType("decimal(18,4)")
-                                .HasColumnName("AliquotaIBS");
-
-                            b1.Property<decimal>("AliquotaICMS")
-                                .HasColumnType("decimal(18,4)")
-                                .HasColumnName("AliquotaICMS");
-
-                            b1.Property<decimal>("AliquotaIPI")
-                                .HasColumnType("decimal(18,4)")
-                                .HasColumnName("AliquotaIPI");
-
-                            b1.Property<decimal>("AliquotaIS")
-                                .HasColumnType("decimal(18,4)")
-                                .HasColumnName("AliquotaIS");
-
-                            b1.Property<decimal>("AliquotaISSQN")
-                                .HasColumnType("decimal(18,4)")
-                                .HasColumnName("AliquotaISSQN");
-
-                            b1.Property<decimal>("AliquotaPIS")
-                                .HasColumnType("decimal(18,4)")
-                                .HasColumnName("AliquotaPIS");
-
-                            b1.Property<bool>("AplicarCBS")
-                                .HasColumnType("boolean")
-                                .HasColumnName("AplicarCBS");
-
-                            b1.Property<bool>("AplicarCOFINS")
-                                .HasColumnType("boolean")
-                                .HasColumnName("AplicarCOFINS");
-
-                            b1.Property<bool>("AplicarIBS")
-                                .HasColumnType("boolean")
-                                .HasColumnName("AplicarIBS");
-
-                            b1.Property<bool>("AplicarICMS")
-                                .HasColumnType("boolean")
-                                .HasColumnName("AplicarICMS");
-
-                            b1.Property<bool>("AplicarIPI")
-                                .HasColumnType("boolean")
-                                .HasColumnName("AplicarIPI");
-
-                            b1.Property<bool>("AplicarIS")
-                                .HasColumnType("boolean")
-                                .HasColumnName("AplicarIS");
-
-                            b1.Property<bool>("AplicarISSQN")
-                                .HasColumnType("boolean")
-                                .HasColumnName("AplicarISSQN");
-
-                            b1.Property<bool>("AplicarPIS")
-                                .HasColumnType("boolean")
-                                .HasColumnName("AplicarPIS");
-
-                            b1.Property<string>("CstCBS")
-                                .HasMaxLength(50)
-                                .HasColumnType("character varying(50)")
-                                .HasColumnName("CstCBS");
-
-                            b1.Property<string>("CstCOFINS")
-                                .HasMaxLength(50)
-                                .HasColumnType("character varying(50)")
-                                .HasColumnName("CstCOFINS");
-
-                            b1.Property<string>("CstIBS")
-                                .HasMaxLength(50)
-                                .HasColumnType("character varying(50)")
-                                .HasColumnName("CstIBS");
-
-                            b1.Property<string>("CstICMS")
-                                .HasMaxLength(50)
-                                .HasColumnType("character varying(50)")
-                                .HasColumnName("CstICMS");
-
-                            b1.Property<string>("CstIPI")
-                                .HasMaxLength(50)
-                                .HasColumnType("character varying(50)")
-                                .HasColumnName("CstIPI");
-
-                            b1.Property<string>("CstPIS")
-                                .HasMaxLength(50)
-                                .HasColumnType("character varying(50)")
-                                .HasColumnName("CstPIS");
-
-                            b1.Property<bool>("ReduzirBaseICMS")
-                                .HasColumnType("boolean")
-                                .HasColumnName("ReduzirBaseICMS");
-
-                            b1.HasKey("NaturezaOperacaoId");
-
-                            b1.ToTable("tb_naturezaOperacao");
-
-                            b1.WithOwner()
-                                .HasForeignKey("NaturezaOperacaoId");
-                        });
-
-                    b.Navigation("Company");
-
-                    b.Navigation("ConfiguracaoTributaria");
-                });
-
             modelBuilder.Entity("Model.Registrations.PaymentMethod", b =>
                 {
                     b.HasOne("Model.Registrations.Company", "Company")
@@ -2169,8 +1973,6 @@ namespace Repository.Migrations
                     b.Navigation("DescriptionFiles");
 
                     b.Navigation("Financials");
-
-                    b.Navigation("NaturezaOperacoes");
 
                     b.Navigation("PaymentMethods");
 
