@@ -98,6 +98,7 @@ namespace Repository
             ConfiguraUserPermission(modelBuilder);
             ConfiguraBankAccount(modelBuilder);
             ConfiguraNaturezaOperacao(modelBuilder);
+            ConfiguraFiscalConfiguration(modelBuilder);
             var cascadeFKs = modelBuilder.Model.GetEntityTypes()
      .SelectMany(t => t.GetForeignKeys())
      .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
@@ -705,6 +706,83 @@ namespace Repository
                .HasOne(dc => dc.Company)
                .WithMany(c => c.NaturezaOperacoes)
                .HasForeignKey(dc => dc.CompanyId);
+        }
+     
+        private void ConfiguraFiscalConfiguration(ModelBuilder builder)
+        {
+            builder.Entity<Model.Registrations.FiscalConfiguration>(entity =>
+            {
+                entity.ToTable("tb_fiscalConfiguration");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                // Ambiente como string
+                entity.Property(e => e.Ambiente).HasConversion<string>().HasMaxLength(50);
+
+                // NumeracaoDocumentos (owned)
+                entity.OwnsOne(e => e.NumeracaoDocumentos, nb =>
+                {
+                    nb.OwnsOne(n => n.Nfe, nfe =>
+                    {
+                        nfe.Property(p => p.Serie).HasColumnName("Nfe_Serie").HasMaxLength(50);
+                        nfe.Property(p => p.NumeroInicial).HasColumnName("Nfe_NumeroInicial");
+                    });
+
+                    nb.OwnsOne(n => n.Nfce, nfce =>
+                    {
+                        nfce.Property(p => p.Serie).HasColumnName("Nfce_Serie").HasMaxLength(50);
+                        nfce.Property(p => p.NumeroInicial).HasColumnName("Nfce_NumeroInicial");
+                    });
+                });
+
+                // CertificadoDigital (owned)
+                entity.OwnsOne(e => e.CertificadoDigital, cb =>
+                {
+                    cb.Property(p => p.Arquivo).HasColumnName("Certificado_Arquivo").HasMaxLength(2000);
+                    cb.Property(p => p.Senha).HasColumnName("Certificado_Senha").HasMaxLength(200);
+                });
+
+                // CSC (owned)
+                entity.OwnsOne(e => e.Csc, c =>
+                {
+                    c.Property(p => p.Identificador).HasColumnName("Csc_Identificador").HasMaxLength(200);
+                    c.Property(p => p.Valor).HasColumnName("Csc_Valor").HasMaxLength(500);
+                });
+
+                // Emitente (owned)
+                entity.OwnsOne(e => e.Emitente, em =>
+                {
+                    em.Property(p => p.Cnpj).HasColumnName("Emitente_Cnpj").HasMaxLength(20);
+                    em.Property(p => p.Cpf).HasColumnName("Emitente_Cpf").HasMaxLength(20);
+                    em.Property(p => p.InscricaoEstadual).HasColumnName("Emitente_InscricaoEstadual").HasMaxLength(100);
+                    em.Property(p => p.RazaoSocial).HasColumnName("Emitente_RazaoSocial").HasMaxLength(250);
+                    em.Property(p => p.Fantasia).HasColumnName("Emitente_Fantasia").HasMaxLength(250);
+
+                    em.OwnsOne(p => p.EmitenteContato, ct =>
+                    {
+                        ct.Property(c => c.Telefone).HasColumnName("Emitente_Telefone").HasMaxLength(50);
+                    });
+
+                    em.OwnsOne(p => p.EmitenteEndereco, ed =>
+                    {
+                        ed.Property(ea => ea.Cep).HasColumnName("Emitente_Cep").HasMaxLength(20);
+                        ed.Property(ea => ea.Logradouro).HasColumnName("Emitente_Logradouro").HasMaxLength(250);
+                        ed.Property(ea => ea.Numero).HasColumnName("Emitente_Numero").HasMaxLength(50);
+                        ed.Property(ea => ea.Complemento).HasColumnName("Emitente_Complemento").HasMaxLength(200);
+                        ed.Property(ea => ea.Bairro).HasColumnName("Emitente_Bairro").HasMaxLength(100);
+                        ed.Property(ea => ea.CodigoCidade).HasColumnName("Emitente_CodigoCidade").HasMaxLength(50);
+                        ed.Property(ea => ea.Cidade).HasColumnName("Emitente_Cidade").HasMaxLength(150);
+                        ed.Property(ea => ea.Uf).HasColumnName("Emitente_Uf").HasMaxLength(10);
+                    });
+
+                    em.OwnsOne(p => p.RegimeTributario, rt =>
+                    {
+                        rt.Property(r => r.Crt).HasColumnName("Emitente_Crt").HasMaxLength(10);
+                    });
+                });
+
+                entity.Property(e => e.AutorizacaoASO).HasColumnName("AutorizacaoASO");
+            });
         }
     }
 }
