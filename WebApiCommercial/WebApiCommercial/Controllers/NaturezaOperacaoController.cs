@@ -1,6 +1,7 @@
 
 
 using Microsoft.AspNetCore.Mvc;
+using Model.DTO;
 using Service;
 using Service.Dtos;
 using Service.Exceptions;
@@ -26,11 +27,12 @@ namespace WebApiCommercial.Controllers
             {
                 request.CompanyId = tenantid;
                 var id = await _service.CreateAsync(request);
-                return CreatedAtAction(nameof(GetById), new { id = id }, new { id = id });
+                //return CreatedAtAction(nameof(GetById), new { id = id }, new { id = id });
+                return Ok(new ResponseGeneric {  Success = true });
             }
             catch (DomainException dex)
             {
-                return BadRequest(new { error = dex.Message });
+                return Ok(new ResponseGeneric { Message = dex.Message, Success = false });
             }
         }
 
@@ -40,11 +42,11 @@ namespace WebApiCommercial.Controllers
             try
             {
                 await _service.UpdateAsync(id, request);
-                return NoContent();
+                return Ok(new ResponseGeneric {Success = true });
             }
             catch (DomainException dex)
             {
-                return BadRequest(new { error = dex.Message });
+                return Ok(new ResponseGeneric { Message = dex.Message, Success = false });
             }
         }
 

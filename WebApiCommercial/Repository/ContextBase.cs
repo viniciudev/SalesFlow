@@ -651,7 +651,7 @@ namespace Repository
                 entity.ToTable("tb_naturezaOperacao");
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
                 entity.Property(e => e.Descricao).HasMaxLength(150).IsRequired();
                 entity.Property(e => e.Cfop).HasMaxLength(10).IsRequired();
