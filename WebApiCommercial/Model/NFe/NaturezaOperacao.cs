@@ -1,5 +1,6 @@
 
 
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Model.Registrations
@@ -27,5 +28,6 @@ namespace Model.Registrations
         public bool Ativo { get; set; } = true;
 
         public ConfiguracaoTributaria ConfiguracaoTributaria { get; set; } = new();
+        public ICollection<NFeEmission> NFeEmissions { get; set; }= new List<NFeEmission>();
     }
 }

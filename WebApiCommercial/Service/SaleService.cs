@@ -268,6 +268,7 @@ namespace Service
         Task<SaleInfoResponse> GetByMonthAllSales(Filters filters);
         Task<SalesCommissionsInfo> GetByWeekAllSales(Filters filters);
         Task<List<SalesmanInfo>> GetSalesmanByWeek(int idCompany);
+
         Task<int> PutWithItems(Sale sale);
     }
 }

@@ -38,5 +38,7 @@ namespace Model.Registrations
         public ICollection<BankAccount> BankAccounts { get; set; } = new List<BankAccount>();
         public ICollection<NaturezaOperacao> NaturezaOperacoes { get; set; } = new List<NaturezaOperacao>();
         public  FiscalConfiguration FiscalConfiguration { get; set; }
+        public ICollection<NFeEmission> NFeEmissions { get; set; }= new List<NFeEmission>();
+
     }
 }

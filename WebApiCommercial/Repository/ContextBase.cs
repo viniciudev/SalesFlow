@@ -99,6 +99,7 @@ namespace Repository
             ConfiguraBankAccount(modelBuilder);
             ConfiguraNaturezaOperacao(modelBuilder);
             ConfiguraFiscalConfiguration(modelBuilder);
+            ConfiguraNFeEmission(modelBuilder);
             var cascadeFKs = modelBuilder.Model.GetEntityTypes()
      .SelectMany(t => t.GetForeignKeys())
      .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
@@ -787,6 +788,40 @@ namespace Repository
              .HasOne(dc => dc.Company)
              .WithOne(c => c.FiscalConfiguration)
              .HasForeignKey<FiscalConfiguration>(dc => dc.CompanyId);
+        }
+        private void ConfiguraNFeEmission(ModelBuilder builder)
+        {
+            builder.Entity<NFeEmission>(entity =>
+            {
+                entity.ToTable("tb_nfeEmission");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                entity.Property(e => e.Serie).HasMaxLength(50);
+                entity.Property(e => e.Numero);
+
+                entity.Property(e => e.RequestPayloadJson).HasColumnType("text");
+                entity.Property(e => e.ResponseJson).HasColumnType("text");
+                entity.Property(e => e.ErrorMessage).HasMaxLength(1000);
+
+                entity.Property(e => e.CreatedAt);
+                entity.Property(e => e.UpdatedAt);
+
+                entity.HasOne(e=>e.Company)
+                    .WithMany(e => e.NFeEmissions)
+                    .HasForeignKey(e => e.ComapanyId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e=>e.NaturezaOperacao)
+                    .WithMany(e=>e.NFeEmissions)
+                    .HasForeignKey(e => e.NaturezaOperacaoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e=>e.Sale)
+                    .WithMany(e => e.NFeEmissions)
+                    .HasForeignKey(e => e.SaleId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
         }
     }
 }
