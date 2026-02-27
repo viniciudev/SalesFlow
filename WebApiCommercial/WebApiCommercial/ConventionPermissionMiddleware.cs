@@ -28,6 +28,7 @@ public class ConventionPermissionMiddleware
         { "PaymentMethod", "FORMA_PAGAMENTO" },
          { "BankAccount", "CONTA_BANCARIA" },
         {"NaturezaOperacao", "CONF_NOTA_FISCAL" },
+        {"FiscalConfiguration", "CONF_NOTA_FISCAL" },
 
         // === OPERACIONAIS ===
         { "Sale", "VENDA" },

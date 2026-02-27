@@ -248,6 +248,11 @@ namespace WebAppCommercial
             services.AddTransient<IGenericRepository<NaturezaOperacao>, NaturezaOperacaoRepository>();
             services.AddTransient<INaturezaOperacaoRepository, NaturezaOperacaoRepository>();
             services.AddTransient<IBaseService<NaturezaOperacao>, NaturezaOperacaoService>();
+            //FiscalConfiguration
+            services.AddTransient<IFiscalConfigurationService, FiscalConfigurationService>();
+            services.AddTransient<IGenericRepository<FiscalConfiguration>, FiscalConfigurationRepository>();
+            services.AddTransient<IFiscalConfigurationRepository, FiscalConfigurationRepository>();
+            services.AddTransient<IBaseService<FiscalConfiguration>, FiscalConfigurationService>();
             //services.AddCors(options =>
             //{
             //    options.AddPolicy("EnableCORS", builder =>

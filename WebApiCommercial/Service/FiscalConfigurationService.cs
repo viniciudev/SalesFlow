@@ -15,9 +15,9 @@ namespace Service
             _fiscalRepository = fiscalRepository;
         }
 
-        public async Task<FiscalConfiguration?> GetActiveAsync()
+        public async Task<FiscalConfiguration?> GetActiveAsync(int tenantid)
         {
-            return await _fiscalRepository.GetActiveAsync();
+            return await _fiscalRepository.GetActiveAsync(tenantid);
         }
 
         // Herdamos Create, Alter, GetAll, GetByIdAsync, DeleteAsync do BaseService/IGenericRepository.
@@ -25,6 +25,6 @@ namespace Service
     }
     public interface IFiscalConfigurationService : IBaseService<FiscalConfiguration>
     {
-        Task<FiscalConfiguration?> GetActiveAsync();
+        Task<FiscalConfiguration?> GetActiveAsync(int tenantid);
     }
 }

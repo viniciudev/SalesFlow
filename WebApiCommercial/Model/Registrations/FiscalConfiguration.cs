@@ -22,6 +22,8 @@ namespace Model.Registrations
 
         // Autorizacao ASO
         public bool AutorizacaoASO { get; set; }
+        public Company Company { get; set; }
+        public int CompanyId { get; set; }
     }
 
     public class NumeracaoDocumentos

@@ -783,6 +783,10 @@ namespace Repository
 
                 entity.Property(e => e.AutorizacaoASO).HasColumnName("AutorizacaoASO");
             });
+            builder.Entity<FiscalConfiguration>()
+             .HasOne(dc => dc.Company)
+             .WithOne(c => c.FiscalConfiguration)
+             .HasForeignKey<FiscalConfiguration>(dc => dc.CompanyId);
         }
     }
 }
