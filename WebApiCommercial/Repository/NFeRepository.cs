@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Model.Registrations;
 using Model.Enums;
+using Model.Registrations;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -49,14 +49,23 @@ namespace Repository
 
             return last;
         }
-    }
- 
-        public interface INFeRepository : IGenericRepository<NFeEmission>
+        public async Task<List<NFeEmission>> GetAllAsync(int tenantid)
         {
-            Task<List<NFeEmission>> GetPendingAsync();
-            Task<NFeEmission?> GetByIdAsync(int id);
-            Task<List<NFeEmission>> GetBySaleIdAsync(int saleId);
-            Task<long?> GetLastNumeroAsync(string serie, TipoDocumentoEnum tipoDocumento);
+            return await _dbContext.Set<NFeEmission>()
+                .Where(x => x.ComapanyId == tenantid)
+                .AsNoTracking()
+                .ToListAsync();
         }
-    
+
+        
+
+    }
+    public interface INFeRepository : IGenericRepository<NFeEmission>
+    {
+        Task<List<NFeEmission>> GetPendingAsync();
+        Task<NFeEmission?> GetByIdAsync(int id);
+        Task<List<NFeEmission>> GetBySaleIdAsync(int saleId);
+        Task<long?> GetLastNumeroAsync(string serie, TipoDocumentoEnum tipoDocumento);
+        Task<List<NFeEmission>> GetAllAsync(int tenantid);
+    }
 }

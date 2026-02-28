@@ -32,5 +32,13 @@ namespace Model.Registrations
         public DateTime? UpdatedAt { get; set; }
         public Company Company { get; set; }
         public int ComapanyId { get; set; }
+        public StatusNfe StatusNfe { get; set; }
+    }
+    public enum StatusNfe
+    {
+        pendente=1,
+        emitida=2,
+        cancelada=3,
+        outros=4
     }
 }
