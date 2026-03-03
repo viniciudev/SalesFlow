@@ -115,6 +115,7 @@ namespace Service
             user.Password = hash;
             user.VerifiedEmail = false;
             user.TokenVerify = Guid.NewGuid().ToString();
+            user.BirthDate = DateTime.Now.ToUniversalTime();
             await base.Create(user);
             await MethodPermissions(user);
             if (_environment.IsProduction())
