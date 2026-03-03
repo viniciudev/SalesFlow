@@ -287,6 +287,7 @@ public class ConventionPermissionMiddleware
             PermissionEnum.CAIXA_CREATE=>"Abrir o caixa",
             PermissionEnum.CAIXA_VIEW=>"Ver caixa",
             PermissionEnum.FINANCEIRO_CREATE=>"Criar Financeiro",
+            PermissionEnum.FINANCEIRO_DELETE=>"Deletar Financeiro",
             PermissionEnum.CONF_NOTA_FISCAL_VIEW=>"Visualizar configuração fiscal",
             PermissionEnum.CONF_NOTA_FISCAL_CREATE=>"Criar configuração fiscal",
             PermissionEnum.CONF_NOTA_FISCAL_EDIT=>"Editar configuração fiscal",

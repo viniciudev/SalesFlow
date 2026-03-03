@@ -257,6 +257,14 @@ namespace Model
                 },
                   new Permission
                   {
+                      Id=(int)PermissionEnum.FINANCEIRO_DELETE,
+                      Code = PermissionEnum.FINANCEIRO_DELETE,
+                      Name = "Deletar Financeiro",
+                      Category="Financeiro"
+                  }
+                 
+                  new Permission
+                  {
                       Id = (int)PermissionEnum.CONF_NOTA_FISCAL_VIEW,
                     Code = PermissionEnum.CONF_NOTA_FISCAL_VIEW,
                     Name = "Visualizar Configurações de Nota Fiscal",
