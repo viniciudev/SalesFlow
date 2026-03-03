@@ -15,11 +15,11 @@ namespace Repository
         {
 
         }
-        public async Task<Box> GetByStatus(CaixaStatus status)
+        public async Task<Box> GetByStatus(CaixaStatus status, int idCompany)
         {
             return await _dbContext.Set<Box>()
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Status == status);
+                .FirstOrDefaultAsync(x => x.Status == status && x.IdCompany==idCompany );
                 
         }
         public async Task<Box> GetByIdBox(int BoxId)
@@ -51,7 +51,7 @@ namespace Repository
     }
     public interface IBoxRepository : IGenericRepository<Box>
     {
-        Task<Box> GetByStatus(CaixaStatus status);
+        Task<Box> GetByStatus(CaixaStatus status, int idCompany);
         Task<Box> GetByIdBox(int BoxId);
         Task<PagedResult<Box>> GetPaged(Filters filters);
         Task<BoxStatus> GetStatusByCompany(int tenantid);

@@ -21,7 +21,7 @@ namespace Service
         {
             // Validar se já existe caixa aberto
 
-            var caixaAberto = await (repository as IBoxRepository).GetByStatus(CaixaStatus.ABERTO);
+            var caixaAberto = await (repository as IBoxRepository).GetByStatus(CaixaStatus.ABERTO,dto.IdCompany);
 
 
             if (caixaAberto != null)

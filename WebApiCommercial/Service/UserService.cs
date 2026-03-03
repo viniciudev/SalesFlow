@@ -115,6 +115,7 @@ namespace Service
             user.Password = hash;
             user.VerifiedEmail = false;
             user.TokenVerify = Guid.NewGuid().ToString();
+            user.BirthDate = DateTime.Now.ToUniversalTime();
             await base.Create(user);
             await MethodPermissions(user);
             if (_environment.IsProduction())
@@ -140,7 +141,9 @@ namespace Service
             {
                 (int)PermissionEnum.USUARIO_MANAGER,
                 (int)PermissionEnum.USUARIO_PERMISSION_MANAGER,
-                (int)PermissionEnum.USUARIO_VIEW
+                (int)PermissionEnum.USUARIO_VIEW,
+                (int)PermissionEnum.CADASTRO_CLIENTE_VIEW,
+                (int)PermissionEnum.CADASTRO_PRODUTO_VIEW,
             };
 
         var userPermissions = permissions.Select(permissionId => new UserPermission
