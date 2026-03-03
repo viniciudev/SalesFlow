@@ -1,3 +1,5 @@
+using Model;
+using Model.DTO;
 using Model.Enums;
 using Model.Moves;
 using Model.Registrations;
@@ -18,11 +20,24 @@ namespace Service
             
         }
 
-        public async Task<int> CreateAttemptAsync(NFeEmission attempt)
+        public async Task<int> CreateAttemptAsync(NFeEmissionDto attempt)
         {
             attempt.TryCount = attempt.TryCount <= 0 ? 1 : attempt.TryCount;
             attempt.CreatedAt = DateTime.UtcNow;
-            await repository.CreateAsync(attempt);
+
+                var entity = new NFeEmission
+                {
+                    NaturezaOperacaoId = attempt.NaturezaOperacaoId,
+                    SaleId = attempt.SaleId,
+                    TipoDocumento = attempt.TipoDocumento,
+                    Serie = attempt.Serie,
+                    Numero = attempt.Numero,
+                    StatusNfe = attempt.StatusNfe,
+                    CreatedAt = attempt.CreatedAt,
+                    TryCount = attempt.TryCount,
+                    ComapanyId = attempt.CompanyId
+                };
+            await repository.CreateAsync(entity);
             return attempt.Id;
         }
 
@@ -64,10 +79,14 @@ namespace Service
         {
             return await (repository as INFeRepository ).GetAllAsync(tenantid);
         }
+        public async Task<PagedResult<NFeEmission>> GetPaged(Filters filters)
+        {
+            return await (repository as INFeRepository).GetPaged(filters);
+        }
     }
     public interface INFeService
     {
-        Task<int> CreateAttemptAsync(NFeEmission attempt);
+        Task<int> CreateAttemptAsync(NFeEmissionDto attempt);
         Task UpdateResultAsync(int id, bool sent, long? numero, string? responseJson, string? errorMessage);
         Task<NFeEmission?> GetByIdAsync(int id);
         Task<List<NFeEmission>> GetPendingAsync();
@@ -75,5 +94,6 @@ namespace Service
         Task<long?> GetLastNumeroAsync(string serie, TipoDocumentoEnum tipoDocumento);
   
         Task<List<NFeEmission>> GetAll(int tenantid);
+        Task<PagedResult<NFeEmission>> GetPaged(Filters filters);
     }
 }

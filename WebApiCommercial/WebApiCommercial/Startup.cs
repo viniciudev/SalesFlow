@@ -253,6 +253,11 @@ namespace WebAppCommercial
             services.AddTransient<IGenericRepository<FiscalConfiguration>, FiscalConfigurationRepository>();
             services.AddTransient<IFiscalConfigurationRepository, FiscalConfigurationRepository>();
             services.AddTransient<IBaseService<FiscalConfiguration>, FiscalConfigurationService>();
+            //NFe
+            services.AddTransient<INFeService, NFeService>();
+            services.AddTransient<IGenericRepository<NFeEmission>, NFeRepository>();
+            services.AddTransient<INFeRepository, NFeRepository>();
+            services.AddTransient<IBaseService<NFeEmission>, NFeService>();
             //services.AddCors(options =>
             //{
             //    options.AddPolicy("EnableCORS", builder =>

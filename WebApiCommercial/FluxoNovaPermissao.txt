@@ -1,0 +1,8 @@
+Back End
+PermissionEnum.cs -- adionar enuns
+ConventionPermissionMiddleware.cs -- ajustar conforme endpoint
+ContextBase.cs -- ajustar metodo GetDefaultPermissions para migração
+fazer migração para banco de dados.
+
+Front End
+src\components\modals\PermissionsManagerModal.tsx --adicionar as novas permissões no array permissioncategories

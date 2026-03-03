@@ -1,10 +1,13 @@
+using Microsoft.AspNetCore.Mvc;
+using Model;
+using Model.DTO;
+using Model.Enums;
+using Model.Registrations;
+using Repository;
+using Service;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Model.Enums;
-using Model.Registrations;
-using Service;
 
 namespace WebApiCommercial.Controllers
 {
@@ -29,9 +32,10 @@ namespace WebApiCommercial.Controllers
 
         // GET api/nfe
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromHeader]int tenantid)
+        public async Task<IActionResult> GetAll([FromHeader]int tenantid, [FromQuery] Filters filters)
         {
-            List<NFeEmission> list = await _nfeService.GetAll(tenantid);
+            filters.IdCompany = tenantid;
+            PagedResult<NFeEmission> list = await _nfeService.GetPaged(filters);
             return Ok(list);
         }
 
@@ -47,11 +51,12 @@ namespace WebApiCommercial.Controllers
         // POST api/nfe
         // Cria tentativa de emissão (salva payload para retry)
         [HttpPost]
-        public async Task<IActionResult> CreateAttempt([FromBody] NFeEmission attempt)
+        public async Task<IActionResult> CreateAttempt([FromHeader]int tenantid,[FromBody] NFeEmissionDto attempt)
         {
             if (attempt == null) return BadRequest("Payload inválido.");
             try
             {
+                attempt.CompanyId = tenantid;
                 var id = await _nfeService.CreateAttemptAsync(attempt);
                 return CreatedAtAction(nameof(GetById), new { id = id }, new { id = id });
             }

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Model;
 using Model.Enums;
 using Model.Registrations;
 using System.Collections.Generic;
@@ -57,7 +58,15 @@ namespace Repository
                 .ToListAsync();
         }
 
-        
+        public async Task<PagedResult<NFeEmission>> GetPaged(Filters filters)
+        {
+            return await _dbContext.Set<NFeEmission>()
+                    .Where(x =>
+                    (string.IsNullOrEmpty(filters.TextOption) ||x.Numero.ToString()==filters.TextOption)
+                    && x.ComapanyId == filters.IdCompany)
+                    .AsNoTracking()
+                    .GetPagedAsync(filters.PageNumber,filters.PageSize);
+        }
 
     }
     public interface INFeRepository : IGenericRepository<NFeEmission>
@@ -67,5 +76,6 @@ namespace Repository
         Task<List<NFeEmission>> GetBySaleIdAsync(int saleId);
         Task<long?> GetLastNumeroAsync(string serie, TipoDocumentoEnum tipoDocumento);
         Task<List<NFeEmission>> GetAllAsync(int tenantid);
+        Task<PagedResult<NFeEmission>> GetPaged(Filters filters);
     }
 }

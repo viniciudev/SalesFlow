@@ -58,9 +58,9 @@ namespace Service
             await base.DeleteAsync(id);
         }
 
-        public async Task<List<NaturezaOperacaoResponse>> GetAllAsync()
+        public async Task<List<NaturezaOperacaoResponse>> GetAllAsync(int tenantid)
         {
-            var list = await ( repository as INaturezaOperacaoRepository).GetAllAsync();
+            var list = await ( repository as INaturezaOperacaoRepository).GetAllAsync(tenantid);
             return list.Select(MapToResponse).ToList();
         }
 
@@ -200,7 +200,7 @@ namespace Service
         Task UpdateAsync(int id, NaturezaOperacaoUpdateRequest request);
         Task DeleteAsync(int id);
         Task<NaturezaOperacaoResponse?> GetByIdAsync(int id);
-        Task<List<NaturezaOperacaoResponse>> GetAllAsync();
+        Task<List<NaturezaOperacaoResponse>> GetAllAsync(int tenantid);
         Task<object> GerarPayloadFiscalAsync(int id);
     }
 }

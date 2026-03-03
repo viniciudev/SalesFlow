@@ -18,9 +18,10 @@ namespace Repository
 
 
 
-        public async Task<List<NaturezaOperacao>> GetAllAsync()
+        public async Task<List<NaturezaOperacao>> GetAllAsync(int tenantid)
         {
             return await _dbContext.Set<NaturezaOperacao>()
+                .Where(x=>x.CompanyId==tenantid)
                 .AsNoTracking()
                 .ToListAsync();
         }
@@ -61,7 +62,7 @@ namespace Repository
     public interface INaturezaOperacaoRepository : IGenericRepository<NaturezaOperacao>
     {
         //Task<NaturezaOperacao?> GetByIdAsync(Guid id);
-        Task<List<NaturezaOperacao>> GetAllAsync();
+        Task<List<NaturezaOperacao>> GetAllAsync(int tenantid);
 
         Task<bool> ExistsCfopAsync(string cfop, TipoDocumentoEnum tipoDocumento, int id);
     }

@@ -29,6 +29,9 @@ public class ConventionPermissionMiddleware
          { "BankAccount", "CONTA_BANCARIA" },
         {"NaturezaOperacao", "CONF_NOTA_FISCAL" },
         {"FiscalConfiguration", "CONF_NOTA_FISCAL" },
+        //=== NOTA FISCAL ===
+        {"Nfe","NOTA_FISCAL" },
+
 
         // === OPERACIONAIS ===
         { "Sale", "VENDA" },
@@ -217,7 +220,7 @@ public class ConventionPermissionMiddleware
             "GET" => new[] { "VIEW", "READ", "ACCESS", "LIST", "GET", "MANAGER" },
             "POST" => new[] { "CREATE", "ADD", "INSERT", "NEW", "POST", "MANAGER" },
             "PUT" or "PATCH" => new[] { "EDIT", "UPDATE", "MODIFY", "ALTER", "PUT", "MANAGER" },
-            "DELETE" => new[] { "DELETE", "REMOVE", "EXCLUDE", "DEL", "MANAGER" },
+            "DELETE" => new[] { "DELETE", "REMOVE", "EXCLUDE", "DEL", "MANAGER" ,"CANCEL"},
             _ => new[] { "ACCESS" }
         };
 
@@ -288,6 +291,10 @@ public class ConventionPermissionMiddleware
             PermissionEnum.CONF_NOTA_FISCAL_CREATE=>"Criar configuração fiscal",
             PermissionEnum.CONF_NOTA_FISCAL_EDIT=>"Editar configuração fiscal",
             PermissionEnum.CONF_NOTA_FISCAL_DELETE=>"Cancelar configuração fiscal",
+            PermissionEnum.NOTA_FISCAL_VIEW=>"Visualizar nota fiscal",
+            PermissionEnum.NOTA_FISCAL_CREATE=>"Criar nota fiscal",
+            PermissionEnum.NOTA_FISCAL_CANCEL=>"Cancelar nota fiscal",
+            PermissionEnum.NOTA_FISCAL_EDIT=>"Editar nota fiscal",
             _ => permission.ToString().Replace("_", " ")
         };
     }

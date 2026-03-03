@@ -57,6 +57,13 @@
         CONF_NOTA_FISCAL_VIEW = 89,
         CONF_NOTA_FISCAL_CREATE = 90,
         CONF_NOTA_FISCAL_EDIT = 91,
-        CONF_NOTA_FISCAL_DELETE = 92
+        CONF_NOTA_FISCAL_DELETE = 92,
+        // emissao de nota fiscal
+        NOTA_FISCAL_VIEW = 95,
+        NOTA_FISCAL_CREATE = 96,
+        NOTA_FISCAL_CANCEL = 97,
+        NOTA_FISCAL_EDIT = 98
+
+
     }
 }

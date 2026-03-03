@@ -283,6 +283,34 @@ namespace Model
                             Name = "Cancelar Configurações de Nota Fiscal",
                             Category = "Cadastros"
                     }
+                    ,new Permission
+                    {
+                            Id = (int)PermissionEnum.NOTA_FISCAL_VIEW,
+                            Code = PermissionEnum.NOTA_FISCAL_VIEW,
+                            Name = "Visualizar Notas Fiscais",
+                            Category = "Notas"
+                    },
+                    new Permission
+                    {
+                            Id = (int)PermissionEnum.NOTA_FISCAL_CREATE,
+                            Code = PermissionEnum.NOTA_FISCAL_CREATE,
+                            Name = "Criar Notas Fiscais",
+                            Category = "Notas"
+                    },
+                    new Permission
+                    {
+                            Id = (int)PermissionEnum.NOTA_FISCAL_CANCEL,
+                            Code = PermissionEnum.NOTA_FISCAL_CANCEL,
+                            Name = "Cancelar Notas Fiscais",
+                            Category = "Notas"
+                    },
+                    new Permission
+                    {
+                            Id = (int)PermissionEnum.NOTA_FISCAL_EDIT,
+                            Code = PermissionEnum.NOTA_FISCAL_EDIT,
+                            Name = "Editar Notas Fiscais",
+                            Category = "Notas"
+                    }
 
             };
         }

@@ -2,6 +2,7 @@
 
 using Microsoft.AspNetCore.Mvc;
 using Model.DTO;
+using Repository.Providers;
 using Service;
 using Service.Dtos;
 using Service.Exceptions;
@@ -51,9 +52,9 @@ namespace WebApiCommercial.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get([FromHeader]int tenantid)
         {
-            var list = await _service.GetAllAsync();
+            var list = await _service.GetAllAsync(tenantid);
             return Ok(list);
         }
 

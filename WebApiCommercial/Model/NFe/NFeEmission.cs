@@ -13,7 +13,7 @@ namespace Model.Registrations
 
         // Venda relacionada (opcional)
         public int SaleId { get; set; }
-        public Sale Sale { get; set; }
+        public Sale? Sale { get; set; }
 
         // Dados de controle / retry
         public TipoDocumentoEnum TipoDocumento { get; set; } = TipoDocumentoEnum.NFE; // NFE ou NFCE
