@@ -135,10 +135,10 @@ namespace Repository
             .HasOne(dc => dc.User)
             .WithMany(c => c.UserPermissions)
             .HasForeignKey(dc => dc.UserId);
-                        modelBuilder.Entity<UserPermission>()
-            .HasOne(dc => dc.Permission)
-            .WithMany(c => c.UserPermissions)
-            .HasForeignKey(dc => dc.PermissionId);
+            modelBuilder.Entity<UserPermission>()
+.HasOne(dc => dc.Permission)
+.WithMany(c => c.UserPermissions)
+.HasForeignKey(dc => dc.PermissionId);
 
 
         }
@@ -154,7 +154,7 @@ namespace Repository
            .IsUnique();
                 d.HasData(SeedPermissions.GetDefaultPermissions());
             });
-            
+
         }
 
         private void ConfiguraPaymentMethod(ModelBuilder modelBuilder)
@@ -193,6 +193,10 @@ namespace Repository
                 d.Property(c => c.Id).ValueGeneratedOnAdd();
 
             });
+            builder.Entity<Box>()
+     .HasOne(dc => dc.Company)
+     .WithMany(c => c.Boxes)
+     .HasForeignKey(dc => dc.IdCompany);
         }
 
         private void ConfiguraStockService(ModelBuilder builder)
