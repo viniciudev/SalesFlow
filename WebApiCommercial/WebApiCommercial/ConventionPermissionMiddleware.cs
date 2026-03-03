@@ -282,6 +282,7 @@ public class ConventionPermissionMiddleware
             PermissionEnum.CAIXA_CREATE=>"Abrir o caixa",
             PermissionEnum.CAIXA_VIEW=>"Ver caixa",
             PermissionEnum.FINANCEIRO_CREATE=>"Criar Financeiro",
+            PermissionEnum.FINANCEIRO_DELETE=>"Deletar Financeiro",
             _ => permission.ToString().Replace("_", " ")
         };
     }

@@ -255,6 +255,13 @@ namespace Model
                     Name = "Abrir caixa",
                     Category = "Financeiro"
                 },
+                  new Permission
+                  {
+                      Id=(int)PermissionEnum.FINANCEIRO_DELETE,
+                      Code = PermissionEnum.FINANCEIRO_DELETE,
+                      Name = "Deletar Financeiro",
+                      Category="Financeiro"
+                  }
                  
             };
         }

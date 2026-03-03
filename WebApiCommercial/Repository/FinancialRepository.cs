@@ -96,7 +96,8 @@ namespace Repository
 
                                   where
                                   fin.IdCompany == filters.IdCompany
-                                  && (string.IsNullOrEmpty(filters.TextOption) || fin.Description.Contains(filters.TextOption))
+                                  && (string.IsNullOrEmpty(filters.TextOption) || fin.Description.Contains(filters.TextOption)
+                                  || fin.Client.Name.Contains(filters.TextOption))
                                   && (filters.FinancialStatus == null || fin.FinancialStatus == filters.FinancialStatus)
                                   &&(fin.FinancialType==filters.FinancialType)
                                   orderby fin.DueDate 
@@ -131,6 +132,7 @@ namespace Repository
                             .ToList()
 
                                   }).AsNoTracking()
+                                  .WithCaseInsensitive()
                            .GetPagedAsync<FinancialResponse>(filters.PageNumber, filters.PageSize);
 
                 return data;
