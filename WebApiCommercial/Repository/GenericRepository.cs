@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Model;
+using Model.Registrations;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Repository
@@ -61,7 +63,7 @@ namespace Repository
         {
             return await _dbContext.Database.BeginTransactionAsync();
         }
-
+   
 
     }
 
@@ -75,6 +77,6 @@ namespace Repository
         Task DeleteAsync(int id);
         Task<bool> Exists(int id);
         Task<IDbContextTransaction> CreateTransactionAsync();
-
+       
     }
 }

@@ -297,16 +297,38 @@ namespace Repository
                 IsIncrease = percentage >= 0
             };
         }
+        public async Task<Sale> GetSaleByCompany(int idSale, int idCompany)
+        {
+            var data = await (from sale in base._dbContext.Set<Sale>().
+                              Include(x => x.SaleItems).ThenInclude(x => x.Product)
+                              .Include(x => x.Client)
+                              where sale.Id == idSale
+                              && sale.IdCompany == idCompany
+                              select sale).AsNoTracking()
+                              .FirstOrDefaultAsync();
+
+            return data;
+        }
+        public async Task<NFeEmission> GetByCompany(int companyId)
+        {
+            return await _dbContext.Set<NFeEmission>()
+                .Where(x =>  x.ComapanyId == companyId)
+                .AsNoTracking()
+                .OrderByDescending(x => x.Id)
+                .FirstOrDefaultAsync();
+        }
     }
 
     public interface ISaleRepository : IGenericRepository<Sale>
     {
         Task<PagedResult<Sale>> GetAllPaged(Filters filters);
         Task<Sale> GetByIdSale(int id);
+        Task<Sale> GetSaleByCompany(int idSale,int idCompany);
         Task<SaleInfoResponse> GetByMonthAllSales(Filters filters);
         Task<SalesCommissionsInfo> GetByWeekAllSales(Filters filters);
         Task<List<SalesmanInfo>> GetSalesmanByWeek(int idCompany);
         Task<MonthlySalesComparisonResult> GetMonthlySalesWithComparisonByIdCompany(int id);
+        Task<NFeEmission> GetByCompany(int companyId);
     }
 }
 

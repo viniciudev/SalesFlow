@@ -17,11 +17,16 @@ namespace Repository
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x=>x.CompanyId==tenantid);
         }
-
-        // GetAll, GetById, Create, Update, Delete já vêm do GenericRepository
+        public async Task<FiscalConfiguration?> GetByCompany(int tenantid)
+        {
+            return await _dbContext.Set<FiscalConfiguration>()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.CompanyId == tenantid);
+        }
     }
     public interface IFiscalConfigurationRepository : IGenericRepository<FiscalConfiguration>
     {
         Task<FiscalConfiguration?> GetActiveAsync(int tenantid); // exemplo: retorna configuração ativa (você pode adaptar)
+        Task<FiscalConfiguration?> GetByCompany(int companyId);
     }
 }

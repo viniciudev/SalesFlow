@@ -261,7 +261,7 @@ namespace Model
                       Code = PermissionEnum.FINANCEIRO_DELETE,
                       Name = "Deletar Financeiro",
                       Category="Financeiro"
-                  }
+                  },
                  
                   new Permission
                   {

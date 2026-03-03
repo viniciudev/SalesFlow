@@ -57,8 +57,8 @@ namespace WebApiCommercial.Controllers
             try
             {
                 attempt.CompanyId = tenantid;
-                var id = await _nfeService.CreateAttemptAsync(attempt);
-                return CreatedAtAction(nameof(GetById), new { id = id }, new { id = id });
+                var resp = await _nfeService.CreateAttemptAsync(attempt);
+                return Ok(resp);
             }
             catch (Exception ex)
             {

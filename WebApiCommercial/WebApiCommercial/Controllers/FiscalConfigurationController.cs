@@ -55,8 +55,12 @@ namespace WebApiCommercial.Controllers
                 var caminho = await SaveCertificadoAsync(request.CertificadoDigital);
                 request.CertificadoDigital.Arquivo = caminho;
             }
-
-            var model = request.ToEntity();
+            else
+            {
+                // se não enviou novo arquivo, manter o caminho existente
+                request.CertificadoDigital.Arquivo = existing.CertificadoDigital?.Arquivo;
+            }
+                var model = request.ToEntity();
             model.Id = id;
             model.CompanyId = existing.CompanyId;
             await _service.Alter(model);

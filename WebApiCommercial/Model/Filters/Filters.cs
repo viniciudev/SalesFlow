@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Model.Registrations;
+using System;
 
 namespace Model
 {
@@ -24,6 +25,7 @@ namespace Model
         public int IdSeller { get; set; }
         public FinancialType ?FinancialType  { get; set; }
         public FinancialStatus ?FinancialStatus { get; set; }
+        public StatusNfe? StatusNfe { get; set; }
     }
 
     public enum FilterType
