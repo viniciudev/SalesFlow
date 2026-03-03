@@ -25,6 +25,7 @@
         FINANCEIRO_VIEW = 40,
         FINANCEIRO_EDIT = 41,
         FINANCEIRO_CREATE=88,
+        FINANCEIRO_DELETE=99,
 
         // Estoque
         ESTOQUE_VIEW = 50,
