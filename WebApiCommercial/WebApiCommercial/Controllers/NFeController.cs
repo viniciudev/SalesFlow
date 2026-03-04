@@ -65,6 +65,21 @@ namespace WebApiCommercial.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
+        // POST api/nfe
+        // reenvio de emissão (salva payload para retry)
+        [HttpPost("{id}/resend")]
+        public async Task<IActionResult> Resend(int id)
+        {
+            try
+            {
+                var resp = await _nfeService.Resend(id);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
 
         // PUT api/nfe/{id}/result
         // Atualiza resultado da emissão (success/failure, número, response)
@@ -89,31 +104,31 @@ namespace WebApiCommercial.Controllers
 
         // POST api/nfe/{id}/resend
         // Retorna o payload salvo para reenvio e incrementa contador de tentativas
-        [HttpPost("{id:int}/resend")]
-        public async Task<IActionResult> Resend(int id)
-        {
-            var existing = await _nfeService.GetByIdAsync(id);
-            if (existing == null) return NotFound();
+        //[HttpPost("{id:int}/resend")]
+        //public async Task<IActionResult> Resend(int id)
+        //{
+        //    var existing = await _nfeService.GetByIdAsync(id);
+        //    if (existing == null) return NotFound();
 
-            try
-            {
-                // incrementa TryCount utilizando UpdateResultAsync mantendo os dados atuais
-                await _nfeService.UpdateResultAsync(existing.Id, existing.Sent, existing.Numero, existing.ResponseJson, existing.ErrorMessage);
+        //    try
+        //    {
+        //        // incrementa TryCount utilizando UpdateResultAsync mantendo os dados atuais
+        //        await _nfeService.UpdateResultAsync(existing.Id, existing.Sent, existing.Numero, existing.ResponseJson, existing.ErrorMessage);
 
-                // Retorna o payload salvo para o processo que fará o reenvio
-                return Ok(new
-                {
-                    id = existing.Id,
-                    tipoDocumento = existing.TipoDocumento,
-                    serie = existing.Serie,
-                    payload = existing.RequestPayloadJson
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-        }
+        //        // Retorna o payload salvo para o processo que fará o reenvio
+        //        return Ok(new
+        //        {
+        //            id = existing.Id,
+        //            tipoDocumento = existing.TipoDocumento,
+        //            serie = existing.Serie,
+        //            payload = existing.RequestPayloadJson
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(new { error = ex.Message });
+        //    }
+        //}
 
         // GET api/nfe/last-number?serie=XXX&tipo=NFE
         [HttpGet("last-number")]

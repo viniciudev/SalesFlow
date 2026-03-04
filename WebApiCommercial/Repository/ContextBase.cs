@@ -813,7 +813,7 @@ namespace Repository
 
                 entity.HasOne(e=>e.Company)
                     .WithMany(e => e.NFeEmissions)
-                    .HasForeignKey(e => e.ComapanyId)
+                    .HasForeignKey(e => e.CompanyId)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(e=>e.NaturezaOperacao)

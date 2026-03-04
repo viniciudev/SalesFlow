@@ -30,8 +30,8 @@ namespace Model.Registrations
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
-        public Company Company { get; set; }
-        public int ComapanyId { get; set; }
+        public Company? Company { get; set; }
+        public int CompanyId { get; set; }
         public StatusNfe StatusNfe { get; set; }
     }
     public enum StatusNfe

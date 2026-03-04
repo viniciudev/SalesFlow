@@ -53,7 +53,7 @@ namespace Repository
         public async Task<List<NFeEmission>> GetAllAsync(int tenantid)
         {
             return await _dbContext.Set<NFeEmission>()
-                .Where(x => x.ComapanyId == tenantid)
+                .Where(x => x.CompanyId == tenantid)
                 .AsNoTracking()
                 .ToListAsync();
         }
@@ -63,7 +63,7 @@ namespace Repository
             return await _dbContext.Set<NFeEmission>()
                     .Where(x =>
                     (string.IsNullOrEmpty(filters.TextOption) ||x.Numero.ToString()==filters.TextOption)
-                    && x.ComapanyId == filters.IdCompany
+                    && x.CompanyId == filters.IdCompany
                     && (filters.StatusNfe==null|| x.StatusNfe==filters.StatusNfe))
                     .AsNoTracking()
                     .GetPagedAsync(filters.PageNumber,filters.PageSize);
@@ -71,7 +71,7 @@ namespace Repository
         public async Task<NFeEmission> GetByCompany(int companyId)
         {
                        return await _dbContext.Set<NFeEmission>()
-                .Where(x => x.ComapanyId == companyId)
+                .Where(x => x.CompanyId == companyId)
                 .AsNoTracking()
                 .FirstOrDefaultAsync();
         }

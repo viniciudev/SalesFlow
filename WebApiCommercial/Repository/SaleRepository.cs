@@ -312,7 +312,7 @@ namespace Repository
         public async Task<NFeEmission> GetByCompany(int companyId)
         {
             return await _dbContext.Set<NFeEmission>()
-                .Where(x =>  x.ComapanyId == companyId)
+                .Where(x =>  x.CompanyId == companyId)
                 .AsNoTracking()
                 .OrderByDescending(x => x.Id)
                 .FirstOrDefaultAsync();
