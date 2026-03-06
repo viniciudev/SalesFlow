@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,10 +15,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Downloads\ZeusFiscal-master\ZeusFiscal-master\NFe.AppTeste\NFe.AppTeste.csproj" />
-    <ProjectReference Include="..\..\..\Downloads\ZeusFiscal-master\ZeusFiscal-master\NFe.Classes\NFe.Classes.csproj" />
-    <ProjectReference Include="..\..\..\Downloads\ZeusFiscal-master\ZeusFiscal-master\NFe.Danfe.PdfClown\NFe.Danfe.PdfClown.csproj" />
-    <ProjectReference Include="..\Model\Model.csproj" />
+    <ProjectReference Include="..\NFe\NFe.AppTeste.NetCore\NFe.AppTeste.NetCore.csproj" />
+    <ProjectReference Include="..\NFe\NFe.AppTeste\NFe.AppTeste.csproj" />
     <ProjectReference Include="..\Repository\Repository.csproj" />
   </ItemGroup>
 

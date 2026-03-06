@@ -31,7 +31,6 @@ using NFe.Utils;
 using NFe.Utils.Email;
 using NFe.Utils.InformacoesSuplementares;
 using NFe.Utils.NFe;
-using org.pdfclown.documents.interaction.annotations;
 using Repository;
 using System;
 using System.Collections.Generic;
@@ -39,8 +38,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using static Repository.NFeRepository;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Service
 {
@@ -66,11 +63,11 @@ namespace Service
             _naturezaOperacaoRepository = naturezaOperacaoRepository;
             _environment = webHostEnvironment;
         }
-       public async Task<ResponseGeneric> Resend(int id)
+        public async Task<ResponseGeneric> Resend(int id)
         {
             NFeEmission nFeEmission = await (repository as INFeRepository).GetByIdAsync(id);
-            if(nFeEmission==null) 
-                    return new ResponseGeneric { Success = false, Message = "Não foi encontrado a nota!" };
+            if (nFeEmission == null)
+                return new ResponseGeneric { Success = false, Message = "Não foi encontrado a nota!" };
             //configuraçao da empresa para nfe
             FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(nFeEmission.CompanyId);
             if (fiscalConfiguration == null)
@@ -84,7 +81,7 @@ namespace Service
             if (naturezaOperacao == null)
                 return new ResponseGeneric { Success = false, Message = "Natureza de operação não encontrada." };
 
-            
+
             //classes externas para gerar nfe
             var respEmissao = await TransmitirNfe(nFeEmission, fiscalConfiguration, sale, naturezaOperacao);
 
@@ -93,53 +90,54 @@ namespace Service
             nFeEmission.Sent = true;
             //nFeEmission.Numero = numero ?? existing.Numero;
             //nFeEmission.ResponseJson = responseJson;
-            //nFeEmission.ErrorMessage = errorMessage;
+            nFeEmission.ErrorMessage = respEmissao;
+            nFeEmission.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
             nFeEmission.TryCount += 1;
             nFeEmission.UpdatedAt = DateTime.UtcNow;
 
-            await repository.UpdateAsync(nFeEmission.Id,nFeEmission);
+            await repository.UpdateAsync(nFeEmission.Id, nFeEmission);
             return new ResponseGeneric { Success = true };
         }
         public async Task<ResponseGeneric> CreateAttemptAsync(NFeEmissionDto attempt)
         {
             //ultima nota emitida com sucesso
-            NFeEmission nFeEmission= await  (repository as INFeRepository).GetByCompany(attempt.CompanyId);
+            NFeEmission nFeEmission = await (repository as INFeRepository).GetByCompany(attempt.CompanyId);
 
             //configuraçao da empresa para nfe
-            FiscalConfiguration fiscalConfiguration =await _fiscalConfigurationRepository.GetByCompany(attempt.CompanyId);
-            if(fiscalConfiguration==null)
+            FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(attempt.CompanyId);
+            if (fiscalConfiguration == null)
                 return new ResponseGeneric { Success = false, Message = "Não encontrado as configurações para emissão de nota!" };
-          
-            //verifica se existe a venda
-            Sale sale = await _saleRepository.GetSaleByCompany(attempt.SaleId,attempt.CompanyId);
-            if(sale==null)
-                return new ResponseGeneric { Success=false,Message= "Venda não encontrada para a empresa." };
 
-            NaturezaOperacao naturezaOperacao= await _naturezaOperacaoRepository.GetByIdAsync(attempt.NaturezaOperacaoId);
+            //verifica se existe a venda
+            Sale sale = await _saleRepository.GetSaleByCompany(attempt.SaleId, attempt.CompanyId);
+            if (sale == null)
+                return new ResponseGeneric { Success = false, Message = "Venda não encontrada para a empresa." };
+
+            NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(attempt.NaturezaOperacaoId);
             if (naturezaOperacao == null)
                 return new ResponseGeneric { Success = false, Message = "Natureza de operação não encontrada." };
 
             //classes externas para gerar nfe
-            var respEmissao = await TransmitirNfe(nFeEmission,fiscalConfiguration,sale,naturezaOperacao);
+            var respEmissao = await TransmitirNfe(nFeEmission, fiscalConfiguration, sale, naturezaOperacao);
 
             attempt.TryCount = attempt.TryCount <= 0 ? 1 : attempt.TryCount;
             attempt.CreatedAt = DateTime.UtcNow;
 
-                var entity = new NFeEmission
-                {
-                    ResponseJson= respEmissao,
-                    NaturezaOperacaoId = attempt.NaturezaOperacaoId,
-                    SaleId = attempt.SaleId,
-                    TipoDocumento = attempt.TipoDocumento,
-                    Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie,
-                    Numero = nFeEmission==null?fiscalConfiguration.NumeracaoDocumentos.Nfce.NumeroInicial:nFeEmission.Numero+1,
-                    StatusNfe = attempt.StatusNfe,
-                    CreatedAt = attempt.CreatedAt,
-                    TryCount = attempt.TryCount,
-                    CompanyId = attempt.CompanyId
-                };
+            var entity = new NFeEmission
+            {
+                ResponseJson = respEmissao,
+                NaturezaOperacaoId = attempt.NaturezaOperacaoId,
+                SaleId = attempt.SaleId,
+                TipoDocumento = attempt.TipoDocumento,
+                Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie,
+                Numero = nFeEmission == null ? fiscalConfiguration.NumeracaoDocumentos.Nfce.NumeroInicial : nFeEmission.Numero + 1,
+                StatusNfe = attempt.StatusNfe,
+                CreatedAt = attempt.CreatedAt,
+                TryCount = attempt.TryCount,
+                CompanyId = attempt.CompanyId
+            };
             await repository.CreateAsync(entity);
-            return new ResponseGeneric { Success=true};
+            return new ResponseGeneric { Success = true };
         }
 
         private async Task<string> TransmitirNfe(NFeEmission nFeEmission, FiscalConfiguration fiscalConfiguration, Sale sale, NaturezaOperacao naturezaOperacao)
@@ -150,8 +148,8 @@ namespace Service
                 //if (string.IsNullOrEmpty(numero)) throw new Exception("O Número deve ser informado!");
                 byte[] certbyte = await ObterCertificado(fiscalConfiguration.CertificadoDigital.Arquivo);
                 _currentFiscalConfiguration = fiscalConfiguration;
-                _currentNaturezaOperacao= naturezaOperacao;
-              _configuracaoApp= criarConfiguracaoApp(fiscalConfiguration, certbyte);
+                _currentNaturezaOperacao = naturezaOperacao;
+                _configuracaoApp = criarConfiguracaoApp(fiscalConfiguration, naturezaOperacao, certbyte);
                 _nfe = ObterNfeValidada(VersaoServico.Versao400, ModeloDocumento.NFCe,
                     Convert.ToInt32(nFeEmission.Numero), new ConfiguracaoCsc
                     {
@@ -173,7 +171,7 @@ namespace Service
                 //if (result != true) return;
                 //var arquivoXml = dlg.FileName;
                 //_nfe.SalvarArquivoXml(arquivoXml);
-              
+
                 return retornoEnvio.RetornoStr;
             }
             catch (Exception ex)
@@ -232,7 +230,7 @@ namespace Service
             string caminhoCompleto = Path.Combine(_environment.WebRootPath, caminhoRelativo);
 
             // Verifica se o arquivo existe
-            if (!System.IO. File.Exists(caminhoCompleto))
+            if (!System.IO.File.Exists(caminhoCompleto))
             {
                 throw new FileNotFoundException($"Certificado não encontrado: {caminhoCompleto}");
             }
@@ -240,67 +238,90 @@ namespace Service
             // Lê o arquivo
             return await System.IO.File.ReadAllBytesAsync(caminhoCompleto);
         }
-        private ConfiguracaoApp criarConfiguracaoApp(FiscalConfiguration fiscalConfiguration,
+        private ConfiguracaoApp criarConfiguracaoApp(FiscalConfiguration fiscalConfiguration,NaturezaOperacao naturezaOperacao,
             byte[] certbyte)
         {
-            var ConfiguracaoEmail = new ConfiguracaoEmail();
-            var ConfiguracaoCsc = new ConfiguracaoCsc
-            {
-                CIdToken = fiscalConfiguration.Csc.Identificador,
-                Csc = fiscalConfiguration.Csc.Valor
-            };
-            var ConfiguracaoDanfeNfce = new NFe.Danfe.Base.NFCe.ConfiguracaoDanfeNfce
-            {
-                VersaoQrCode = VersaoQrCode.QrCodeVersao3
-            };
-
-            var configuracaoApp = new ConfiguracaoApp
+            try
             {
 
-                CfgServico = new ConfiguracaoServico
+
+                var ConfiguracaoEmail = new ConfiguracaoEmail();
+                var ConfiguracaoCsc = new ConfiguracaoCsc
                 {
-                    tpAmb = fiscalConfiguration.Ambiente == AmbienteEnum.Homologacao ?
-                    TipoAmbiente.Homologacao : TipoAmbiente.Producao,
-                    tpEmis = TipoEmissao.teNormal,
-                    Certificado = new DFe.Utils.ConfiguracaoCertificado
+                    CIdToken = fiscalConfiguration.Csc.Identificador,
+                    Csc = fiscalConfiguration.Csc.Valor
+                };
+                var ConfiguracaoDanfeNfce = new NFe.Danfe.Base.NFCe.ConfiguracaoDanfeNfce
+                {
+                    VersaoQrCode = VersaoQrCode.QrCodeVersao3
+                };
+                var DiretorioSchemas = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Schemas");
+                var configuracaoApp = new ConfiguracaoApp
+                {
+          
+                    CfgServico = new ConfiguracaoServico
                     {
-                        TipoCertificado = DFe.Utils.TipoCertificado.A1ByteArray,
-                        ArrayBytesArquivo = certbyte,
-                        Senha = fiscalConfiguration.CertificadoDigital.Senha,
-                        ManterDadosEmCache = false
-                    }
-                },
-                Emitente = new emit
-                {
-                    CNPJ = fiscalConfiguration.Emitente.Cnpj,
-                    IE = fiscalConfiguration.Emitente.InscricaoEstadual,
-                    xNome = fiscalConfiguration.Emitente.RazaoSocial,
-                    xFant = fiscalConfiguration.Emitente.Fantasia,
-                    CRT = CRT.RegimeNormal,
+                        ModeloDocumento =naturezaOperacao.TipoDocumento==TipoDocumentoEnum.NFCE?ModeloDocumento.NFCe:ModeloDocumento.NFe,
+                        VersaoNFeAutorizacao =VersaoServico.Versao400,
+                         VersaoNFeRetAutorizacao=VersaoServico.Versao400,
+                         VersaoLayout=VersaoServico.Versao400,
+                         cUF=Estado.MG,//(Estado)fiscalConfiguration.Emitente.EmitenteEndereco.Uf,
+                        ProtocoloDeSeguranca=System.Net.SecurityProtocolType.Tls12,
+                        VersaoConsultaGTIN=VersaoServico.Versao400,
+                        VersaoNfceAministracaoCSC=VersaoServico.Versao400,
+                        VersaoNfeDownloadNF=VersaoServico.Versao400,
+                        VersaoNfeRecepcao=VersaoServico.Versao400,
+                        ValidarSchemas=true,
+                        RemoverAcentos=true,
+                        DiretorioSchemas = DiretorioSchemas,
+                        tpAmb = fiscalConfiguration.Ambiente == AmbienteEnum.Homologacao ?
+                                    TipoAmbiente.Homologacao : TipoAmbiente.Producao,
+                        tpEmis = TipoEmissao.teNormal,
+                        Certificado = new DFe.Utils.ConfiguracaoCertificado
+                        {
+                            TipoCertificado = DFe.Utils.TipoCertificado.A1ByteArray,
+                            ArrayBytesArquivo = certbyte,
+                            Senha = fiscalConfiguration.CertificadoDigital.Senha,
+                            ManterDadosEmCache = false
+                        }
+                    },
+                    Emitente = new emit
+                    {
+                        CNPJ = fiscalConfiguration.Emitente.Cnpj,
+                        IE = fiscalConfiguration.Emitente.InscricaoEstadual,
+                        xNome = fiscalConfiguration.Emitente.RazaoSocial,
+                        xFant = fiscalConfiguration.Emitente.Fantasia,
+                        CRT = CRT.RegimeNormal,
 
-                },
+                    },
 
-                EnderecoEmitente = new enderEmit
-                {
-                    xLgr = fiscalConfiguration.Emitente.EmitenteEndereco.Logradouro,
-                    nro = fiscalConfiguration.Emitente.EmitenteEndereco.Numero,
-                    xCpl = fiscalConfiguration.Emitente.EmitenteEndereco.Complemento,
-                    xBairro = fiscalConfiguration.Emitente.EmitenteEndereco.Bairro,
-                    cMun = long.Parse(fiscalConfiguration.Emitente.EmitenteEndereco.CodigoCidade),
-                    xMun = fiscalConfiguration.Emitente.EmitenteEndereco.Cidade,
-                    UF = (Estado)Enum.Parse(typeof(Estado), fiscalConfiguration.Emitente.EmitenteEndereco.Uf),
-                    CEP = fiscalConfiguration.Emitente.EmitenteEndereco.Cep,
-                    fone = long.Parse(fiscalConfiguration.Emitente.EmitenteContato.Telefone)
-                },
-                ConfiguracaoCsc = ConfiguracaoCsc,
-                ConfiguracaoDanfeNfce = ConfiguracaoDanfeNfce,
-                EnviarTributacaoIbsCbs = false,
-                EnviarTributacaoIS = false,
-                ConfiguracaoEmail = ConfiguracaoEmail
+                    EnderecoEmitente = new enderEmit
+                    {
+                        xLgr = fiscalConfiguration.Emitente.EmitenteEndereco.Logradouro,
+                        nro = fiscalConfiguration.Emitente.EmitenteEndereco.Numero,
+                        xCpl = fiscalConfiguration.Emitente.EmitenteEndereco.Complemento,
+                        xBairro = fiscalConfiguration.Emitente.EmitenteEndereco.Bairro,
+                        cMun = long.Parse(fiscalConfiguration.Emitente.EmitenteEndereco.CodigoCidade),
+                        xMun = fiscalConfiguration.Emitente.EmitenteEndereco.Cidade,
+                        UF = (Estado)Enum.Parse(typeof(Estado), fiscalConfiguration.Emitente.EmitenteEndereco.Uf),
+                        CEP = fiscalConfiguration.Emitente.EmitenteEndereco.Cep,
+                        fone = long.Parse(fiscalConfiguration.Emitente.EmitenteContato.Telefone)
+                    },
+                    ConfiguracaoCsc = ConfiguracaoCsc,
+                    ConfiguracaoDanfeNfce = ConfiguracaoDanfeNfce,
+                    EnviarTributacaoIbsCbs = false,
+                    EnviarTributacaoIS = false,
+                    ConfiguracaoEmail = ConfiguracaoEmail
 
 
-            };
-            return configuracaoApp;
+                };
+                return configuracaoApp;
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
         }
         private NFe.Classes.NFe ObterNfeValidada(VersaoServico versaoServico, ModeloDocumento modelo, int numero,
             ConfiguracaoCsc configuracaoCsc)
@@ -342,7 +363,7 @@ namespace Service
                 infNFe.det.Add(GetDetalhe(i, infNFe.emit.CRT, modelo));
             }
 
-            infNFe.total = GetTotal(versao, infNFe.det);
+            infNFe.total = GetTotal(versao, infNFe.det,modelo);
 
             if (infNFe.ide.mod == ModeloDocumento.NFe & (versao == VersaoServico.Versao310 || versao == VersaoServico.Versao400))
                 infNFe.cobr = GetCobranca(infNFe.total.ICMSTot); //V3.00 e 4.00 Somente
@@ -488,41 +509,41 @@ namespace Service
                         TipoPIS = new PISOutr { CST = CSTPIS.pis99, pPIS = 0, vBC = 0, vPIS = 0 }
                     },
 
-                    IS = _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIS == true ? new IS
-                    {
-                        cClassTribIS = "000001",
-                        uTrib = "UN",
-                        qTrib = 1,
-                        CSTIS = "000",
-                        pIS = 0,
-                        vIS = 0
-                    } : null,
+                    //IS = (modelo == ModeloDocumento.NFe && _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIS == true) ? new IS
+                    //{
+                    //    cClassTribIS = "000001",
+                    //    uTrib = "UN",
+                    //    qTrib = 1,
+                    //    CSTIS = "000",
+                    //    pIS = 0,
+                    //    vIS = 0
+                    //} : null,
 
-                    IBSCBS = _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIBS == true ? new IBSCBS
-                    {
-                        CST = CSTIBSCBS.cst000,
-                        cClassTrib = "000001",
-                        gIBSCBS = new gIBSCBS
-                        {
-                            vBC = 0,
-                            gIBSUF = new gIBSUF
-                            {
-                                pIBSUF = 0.10m,
-                                vIBSUF = 0,
-                            },
-                            gIBSMun = new gIBSMun
-                            {
-                                pIBSMun = 0,
-                                vIBSMun = 0,
-                            },
-                            gCBS = new gCBS
-                            {
-                                pCBS = 0.90m,
-                                vCBS = 0,
-                            },
-                            vIBS = 0// opcional
-                        }
-                    } : null
+                    //IBSCBS =(modelo == ModeloDocumento.NFe && _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIBS == true) ? new IBSCBS
+                    //{
+                    //    CST = CSTIBSCBS.cst000,
+                    //    cClassTrib = "000001",
+                    //    gIBSCBS = new gIBSCBS
+                    //    {
+                    //        vBC = 0,
+                    //        gIBSUF = new gIBSUF
+                    //        {
+                    //            pIBSUF = 0.10m,
+                    //            vIBSUF = 0,
+                    //        },
+                    //        gIBSMun = new gIBSMun
+                    //        {
+                    //            pIBSMun = 0,
+                    //            vIBSMun = 0,
+                    //        },
+                    //        gCBS = new gCBS
+                    //        {
+                    //            pCBS = 0.90m,
+                    //            vCBS = 0,
+                    //        },
+                    //        vIBS = 0// opcional
+                    //    }
+                    //} : null
                 }
             };
 
@@ -599,7 +620,7 @@ namespace Service
                     return new ICMSSN201();
             }
         }
-        protected virtual total GetTotal(VersaoServico versao, List<det> produtos)
+        protected virtual total GetTotal(VersaoServico versao, List<det> produtos,ModeloDocumento modeloDocumento)
         {
             var icmsTot = new ICMSTot
             {
@@ -656,40 +677,40 @@ namespace Service
             var t = new total
             {
                 ICMSTot = icmsTot,
-                IBSCBSTot = _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIBS == true ? new IBSCBSTot
-                {
-                    vBCIBSCBS = 0,
-                    gIBS = new gIBSTotal
-                    {
-                        gIBSUF = new gIBSUFTotal
-                        {
-                            vDif = 0,
-                            vDevTrib = 0,
-                            vIBSUF = 0
-                        },
-                        gIBSMun = new gIBSMunTotal
-                        {
-                            vDif = 0,
-                            vDevTrib = 0,
-                            vIBSMun = 0
-                        },
-                        vIBS = 0,
-                        vCredPres = 0,
-                        vCredPresCondSus = 0
-                    },
-                    gCBS = new gCBSTotal
-                    {
-                        vDif = 0,
-                        vDevTrib = 0,
-                        vCBS = 0,
-                        vCredPres = 0,
-                        vCredPresCondSus = 0
-                    }
-                } : null,
-                ISTot = _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIS == true ? new ISTot()
-                {
-                    vIS = 0
-                } : null
+                //IBSCBSTot = (modeloDocumento == ModeloDocumento.NFe && _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIBS == true) ? new IBSCBSTot
+                //{
+                //    vBCIBSCBS = 0,
+                //    gIBS = new gIBSTotal
+                //    {
+                //        gIBSUF = new gIBSUFTotal
+                //        {
+                //            vDif = 0,
+                //            vDevTrib = 0,
+                //            vIBSUF = 0
+                //        },
+                //        gIBSMun = new gIBSMunTotal
+                //        {
+                //            vDif = 0,
+                //            vDevTrib = 0,
+                //            vIBSMun = 0
+                //        },
+                //        vIBS = 0,
+                //        vCredPres = 0,
+                //        vCredPresCondSus = 0
+                //    },
+                //    gCBS = new gCBSTotal
+                //    {
+                //        vDif = 0,
+                //        vDevTrib = 0,
+                //        vCBS = 0,
+                //        vCredPres = 0,
+                //        vCredPresCondSus = 0
+                //    }
+                //} : null,
+                //ISTot =(modeloDocumento == ModeloDocumento.NFe&& _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIS == true) ? new ISTot()
+                //{
+                //    vIS = 0
+                //} : null
             };
             return t;
         }
@@ -870,7 +891,7 @@ namespace Service
         }
         public async Task<List<NFeEmission>> GetAll(int tenantid)
         {
-            return await (repository as INFeRepository ).GetAllAsync(tenantid);
+            return await (repository as INFeRepository).GetAllAsync(tenantid);
         }
         public async Task<PagedResult<NFeEmission>> GetPaged(Filters filters)
         {
@@ -885,7 +906,7 @@ namespace Service
         Task<List<NFeEmission>> GetPendingAsync();
         Task<List<NFeEmission>> GetBySaleIdAsync(int saleId);
         Task<long?> GetLastNumeroAsync(string serie, TipoDocumentoEnum tipoDocumento);
-  
+
         Task<List<NFeEmission>> GetAll(int tenantid);
         Task<PagedResult<NFeEmission>> GetPaged(Filters filters);
         Task<ResponseGeneric> Resend(int id);
