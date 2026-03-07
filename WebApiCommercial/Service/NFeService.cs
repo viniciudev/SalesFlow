@@ -6,6 +6,7 @@ using Model.DTO;
 using Model.Enums;
 using Model.Moves;
 using Model.Registrations;
+using Newtonsoft.Json;
 using NFe.AppTeste;
 using NFe.Classes;
 using NFe.Classes.Informacoes;
@@ -24,7 +25,9 @@ using NFe.Classes.Informacoes.Observacoes;
 using NFe.Classes.Informacoes.Pagamento;
 using NFe.Classes.Informacoes.Total;
 using NFe.Classes.Informacoes.Transporte;
+using NFe.Classes.Protocolo;
 using NFe.Classes.Servicos.Tipos;
+using NFe.Danfe.Nativo.NFCe;
 using NFe.Servicos;
 using NFe.Servicos.Retorno;
 using NFe.Utils;
@@ -36,6 +39,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
@@ -84,16 +88,36 @@ namespace Service
 
             //classes externas para gerar nfe
             var respEmissao = await TransmitirNfe(nFeEmission, fiscalConfiguration, sale, naturezaOperacao);
-
-            //mudar status
-            //mensagem de erro
-            nFeEmission.Sent = true;
-            //nFeEmission.Numero = numero ?? existing.Numero;
-            //nFeEmission.ResponseJson = responseJson;
-            nFeEmission.ErrorMessage = respEmissao;
-            nFeEmission.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
-            nFeEmission.TryCount += 1;
-            nFeEmission.UpdatedAt = DateTime.UtcNow;
+            if (respEmissao is string mensagemErro)
+            {
+                //mudar status
+                //mensagem de erro
+                nFeEmission.Sent = true;
+                nFeEmission.Numero = nFeEmission.Numero;
+                nFeEmission.StatusNfe = StatusNfe.pendente;
+                //nFeEmission.ResponseJson = responseJson;
+                nFeEmission.ErrorMessage = respEmissao;
+                nFeEmission.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
+                nFeEmission.TryCount += 1;
+                nFeEmission.UpdatedAt = DateTime.UtcNow;
+               
+            }
+            else if (respEmissao is RetornoNFeAutorizacao ret)
+            {
+                protNFe protNFe = ret.Retorno.protNFe;
+                infProt infProt = protNFe?.infProt;
+                //mensagem de erro
+                nFeEmission.Sent = true;
+                nFeEmission.Numero = nFeEmission.Numero;
+                nFeEmission.StatusNfe = NfeSituacao.Autorizada(infProt.cStat)? StatusNfe.emitida: StatusNfe.pendente;
+                nFeEmission.ResponseJson = JsonConvert.SerializeObject (infProt);
+                nFeEmission.ErrorMessage = NfeSituacao.Autorizada(infProt.cStat) ?null: infProt.xMotivo;
+                nFeEmission.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
+                nFeEmission.TryCount += 1;
+                nFeEmission.UpdatedAt = DateTime.UtcNow;
+                nFeEmission.ChaveAcesso = infProt.chNFe;
+                nFeEmission.XmlCompleto = ret.EnvioStr;
+            }
 
             await repository.UpdateAsync(nFeEmission.Id, nFeEmission);
             return new ResponseGeneric { Success = true };
@@ -122,25 +146,45 @@ namespace Service
 
             attempt.TryCount = attempt.TryCount <= 0 ? 1 : attempt.TryCount;
             attempt.CreatedAt = DateTime.UtcNow;
-
-            var entity = new NFeEmission
+            var entity = new NFeEmission();
+            if (respEmissao is string mensagemErro)
             {
-                ResponseJson = respEmissao,
-                NaturezaOperacaoId = attempt.NaturezaOperacaoId,
-                SaleId = attempt.SaleId,
-                TipoDocumento = attempt.TipoDocumento,
-                Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie,
-                Numero = nFeEmission == null ? fiscalConfiguration.NumeracaoDocumentos.Nfce.NumeroInicial : nFeEmission.Numero + 1,
-                StatusNfe = attempt.StatusNfe,
-                CreatedAt = attempt.CreatedAt,
-                TryCount = attempt.TryCount,
-                CompanyId = attempt.CompanyId
-            };
+                entity.ResponseJson = "";
+                entity.ErrorMessage = mensagemErro;
+                entity.NaturezaOperacaoId = attempt.NaturezaOperacaoId;
+                entity.SaleId = attempt.SaleId;
+                entity.TipoDocumento = attempt.TipoDocumento;
+                entity.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
+                entity.Numero = nFeEmission == null ? fiscalConfiguration.NumeracaoDocumentos.Nfce.NumeroInicial : nFeEmission.Numero + 1;
+                entity.StatusNfe = StatusNfe.pendente;
+                entity.CreatedAt = DateTime.UtcNow;
+                entity.TryCount = attempt.TryCount;
+                entity.CompanyId = attempt.CompanyId;
+            }
+            else if(respEmissao is RetornoNFeAutorizacao ret)
+            {
+                protNFe protNFe = ret.Retorno.protNFe;
+                infProt infProt = protNFe?.infProt;
+                entity.ResponseJson = JsonConvert.SerializeObject(infProt);
+                entity.ErrorMessage= NfeSituacao.Autorizada(infProt.cStat) ? null : infProt.xMotivo;
+                entity.NaturezaOperacaoId = attempt.NaturezaOperacaoId;
+                entity.SaleId = attempt.SaleId;
+                entity.TipoDocumento = attempt.TipoDocumento;
+                entity.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
+                entity.Numero = nFeEmission == null ? fiscalConfiguration.NumeracaoDocumentos.Nfce.NumeroInicial : nFeEmission.Numero + 1;
+                entity.StatusNfe = NfeSituacao.Autorizada(infProt.cStat) ? StatusNfe.emitida : StatusNfe.pendente; ;
+                entity.CreatedAt = DateTime.UtcNow;
+                entity.TryCount = attempt.TryCount;
+                entity.CompanyId = attempt.CompanyId;
+                entity.XmlCompleto = ret.RetornoCompletoStr;
+            }
+
+              
             await repository.CreateAsync(entity);
             return new ResponseGeneric { Success = true };
         }
 
-        private async Task<string> TransmitirNfe(NFeEmission nFeEmission, FiscalConfiguration fiscalConfiguration, Sale sale, NaturezaOperacao naturezaOperacao)
+        private async Task<dynamic> TransmitirNfe(NFeEmission nFeEmission, FiscalConfiguration fiscalConfiguration, Sale sale, NaturezaOperacao naturezaOperacao)
         {
             try
             {
@@ -157,8 +201,9 @@ namespace Service
                         Csc = fiscalConfiguration.Csc.Valor
                     });
                 var servicoNFe = new ServicosNFe(_configuracaoApp.CfgServico);
-                var retornoEnvio = servicoNFe.NFeAutorizacao(Convert.ToInt32(1), IndicadorSincronizacao.Assincrono, new List<NFe.Classes.NFe> { _nfe }, false/*Envia a mensagem compactada para a SEFAZ*/);
-
+                var retornoEnvio = servicoNFe.NFeAutorizacao(int.Parse(fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie), IndicadorSincronizacao.Sincrono, new List<NFe.Classes.NFe> { _nfe }, false/*Envia a mensagem compactada para a SEFAZ*/);
+   /*             var resp=OnSucessoSync(retornoEnvio)*/;
+               
                 //ExibeNfe();
 
                 //var dlg = new Microsoft.Win32.SaveFileDialog
@@ -172,7 +217,7 @@ namespace Service
                 //var arquivoXml = dlg.FileName;
                 //_nfe.SalvarArquivoXml(arquivoXml);
 
-                return retornoEnvio.RetornoStr;
+                return retornoEnvio;
             }
             catch (Exception ex)
             {
@@ -186,27 +231,43 @@ namespace Service
                 _currentNaturezaOperacao = null;
             }
         }
-        private static void OnSucessoSync(RetornoBasico e)
+        public static string LimparString(string texto, bool manterEspacos = false)
         {
-            Console.Clear();
-            if (!string.IsNullOrEmpty(e.EnvioStr))
-            {
-                Console.WriteLine("Xml Envio:");
-                Console.WriteLine(FormatXml(e.EnvioStr) + "\n");
-            }
+            if (string.IsNullOrEmpty(texto))
+                return texto;
 
-            if (!string.IsNullOrEmpty(e.RetornoStr))
+            if (manterEspacos)
             {
-                Console.WriteLine("Xml Retorno:");
-                Console.WriteLine(FormatXml(e.RetornoStr) + "\n");
+                // Mantém letras, números e espaços
+                return Regex.Replace(texto, @"[^a-zA-Z0-9\s]", "");
             }
+            else
+            {
+                // Mantém apenas letras e números
+                return Regex.Replace(texto, @"[^a-zA-Z0-9]", "");
+            }
+        }
+        private string OnSucessoSync(RetornoBasico e)
+        {
+            //Console.Clear();
+            //if (!string.IsNullOrEmpty(e.EnvioStr))
+            //{
+            //    Console.WriteLine("Xml Envio:");
+            //    Console.WriteLine(FormatXml(e.EnvioStr) + "\n");
+            //}
+
+            //if (!string.IsNullOrEmpty(e.RetornoStr))
+            //{
+            //    Console.WriteLine("Xml Retorno:");
+            //    Console.WriteLine(FormatXml(e.RetornoStr) + "\n");
+            //}
 
             if (!string.IsNullOrEmpty(e.RetornoCompletoStr))
             {
                 Console.WriteLine("Xml Retorno Completo:");
                 Console.WriteLine(FormatXml(e.RetornoCompletoStr) + "\n");
             }
-            Console.ReadKey();
+            return (FormatXml(e.RetornoCompletoStr) + "\n");
         }
         private static string FormatXml(string xml)
         {
@@ -255,7 +316,7 @@ namespace Service
                 {
                     VersaoQrCode = VersaoQrCode.QrCodeVersao3
                 };
-                var DiretorioSchemas = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Schemas");
+                var DiretorioSchemas = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "NFSchemas");
                 var configuracaoApp = new ConfiguracaoApp
                 {
           
@@ -265,7 +326,7 @@ namespace Service
                         VersaoNFeAutorizacao =VersaoServico.Versao400,
                          VersaoNFeRetAutorizacao=VersaoServico.Versao400,
                          VersaoLayout=VersaoServico.Versao400,
-                         cUF=Estado.MG,//(Estado)fiscalConfiguration.Emitente.EmitenteEndereco.Uf,
+                         cUF= (Estado)Enum.Parse(typeof(Estado), fiscalConfiguration.Emitente.EmitenteEndereco.Uf),
                         ProtocoloDeSeguranca=System.Net.SecurityProtocolType.Tls12,
                         VersaoConsultaGTIN=VersaoServico.Versao400,
                         VersaoNfceAministracaoCSC=VersaoServico.Versao400,
@@ -287,11 +348,11 @@ namespace Service
                     },
                     Emitente = new emit
                     {
-                        CNPJ = fiscalConfiguration.Emitente.Cnpj,
-                        IE = fiscalConfiguration.Emitente.InscricaoEstadual,
+                        CNPJ =LimparString( fiscalConfiguration.Emitente.Cnpj),
+                        IE = LimparString( fiscalConfiguration.Emitente.InscricaoEstadual),
                         xNome = fiscalConfiguration.Emitente.RazaoSocial,
                         xFant = fiscalConfiguration.Emitente.Fantasia,
-                        CRT = CRT.RegimeNormal,
+                        CRT = CRT.SimplesNacional,
 
                     },
 
@@ -897,6 +958,53 @@ namespace Service
         {
             return await (repository as INFeRepository).GetPaged(filters);
         }
+        public async Task<byte[]> Danfe(int id)
+        {
+            string arquivoXml = Funcoes.BuscarArquivoXml();
+            try
+            {
+                nfeProc proc = null;
+                NFe.Classes.NFe nfe = null;
+                string arquivo = string.Empty;
+
+                try
+                {
+                    proc = new nfeProc().CarregarDeArquivoXml(arquivoXml);
+                    arquivo = proc.ObterXmlString();
+                }
+                catch (Exception)
+                {
+                    nfe = new NFe.Classes.NFe().CarregarDeArquivoXml(arquivoXml);
+                    arquivo = nfe.ObterXmlString();
+                }
+
+
+
+                DanfeNativoNfce impr = new DanfeNativoNfce(arquivo,
+                    VersaoQrCode.QrCodeVersao3,
+                   null,
+                    "",//_configuracoes.ConfiguracaoCsc.CIdToken,
+                    "",//_configuracoes.ConfiguracaoCsc.Csc,
+                    0 /*troco*//*, "Arial Black"*/);
+
+                //SaveFileDialog fileDialog = new SaveFileDialog();
+
+                //fileDialog.ShowDialog();
+
+                //if (string.IsNullOrEmpty(fileDialog.FileName))
+                //    throw new ArgumentException("Não foi selecionado nem uma pasta");
+
+                return impr.PdfBytes();
+
+                //impr.Imprimir(salvarArquivoPdfEm: fileDialog.FileName.Replace(".pdf", "") + ".pdf");
+                //var bytes = impr.PdfBytes();
+                //var base64 = Convert.ToBase64String(bytes);
+            }
+            catch (Exception ex)
+            {
+                return [];
+            }
+        }
     }
     public interface INFeService
     {
@@ -910,5 +1018,6 @@ namespace Service
         Task<List<NFeEmission>> GetAll(int tenantid);
         Task<PagedResult<NFeEmission>> GetPaged(Filters filters);
         Task<ResponseGeneric> Resend(int id);
+        Task<byte[]> Danfe(int id);
     }
 }

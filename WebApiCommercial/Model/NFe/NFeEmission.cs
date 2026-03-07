@@ -1,13 +1,16 @@
 #nullable enable
-using System;
-using Model.Registrations;
-using Model.Moves;
 using Model.Enums;
+using Model.Moves;
+using Model.Registrations;
+using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Model.Registrations
 {
     public class NFeEmission : BaseEntity
     {
+        public string? ChaveAcesso { get; set; }
+
         public int NaturezaOperacaoId { get; set; }
         public NaturezaOperacao? NaturezaOperacao { get; set; }
 
@@ -33,6 +36,8 @@ namespace Model.Registrations
         public Company? Company { get; set; }
         public int CompanyId { get; set; }
         public StatusNfe StatusNfe { get; set; }
+        [Column(TypeName = "text")] // Usar text para armazenar o XML completo
+        public string? XmlCompleto { get; set; }
     }
     public enum StatusNfe
     {

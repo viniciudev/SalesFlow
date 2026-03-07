@@ -80,6 +80,19 @@ namespace WebApiCommercial.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
+        [HttpGet("{id}/danfe")]
+        public async Task<IActionResult> Danfe(int id)
+        {
+            try
+            {
+                byte[] resp = await _nfeService.Danfe(id);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
 
         // PUT api/nfe/{id}/result
         // Atualiza resultado da emissão (success/failure, número, response)

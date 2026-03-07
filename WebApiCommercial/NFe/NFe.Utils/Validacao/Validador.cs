@@ -162,7 +162,16 @@ namespace NFe.Utils.Validacao
             };
 
             // cria um leitor para validação
-            XmlReader validator = XmlReader.Create(new StringReader(stringXml), cfg);
+            XmlReader validator;
+            try
+            {
+                 validator = XmlReader.Create(new StringReader(stringXml), cfg);
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
             try
             {
                 // Faz a leitura de todos os dados XML

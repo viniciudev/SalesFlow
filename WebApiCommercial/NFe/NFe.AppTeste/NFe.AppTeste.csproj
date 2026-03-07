@@ -114,6 +114,1836 @@
     </EmbeddedResource>
     <None Include="app.config" />
     <None Include="NFe.AppTeste.licenseheader" />
+    <None Include="NFSchemas\110150_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\atuCadEmiDFe_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\autorizacaoRetorno_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\autorizacao_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\Averb_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cabecMsg_v1.02.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cadEmiDFe_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cancCTeTiposBasico_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cancCTeTiposBasico_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cancNFe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\CCe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\config_uf_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\confRecebto_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consCad_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consCad_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consDPEC_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consGTIN_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consMDFeNaoEncTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consMDFeNaoEncTiposBasico_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consMDFeNaoEnc_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consMDFeNaoEnc_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consNFeDest_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consNSUFaltCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consProtFaltCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consReciCTeTiposBasico_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consReciCTeTiposBasico_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consReciCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consReciCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consReciMDFeTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consReciMDFeTiposBasico_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consReciMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consReciMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consReciNF3eTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consReciNF3e_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consReciNFComTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consReciNFCom_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consReciNFe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consReciNFe_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consReciNFe_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consSitCTeTiposBasico_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consSitCTeTiposBasico_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consSitCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consSitCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consSitMDFeTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consSitMDFeTiposBasico_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consSitMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consSitMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consSitNF3eTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consSitNF3e_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consSitNFComTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consSitNFCom_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consSitNFe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consSitNFe_v2.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consSitNFe_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consSitNFe_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consStatServCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consStatServCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consStatServMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consStatServMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consStatServNF3eTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consStatServNF3e_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consStatServNFComTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consStatServNFCom_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consStatServTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consStatServTiposBasico_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consStatServTiposBasico_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consStatServ_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consStatServ_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consStatServ_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\consulta_config_uf_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteConsultaDFeTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteConsultaDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteModalAereo_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteModalAereo_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteModalAquaviario_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteModalAquaviario_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteModalDutoviario_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteModalDutoviario_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteModalFerroviario_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteModalFerroviario_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteModalRodoviarioOS_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteModalRodoviario_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteModalRodoviario_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteMultiModal_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteMultiModal_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteOS_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteTiposBasico_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cteTiposBasico_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cte_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\cte_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\dados_gnre_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\dados_gnre_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\DFeTiposBasicos_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\distChCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\distCTePorUF_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\distCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\distDFeInt_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\distDFeInt_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\distMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\distMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\downloadNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e110110_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e110111_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e110112_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e110130_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e110131_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e110140NFCe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e110140NFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e110140_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e110150_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e110192_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e110193_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e110750_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e110751_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e111500_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e111501_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e111502_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e111503_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e210200_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e210210_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e210220_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e210240_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e411500_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e411501_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e411502_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e411503_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e610130_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e610131_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e790700_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e990900_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\e990910_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envAverb_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envCancelPProrrogNFe_v1.0.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envCCe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envComprovanteEntregaNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envConfRecebto_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envDPEC_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envEPEC_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envEventoAtorInteressado_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envEventoCancEConf_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envEventoCancEntregaNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envEventoCancInsucessoNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envEventoCancNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envEventoCancSubst_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envEventoEConf_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envEventoEntregaNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envEventoInsucessoNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envEvento_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envFiscoNfe_v1.0.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\enviCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\enviCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\enviMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\enviMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\enviNF3e_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\enviNFCom_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\enviNFe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\enviNFe_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\enviNFe_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envioLoteEventos-v1_01_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envioLoteEventos-v1_02_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envioLoteEventos-v1_03_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envioLoteEventos-v1_03_02.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envioLoteEventos-v1_04_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envioLoteEventos-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envioLoteEventos-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envPProrrogNFe_v1.0.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envRemIndus_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envSuframaInternaliza_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\envSuframaVistoria_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\EPEC_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evAlteracaoPagtoServMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCancCECTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCancCTeComplementar_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCancCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCancCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCancMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCancMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCancNF3e_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCancNFCom_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCCeCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCCeCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCECTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evConfirmaServMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCTeAnulado_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCTeAutorizadoMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCTeCanceladoMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCTeComplementar_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCTeLiberaEPEC_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCTeLiberaPrazoCanc_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCTeMultimodal_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCTeRedespachoInter_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCTeRedespacho_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCTeRegPassagemAuto_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCTeRegPassagem_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCTeSubcontratacao_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evCTeSubstituido_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evEncMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evEncMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoAtorInteressado_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\EventoCancEConf_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoCancEntregaNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\EventoCancInsucessoNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoCancNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoCancSubst_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoCTeTiposBasico_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoCTeTiposBasico_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\EventoEConf_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoEntregaNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoEPEC_v0.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoEPEC_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\EventoInsucessoNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoMDFeTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoMDFeTiposBasico_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoNF3eTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoNF3e_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoNFComTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoNFCom_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\eventoRemIndus_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evEPECCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evEPECCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evGTV_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evIncCondutorMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evIncCondutorMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evInclusaoDFeMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evPagtoOperMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evPrestDesacordo_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evRegMultimodal_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evRegMultimodal_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtAquisicaoProdRural-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtAquisicaoProdRural-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtEspDesportivo-v1_01_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtEspDesportivo-v1_02_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtEspDesportivo-v1_03_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtEspDesportivo-v1_03_02.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtEspDesportivo-v1_04_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtEspDesportivo-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtEspDesportivo-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtExclusao-v1_01_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtExclusao-v1_02_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtExclusao-v1_03_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtExclusao-v1_03_02.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtExclusao-v1_04_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtExclusao-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtExclusao-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtFechamento-v1_01_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtFechamento-v1_02_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtFechamento-v1_03_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtFechamento-v1_03_02.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtFechamento-v1_04_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtFechamento-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtFechamento-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoContribuinte-v1_01_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoContribuinte-v1_02_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoContribuinte-v1_03_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoContribuinte-v1_03_02.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoContribuinte-v1_04_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoContribuinte-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoContribuinte-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoCPRB-v1_01_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoCPRB-v1_02_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoCPRB-v1_03_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoCPRB-v1_03_02.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoCPRB-v1_04_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoCPRB-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoCPRB-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoProdRural-v1_01_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoProdRural-v1_02_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoProdRural-v1_03_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoProdRural-v1_03_02.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoProdRural-v1_04_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoProdRural-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtInfoProdRural-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtPagamentosDiversos-v1_01_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtPrestadorServicos-v1_01_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtPrestadorServicos-v1_02_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtPrestadorServicos-v1_03_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtPrestadorServicos-v1_03_02.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtPrestadorServicos-v1_04_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtPrestadorServicos-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtPrestadorServicos-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtReabreEvPer-v1_01_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtReabreEvPer-v1_02_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtReabreEvPer-v1_03_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtReabreEvPer-v1_03_02.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtReabreEvPer-v1_04_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtReabreEvPer-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtReabreEvPer-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtRecursoRecebidoAssociacao-v1_01_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtRecursoRecebidoAssociacao-v1_02_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtRecursoRecebidoAssociacao-v1_03_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtRecursoRecebidoAssociacao-v1_03_02.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtRecursoRecebidoAssociacao-v1_04_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtRecursoRecebidoAssociacao-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtRecursoRecebidoAssociacao-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtRecursoRepassadoAssociacao-v1_01_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtRecursoRepassadoAssociacao-v1_02_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtRecursoRepassadoAssociacao-v1_03_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtRecursoRepassadoAssociacao-v1_03_02.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtRecursoRepassadoAssociacao-v1_04_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtRecursoRepassadoAssociacao-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtRecursoRepassadoAssociacao-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtTabProcesso-v1_01_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtTabProcesso-v1_02_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtTabProcesso-v1_03_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtTabProcesso-v1_03_02.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtTabProcesso-v1_04_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtTabProcesso-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtTabProcesso-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtTomadorServicos-v1_01_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtTomadorServicos-v1_02_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtTomadorServicos-v1_03_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtTomadorServicos-v1_03_02.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtTomadorServicos-v1_04_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtTomadorServicos-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\evtTomadorServicos-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\GTVe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\inutCTeTiposBasico_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\inutCTeTiposBasico_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\inutCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\inutCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\inutNFe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\inutNFe_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\inutNFe_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteAverb_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\LeiauteCadastroEmissorDFe_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteCancNFe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteCCe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteCcgConsGTIN_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteChCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteComprovanteEntregaNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteConfRecebto_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteConsNFeDest_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteConsSitNFe_v2.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteConsSitNFe_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteConsSitNFe_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteConsStatServ_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteConsStatServ_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteConsStatServ_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteConsultaCadastro_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteConsultaCadastro_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteConsultaCadastro_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteDistMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteDistMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteDownloadNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteDPEC_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteEPEC_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteEventoAtorInteressado_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteEventoCancEConf_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteEventoCancEntregaNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteEventoCancInsucessoNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteEventoCancNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteEventoCancSubst_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteEventoEConf_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteEventoEntregaNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteEventoInsucessoNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteEvento_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteInutNFe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteInutNFe_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteInutNFe_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteLivroCombustivel_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteLMCAutorizacaoRetorno_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteLMCAutorizacao_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteLMCStatusServico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteLoteRFBCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteManCadTranspMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteNFe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteNFe_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteNFe_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteNFe_v4.00_Homologacao.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteProtLivroCombustivel_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteRemIndus_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteSRE_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteSuframaInternaliza_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\leiauteSuframaVistoria_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\livroCombustivel_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\lmcComum_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\loteDistCTePorUF_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\loteDistCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\loteEnvCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\loteRFBCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\lote_gnre_consulta_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\lote_gnre_recibo_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\lote_gnre_result_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\lote_gnre_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\lote_gnre_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeConsultaDFeTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeConsultaDFeTiposBasico_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeConsultaDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeConsultaDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeConsultaPorPlacaTiposBasico_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeConsultaPorPlaca_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeManCadFrota_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeManCadTransp_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeModalAereo_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeModalAereo_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeModalAquaviario_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeModalAquaviario_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeModalFerroviario_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeModalFerroviario_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeModalRodoviario_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeModalRodoviario_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfeTiposBasico_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\mdfe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\nf3eTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\nf3e_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\nfcomTiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\nfcom_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\nfe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\nfe_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\nfe_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procAverbNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procCancNFe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procCCeNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procComprovanteEntregaNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procConfRecebtoNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procCTeOS_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEPEC_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEventoAtorInteressado_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEventoCancEConf_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEventoCancEntregaNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEventoCancInsucessoNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEventoCancNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEventoCancSubst_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEventoCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEventoCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEventoEConf_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEventoEntregaNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEventoInsucessoNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEventoMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEventoMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEventoNF3e_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEventoNFCom_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEventoNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procEventoNFe_v99.99.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procGTVe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procInutCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procInutCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procInutNFe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procInutNFe_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procInutNFe_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procNF3e_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procNFCom_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procNFe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procNFe_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procNFe_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\procRemIndus_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\prod_leiauteNFe_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\resEvento_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\resEvento_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\resNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\resNFe_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retAtuCadEmiDFe_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retCancNFe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retComprovanteEntregaNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsCad_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsCad_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsDPEC_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsGTIN_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsMDFeNaoEnc_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsMDFeNaoEnc_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retconsNFeDest_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsNSUFaltCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsProtFaltCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsReciCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsReciCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsReciMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsReciMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsReciNF3e_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsReciNFCom_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsReciNFe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsReciNFe_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsReciNFe_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsSitCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsSitCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsSitMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsSitMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsSitNF3e_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsSitNFCom_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsSitNFe_v2.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsSitNFe_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsSitNFe_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsStatServCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsStatServCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsStatServMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsStatServMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsStatServNF3e_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsStatServNFCom_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsStatServ_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsStatServ_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retConsStatServ_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retCTeConsultaDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retCTeOS_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retDistChCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retDistCTePorUF_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retDistCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retDistDFeInt_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retDistDFeInt_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retDistMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retDistMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retDownloadNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retDPEC_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnvAverb_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnvCancelPProrrogNFe_v1.0.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnvCCe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnvConfRecebto_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnvEPEC_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnvEventoAtorInteressado_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnvEventoCancNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnvEventoCancSubst_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnvEvento_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnvFiscoNFe_v1.0.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnviCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnviCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnviMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnviMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnviNF3e_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnviNFCom_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnviNFe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnviNFe_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnviNFe_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnvRemIndus_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnvSuframaInternaliza_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEnvSuframaVistoria_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEventoCancEConf_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEventoCancEntregaNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEventoCancInsucessoNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEventoCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEventoCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEventoEConf_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEventoEntregaNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEventoEPEC_v0.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEventoInsucessoNFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEventoMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEventoMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEventoNF3e_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retEventoNFCom_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retGTVe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retInutCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retInutCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retInutNFe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retInutNFe_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retInutNFe_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retLoteRFBCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retMDFeConsultaDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retMDFeConsultaDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retMDFeConsultaPorPlaca_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retMdfeManCadFrota_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retMdfeManCadTransp_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retNF3e_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retNFCom_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoEvento-v1_01_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoEvento-v1_02_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoLoteEventos-v1_01_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoLoteEventos-v1_02_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoLoteEventos-v1_03_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoLoteEventos-v1_03_02.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoLoteEventos-v1_04_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoLoteEventos-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoLoteEventos-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoRecibosChaveEvento-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoRecibosChaveEvento-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoTotalizadorContribuinte-v1_01_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoTotalizadorContribuinte-v1_02_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoTotalizadorContribuinte-v1_03_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoTotalizadorContribuinte-v1_03_02.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoTotalizadorContribuinte-v1_04_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoTotalizadorContribuinte-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoTotalizadorContribuinte-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoTotalizadorEvento-v1_03_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoTotalizadorEvento-v1_03_02.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoTotalizadorEvento-v1_04_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoTotalizadorEvento-v1_05_00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retornoTotalizadorEvento-v1_05_01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\retPProrrogNFe_v1.0.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\statusServico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\SuframaInternaliza_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\SuframaVistoria_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposBasicoGNRE_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposBasicoGNRE_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposBasicosCcgConsGTIN_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposBasico_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposBasico_v1.03.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposBasico_v1.03_OPENSSL.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposBasico_v3.10.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposBasico_v3.10_OPENSSL.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposBasico_v4.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposDistDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposDistDFe_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposGeralCTe_v2.00-OPENSSL.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposGeralCTe_v2.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposGeralCTe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposGeralMDFe_v1.00-OPENSSL.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposGeralMDFe_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposGeralMDFe_v3.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposGeralNF3e_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\tiposGeralNFCom_v1.00.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\xmldsig-core-schema.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NFSchemas\xmldsig-core-schema_v1.01.xsd">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

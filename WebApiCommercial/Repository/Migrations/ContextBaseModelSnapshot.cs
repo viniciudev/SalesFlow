@@ -952,6 +952,9 @@ namespace Repository.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ChaveAcesso")
+                        .HasColumnType("text");
+
                     b.Property<int>("CompanyId")
                         .HasColumnType("integer");
 
@@ -995,6 +998,9 @@ namespace Repository.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("XmlCompleto")
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

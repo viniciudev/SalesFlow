@@ -2217,7 +2217,7 @@ namespace NFe.AppTeste
                 if (string.IsNullOrEmpty(fileDialog.FileName))
                     throw new ArgumentException("Não foi selecionado nem uma pasta");
 
-
+              
 
                 impr.Imprimir(salvarArquivoPdfEm: fileDialog.FileName.Replace(".pdf", "") + ".pdf");
                 //var bytes = impr.PdfBytes();
