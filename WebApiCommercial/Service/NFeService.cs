@@ -960,7 +960,8 @@ namespace Service
         }
         public async Task<byte[]> Danfe(int id)
         {
-            string arquivoXml = Funcoes.BuscarArquivoXml();
+            NFeEmission nFeEmission = await repository.GetByIdAsync(id);
+            string arquivoXml = nFeEmission.XmlCompleto;//Funcoes.BuscarArquivoXml();
             try
             {
                 nfeProc proc = null;
@@ -978,13 +979,15 @@ namespace Service
                     arquivo = nfe.ObterXmlString();
                 }
 
-
+                FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(nFeEmission.CompanyId);
+                //if (fiscalConfiguration == null)
+                //    return new ResponseGeneric { Success = false, Message = "Não encontrado as configurações para emissão de nota!" };
 
                 DanfeNativoNfce impr = new DanfeNativoNfce(arquivo,
                     VersaoQrCode.QrCodeVersao3,
                    null,
-                    "",//_configuracoes.ConfiguracaoCsc.CIdToken,
-                    "",//_configuracoes.ConfiguracaoCsc.Csc,
+                    fiscalConfiguration.Csc.Identificador,//_configuracoes.ConfiguracaoCsc.CIdToken,
+                    fiscalConfiguration.Csc.Valor,//",//_configuracoes.ConfiguracaoCsc.Csc,
                     0 /*troco*//*, "Arial Black"*/);
 
                 //SaveFileDialog fileDialog = new SaveFileDialog();
