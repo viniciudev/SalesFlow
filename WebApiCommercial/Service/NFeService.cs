@@ -85,9 +85,9 @@ namespace Service
             if (naturezaOperacao == null)
                 return new ResponseGeneric { Success = false, Message = "Natureza de operação não encontrada." };
 
-
+       
             //classes externas para gerar nfe
-            var respEmissao = await TransmitirNfe(nFeEmission, fiscalConfiguration, sale, naturezaOperacao);
+            var respEmissao = await TransmitirNfe(Convert.ToInt32( nFeEmission.Numero), nFeEmission, fiscalConfiguration, sale, naturezaOperacao);
             if (respEmissao is string mensagemErro)
             {
                 //mudar status
@@ -140,9 +140,9 @@ namespace Service
             NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(attempt.NaturezaOperacaoId);
             if (naturezaOperacao == null)
                 return new ResponseGeneric { Success = false, Message = "Natureza de operação não encontrada." };
-
+            int proximoNumeroNfe = Convert.ToInt32( nFeEmission == null ? fiscalConfiguration.NumeracaoDocumentos.Nfce.NumeroInicial : nFeEmission.Numero + 1);
             //classes externas para gerar nfe
-            var respEmissao = await TransmitirNfe(nFeEmission, fiscalConfiguration, sale, naturezaOperacao);
+            var respEmissao = await TransmitirNfe(proximoNumeroNfe, nFeEmission, fiscalConfiguration, sale, naturezaOperacao);
 
             attempt.TryCount = attempt.TryCount <= 0 ? 1 : attempt.TryCount;
             attempt.CreatedAt = DateTime.UtcNow;
@@ -155,7 +155,7 @@ namespace Service
                 entity.SaleId = attempt.SaleId;
                 entity.TipoDocumento = attempt.TipoDocumento;
                 entity.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
-                entity.Numero = nFeEmission == null ? fiscalConfiguration.NumeracaoDocumentos.Nfce.NumeroInicial : nFeEmission.Numero + 1;
+                entity.Numero = proximoNumeroNfe;
                 entity.StatusNfe = StatusNfe.pendente;
                 entity.CreatedAt = DateTime.UtcNow;
                 entity.TryCount = attempt.TryCount;
@@ -171,7 +171,7 @@ namespace Service
                 entity.SaleId = attempt.SaleId;
                 entity.TipoDocumento = attempt.TipoDocumento;
                 entity.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
-                entity.Numero = nFeEmission == null ? fiscalConfiguration.NumeracaoDocumentos.Nfce.NumeroInicial : nFeEmission.Numero + 1;
+                entity.Numero = proximoNumeroNfe;
                 entity.StatusNfe = NfeSituacao.Autorizada(infProt.cStat) ? StatusNfe.emitida : StatusNfe.pendente; ;
                 entity.CreatedAt = DateTime.UtcNow;
                 entity.TryCount = attempt.TryCount;
@@ -184,7 +184,7 @@ namespace Service
             return new ResponseGeneric { Success = true };
         }
 
-        private async Task<dynamic> TransmitirNfe(NFeEmission nFeEmission, FiscalConfiguration fiscalConfiguration, Sale sale, NaturezaOperacao naturezaOperacao)
+        private async Task<dynamic> TransmitirNfe(int numero, NFeEmission nFeEmission, FiscalConfiguration fiscalConfiguration, Sale sale, NaturezaOperacao naturezaOperacao)
         {
             try
             {
@@ -195,7 +195,7 @@ namespace Service
                 _currentNaturezaOperacao = naturezaOperacao;
                 _configuracaoApp = criarConfiguracaoApp(fiscalConfiguration, naturezaOperacao, certbyte);
                 _nfe = ObterNfeValidada(VersaoServico.Versao400, ModeloDocumento.NFCe,
-                    Convert.ToInt32(nFeEmission.Numero), new ConfiguracaoCsc
+                    numero, new ConfiguracaoCsc
                     {
                         CIdToken = fiscalConfiguration.Csc.Identificador,
                         Csc = fiscalConfiguration.Csc.Valor
@@ -1005,6 +1005,16 @@ namespace Service
                 return [];
             }
         }
+        public async Task update(NFeEmissionDto attempt)
+        {
+            NFeEmission nFeEmission = await GetByIdAsync(attempt.Id);
+            if (nFeEmission == null) return;
+            nFeEmission.NaturezaOperacaoId = attempt.NaturezaOperacaoId;
+            nFeEmission.SaleId = attempt.SaleId;
+            nFeEmission.Numero = attempt.Numero;
+
+            await repository.UpdateAsync(nFeEmission.Id, nFeEmission);
+        }
     }
     public interface INFeService
     {
@@ -1019,5 +1029,6 @@ namespace Service
         Task<PagedResult<NFeEmission>> GetPaged(Filters filters);
         Task<ResponseGeneric> Resend(int id);
         Task<byte[]> Danfe(int id);
+        Task update(NFeEmissionDto attempt);
     }
 }

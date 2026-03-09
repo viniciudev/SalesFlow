@@ -65,6 +65,21 @@ namespace WebApiCommercial.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
+        [HttpPut]
+        public async Task<IActionResult> Update( [FromBody] NFeEmissionDto attempt)
+        {
+            if (attempt == null) return BadRequest("Payload inválido.");
+            try
+            {
+               
+                await _nfeService.update(attempt);
+                return Ok(true);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
         // POST api/nfe
         // reenvio de emissão (salva payload para retry)
         [HttpPost("{id}/resend")]
