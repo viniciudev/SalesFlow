@@ -520,23 +520,23 @@ namespace NFe.Danfe.Nativo.NFCe
 
             _y += dadosNfce.Medida.Altura;
 
-            if (_nfe.infNFe.ide.tpEmis == TipoEmissao.teNormal)
-            {
-                var textoProtocoloAutorizacao = new StringBuilder("Protocolo de autorização: ");
-                textoProtocoloAutorizacao.Append(_proc.protNFe.infProt.nProt);
-                var protocoloAutorizacao = new AdicionarTexto(g, textoProtocoloAutorizacao.ToString(), 7);
-                int protocoloAutorizacaoX = (larguraLinha - protocoloAutorizacao.Medida.Largura) / 2;
-                protocoloAutorizacao.Desenhar(protocoloAutorizacaoX, _y);
-                _y += protocoloAutorizacao.Medida.Altura;
+            //if (_nfe.infNFe.ide.tpEmis == TipoEmissao.teNormal)
+            //{
+            //    var textoProtocoloAutorizacao = new StringBuilder("Protocolo de autorização: ");
+            //    textoProtocoloAutorizacao.Append(_proc.protNFe.infProt.nProt);
+            //    var protocoloAutorizacao = new AdicionarTexto(g, textoProtocoloAutorizacao.ToString(), 7);
+            //    int protocoloAutorizacaoX = (larguraLinha - protocoloAutorizacao.Medida.Largura) / 2;
+            //    protocoloAutorizacao.Desenhar(protocoloAutorizacaoX, _y);
+            //    _y += protocoloAutorizacao.Medida.Altura;
 
 
-                var textoDataAutorizacao = new StringBuilder("Data de autorização ");
-                textoDataAutorizacao.Append(_proc.protNFe.infProt.dhRecbto.ToString("G"));
-                var dataAutorizacao = new AdicionarTexto(g, textoDataAutorizacao.ToString(), 7);
-                int dataAutorizacaoX = (larguraLinha - dataAutorizacao.Medida.Largura) / 2;
-                dataAutorizacao.Desenhar(dataAutorizacaoX, _y);
-                _y += dataAutorizacao.Medida.Altura;
-            }
+            //    var textoDataAutorizacao = new StringBuilder("Data de autorização ");
+            //    textoDataAutorizacao.Append(_proc.protNFe.infProt.dhRecbto.ToString("G"));
+            //    var dataAutorizacao = new AdicionarTexto(g, textoDataAutorizacao.ToString(), 7);
+            //    int dataAutorizacaoX = (larguraLinha - dataAutorizacao.Medida.Largura) / 2;
+            //    dataAutorizacao.Desenhar(dataAutorizacaoX, _y);
+            //    _y += dataAutorizacao.Medida.Altura;
+            //}
 
             if (_nfe.infNFe.ide.tpEmis != TipoEmissao.teNormal)
             {

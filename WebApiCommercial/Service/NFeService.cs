@@ -116,7 +116,7 @@ namespace Service
                 nFeEmission.TryCount += 1;
                 nFeEmission.UpdatedAt = DateTime.UtcNow;
                 nFeEmission.ChaveAcesso = infProt.chNFe;
-                nFeEmission.XmlCompleto = ret.EnvioStr;
+                nFeEmission.XmlCompleto = ret.Xml;
             }
 
             await repository.UpdateAsync(nFeEmission.Id, nFeEmission);
@@ -176,7 +176,7 @@ namespace Service
                 entity.CreatedAt = DateTime.UtcNow;
                 entity.TryCount = attempt.TryCount;
                 entity.CompanyId = attempt.CompanyId;
-                entity.XmlCompleto = ret.RetornoCompletoStr;
+                entity.XmlCompleto = ret.Xml;
             }
 
               
@@ -200,10 +200,12 @@ namespace Service
                         CIdToken = fiscalConfiguration.Csc.Identificador,
                         Csc = fiscalConfiguration.Csc.Valor
                     });
+                //_nfe.infNFeSupl.ObterUrlQrCode3();
+               var xml= _nfe.ObterXmlString();
                 var servicoNFe = new ServicosNFe(_configuracaoApp.CfgServico);
                 var retornoEnvio = servicoNFe.NFeAutorizacao(int.Parse(fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie), IndicadorSincronizacao.Sincrono, new List<NFe.Classes.NFe> { _nfe }, false/*Envia a mensagem compactada para a SEFAZ*/);
    /*             var resp=OnSucessoSync(retornoEnvio)*/;
-               
+
                 //ExibeNfe();
 
                 //var dlg = new Microsoft.Win32.SaveFileDialog
@@ -216,7 +218,7 @@ namespace Service
                 //if (result != true) return;
                 //var arquivoXml = dlg.FileName;
                 //_nfe.SalvarArquivoXml(arquivoXml);
-
+                retornoEnvio.Xml = xml;
                 return retornoEnvio;
             }
             catch (Exception ex)
@@ -961,7 +963,7 @@ namespace Service
         public async Task<byte[]> Danfe(int id)
         {
             NFeEmission nFeEmission = await repository.GetByIdAsync(id);
-            string arquivoXml = XDocument.Parse(nFeEmission.XmlCompleto).ToString();//Funcoes.BuscarArquivoXml();
+          //new nfeProc().CarregarDeXmlString(nFeEmission.XmlCompleto);//Funcoes.BuscarArquivoXml();
             try
             {
                 nfeProc proc = null;
@@ -970,12 +972,12 @@ namespace Service
 
                 try
                 {
-                    proc = new nfeProc().CarregarDeArquivoXml(arquivoXml);
+                    proc = new nfeProc().CarregarDeXmlString(nFeEmission.XmlCompleto);
                     arquivo = proc.ObterXmlString();
                 }
                 catch (Exception)
                 {
-                    nfe = new NFe.Classes.NFe().CarregarDeArquivoXml(arquivoXml);
+                    nfe = new NFe.Classes.NFe().CarregarDeXmlString(nFeEmission.XmlCompleto);
                     arquivo = nfe.ObterXmlString();
                 }
 

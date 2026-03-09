@@ -11,5 +11,6 @@ namespace NFe.Servicos.Retorno
         }
 
         public new retEnviNFe Retorno { get; set; }
+        public string Xml { get; set; }
     }
 }
