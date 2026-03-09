@@ -961,7 +961,7 @@ namespace Service
         public async Task<byte[]> Danfe(int id)
         {
             NFeEmission nFeEmission = await repository.GetByIdAsync(id);
-            string arquivoXml = nFeEmission.XmlCompleto;//Funcoes.BuscarArquivoXml();
+            string arquivoXml = XDocument.Parse(nFeEmission.XmlCompleto).ToString();//Funcoes.BuscarArquivoXml();
             try
             {
                 nfeProc proc = null;
