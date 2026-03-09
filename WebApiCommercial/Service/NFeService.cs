@@ -39,6 +39,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -1010,6 +1011,23 @@ namespace Service
                 return [];
             }
         }
+        public async Task<byte[]> ObterXml(int id)
+        {
+            NFeEmission nfe = await repository.GetByIdAsync(id);
+            byte[] xmlBytes = Encoding.UTF8.GetBytes(nfe.XmlCompleto);
+
+
+            return xmlBytes;
+        }
+        public async Task<string> ObterNomeArquivoXml(int id)
+        {
+            NFeEmission nfe = await repository.GetByIdAsync(id);
+
+            if (nfe == null)
+                return $"nfe-{id}.xml";
+
+            return $"nfe-{nfe.Numero}-{DateTime.Now:yyyyMMddHHmmss}.xml";
+        }
         public async Task update(NFeEmissionDto attempt)
         {
             NFeEmission nFeEmission = await GetByIdAsync(attempt.Id);
@@ -1019,6 +1037,49 @@ namespace Service
             nFeEmission.Numero = attempt.Numero;
 
             await repository.UpdateAsync(nFeEmission.Id, nFeEmission);
+        }
+        public async Task<ResponseGeneric> CancelarNfe(int id)
+        {
+            NFeEmission nFeEmission = await repository.GetByIdAsync(id);
+            if (nFeEmission == null) return new ResponseGeneric { Success = false, Message = "NFe não encontrada." };
+            try
+            {
+                var idlote = Funcoes.InpuBox(this, titulo, "Identificador de controle do Lote de envio:");
+                if (string.IsNullOrEmpty(idlote)) throw new Exception("A Id do Lote deve ser informada!");
+
+                var sequenciaEvento = Funcoes.InpuBox(this, titulo, "Número sequencial do evento:");
+                if (string.IsNullOrEmpty(sequenciaEvento))
+                    throw new Exception("O número sequencial deve ser informado!");
+
+                var protocolo = Funcoes.InpuBox(this, titulo, "Protocolo de Autorização da NFe:");
+                if (string.IsNullOrEmpty(protocolo)) throw new Exception("O protocolo deve ser informado!");
+
+                var chave = Funcoes.InpuBox(this, titulo, "Chave da NFe:");
+                if (string.IsNullOrEmpty(chave)) throw new Exception("A Chave deve ser informada!");
+                if (chave.Length != 44) throw new Exception("Chave deve conter 44 caracteres!");
+
+                var justificativa = Funcoes.InpuBox(this, titulo, "Justificativa do cancelamento");
+                if (string.IsNullOrEmpty(justificativa)) throw new Exception("A justificativa deve ser informada!");
+
+                var servicoNFe = new ServicosNFe(_configuracoes.CfgServico);
+                var cpfcnpj = string.IsNullOrEmpty(_configuracoes.Emitente.CNPJ)
+                    ? _configuracoes.Emitente.CPF
+                    : _configuracoes.Emitente.CNPJ;
+                var retornoCancelamento = servicoNFe.RecepcaoEventoCancelamento(Convert.ToInt32(idlote),
+                    Convert.ToInt16(sequenciaEvento), protocolo, chave, justificativa, cpfcnpj);
+                if (respostaCancelamento.Success)
+                {
+                    nFeEmission.Sent = true;
+                    nFeEmission.ResponseJson = respostaCancelamento.Message;
+                    nFeEmission.UpdatedAt = DateTime.UtcNow;
+                    await repository.UpdateAsync(nFeEmission.Id, nFeEmission);
+                }
+                return respostaCancelamento;
+            }
+            catch (Exception ex)
+            {
+                return new ResponseGeneric { Success = false, Message = $"Erro ao cancelar NFe: {ex.Message}" };
+            }
         }
     }
     public interface INFeService
@@ -1035,5 +1096,8 @@ namespace Service
         Task<ResponseGeneric> Resend(int id);
         Task<byte[]> Danfe(int id);
         Task update(NFeEmissionDto attempt);
+        Task<byte[]> ObterXml(int id);
+        Task<string> ObterNomeArquivoXml(int id);
+        Task<ResponseGeneric> CancelarNfe(int id);
     }
 }

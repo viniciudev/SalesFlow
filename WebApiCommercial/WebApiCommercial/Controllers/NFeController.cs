@@ -108,6 +108,33 @@ namespace WebApiCommercial.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
+        [HttpGet("{id}/xml")]
+        public async Task<IActionResult> BaixarXml(int id)
+        {
+            try
+            {
+                var xmlBytes = await _nfeService.ObterXml(id);
+                var fileName = await _nfeService.ObterNomeArquivoXml(id);
+
+                return File(xmlBytes, "application/xml", fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+        [HttpPost("{id}/Cancelar")]
+        public async Task<IActionResult> CancelarNfe(int id)
+        {
+            try
+            {
+                var result = await _nfeService.CancelarNfe(id);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
 
         // PUT api/nfe/{id}/result
         // Atualiza resultado da emissão (success/failure, número, response)
