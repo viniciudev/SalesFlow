@@ -38,6 +38,8 @@ namespace Model.Registrations
         public StatusNfe StatusNfe { get; set; }
         [Column(TypeName = "text")] // Usar text para armazenar o XML completo
         public string? XmlCompleto { get; set; }
+        public string? Protocolo { get; set; }
+        public string ?MotivoCancelamento { get; set; }
     }
     public enum StatusNfe
     {

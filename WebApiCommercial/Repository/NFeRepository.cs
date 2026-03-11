@@ -72,6 +72,7 @@ namespace Repository
         {
                        return await _dbContext.Set<NFeEmission>()
                 .Where(x => x.CompanyId == companyId)
+                .OrderByDescending(x=>x.Id)
                 .AsNoTracking()
                 .FirstOrDefaultAsync();
         }

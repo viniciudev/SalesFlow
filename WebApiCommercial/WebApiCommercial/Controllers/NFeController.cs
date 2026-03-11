@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Model;
 using Model.DTO;
+using Model.DTO.NFe;
 using Model.Enums;
 using Model.Registrations;
 using Repository;
@@ -123,12 +124,13 @@ namespace WebApiCommercial.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-        [HttpPost("{id}/Cancelar")]
-        public async Task<IActionResult> CancelarNfe(int id)
+        [HttpPost("Cancelar")]
+        public async Task<IActionResult> CancelarNfe( [FromBody] CancelarNotaRequest cancelarNota)
         {
             try
             {
-                var result = await _nfeService.CancelarNfe(id);
+                var result = await _nfeService.CancelarNfe(cancelarNota);
+                return Ok(result);
             }
             catch (Exception ex)
             {

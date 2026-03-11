@@ -13,7 +13,8 @@
             return cStat == 101 /*Cancelamento de NF-e homologado*/
                 || cStat == 151 /*Cancelamento de NF-e homologado fora de prazo*/
                 || cStat == 218 /*NF-e já está cancelada na base de dados da SEFAZ [nRec:999999999999999]*/
-                || cStat == 420 /*Rejeição: Cancelamento para NF-e já cancelada*/;
+                || cStat == 420 /*Rejeição: Cancelamento para NF-e já cancelada*/
+            || cStat == 135;/*"Evento registrado e vinculado à NF-e"*/
         }
 
         public static bool Denegada(int cStat)

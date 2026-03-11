@@ -3,6 +3,7 @@ using DFe.Classes.Flags;
 using Microsoft.AspNetCore.Hosting;
 using Model;
 using Model.DTO;
+using Model.DTO.NFe;
 using Model.Enums;
 using Model.Moves;
 using Model.Registrations;
@@ -32,8 +33,11 @@ using NFe.Servicos;
 using NFe.Servicos.Retorno;
 using NFe.Utils;
 using NFe.Utils.Email;
+using NFe.Utils.Evento;
 using NFe.Utils.InformacoesSuplementares;
 using NFe.Utils.NFe;
+using NFe.Wsdl.Autorizacao;
+using Org.BouncyCastle.Ocsp;
 using Repository;
 using System;
 using System.Collections.Generic;
@@ -88,7 +92,7 @@ namespace Service
 
        
             //classes externas para gerar nfe
-            var respEmissao = await TransmitirNfe(Convert.ToInt32( nFeEmission.Numero), nFeEmission, fiscalConfiguration, sale, naturezaOperacao);
+            var respEmissao = await TransmitirNfe(Convert.ToInt32( nFeEmission.Numero), fiscalConfiguration, sale, naturezaOperacao);
             if (respEmissao is string mensagemErro)
             {
                 //mudar status
@@ -118,6 +122,7 @@ namespace Service
                 nFeEmission.UpdatedAt = DateTime.UtcNow;
                 nFeEmission.ChaveAcesso = infProt.chNFe;
                 nFeEmission.XmlCompleto = ret.Xml;
+                nFeEmission.Protocolo = infProt.nProt;
             }
 
             await repository.UpdateAsync(nFeEmission.Id, nFeEmission);
@@ -143,7 +148,7 @@ namespace Service
                 return new ResponseGeneric { Success = false, Message = "Natureza de operação não encontrada." };
             int proximoNumeroNfe = Convert.ToInt32( nFeEmission == null ? fiscalConfiguration.NumeracaoDocumentos.Nfce.NumeroInicial : nFeEmission.Numero + 1);
             //classes externas para gerar nfe
-            var respEmissao = await TransmitirNfe(proximoNumeroNfe, nFeEmission, fiscalConfiguration, sale, naturezaOperacao);
+            var respEmissao = await TransmitirNfe(proximoNumeroNfe, fiscalConfiguration, sale, naturezaOperacao);
 
             attempt.TryCount = attempt.TryCount <= 0 ? 1 : attempt.TryCount;
             attempt.CreatedAt = DateTime.UtcNow;
@@ -178,6 +183,8 @@ namespace Service
                 entity.TryCount = attempt.TryCount;
                 entity.CompanyId = attempt.CompanyId;
                 entity.XmlCompleto = ret.Xml;
+                entity.Protocolo = infProt.nProt;
+                entity.ChaveAcesso = infProt.chNFe;
             }
 
               
@@ -185,7 +192,7 @@ namespace Service
             return new ResponseGeneric { Success = true };
         }
 
-        private async Task<dynamic> TransmitirNfe(int numero, NFeEmission nFeEmission, FiscalConfiguration fiscalConfiguration, Sale sale, NaturezaOperacao naturezaOperacao)
+        private async Task<dynamic> TransmitirNfe(int numero, FiscalConfiguration fiscalConfiguration, Sale sale, NaturezaOperacao naturezaOperacao)
         {
             try
             {
@@ -204,7 +211,7 @@ namespace Service
                 //_nfe.infNFeSupl.ObterUrlQrCode3();
                var xml= _nfe.ObterXmlString();
                 var servicoNFe = new ServicosNFe(_configuracaoApp.CfgServico);
-                var retornoEnvio = servicoNFe.NFeAutorizacao(int.Parse(fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie), IndicadorSincronizacao.Sincrono, new List<NFe.Classes.NFe> { _nfe }, false/*Envia a mensagem compactada para a SEFAZ*/);
+                var retornoEnvio = servicoNFe. NFeAutorizacao(int.Parse(fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie), IndicadorSincronizacao.Sincrono, new List<NFe.Classes.NFe> { _nfe }, false/*Envia a mensagem compactada para a SEFAZ*/);
    /*             var resp=OnSucessoSync(retornoEnvio)*/;
 
                 //ExibeNfe();
@@ -220,6 +227,7 @@ namespace Service
                 //var arquivoXml = dlg.FileName;
                 //_nfe.SalvarArquivoXml(arquivoXml);
                 retornoEnvio.Xml = xml;
+                
                 return retornoEnvio;
             }
             catch (Exception ex)
@@ -1038,43 +1046,66 @@ namespace Service
 
             await repository.UpdateAsync(nFeEmission.Id, nFeEmission);
         }
-        public async Task<ResponseGeneric> CancelarNfe(int id)
+        public async Task<ResponseGeneric> CancelarNfe(CancelarNotaRequest cancelarNota)
         {
-            NFeEmission nFeEmission = await repository.GetByIdAsync(id);
+            NFeEmission nFeEmission = await repository.GetByIdAsync(cancelarNota.Id);
             if (nFeEmission == null) return new ResponseGeneric { Success = false, Message = "NFe não encontrada." };
             try
             {
-                var idlote = Funcoes.InpuBox(this, titulo, "Identificador de controle do Lote de envio:");
-                if (string.IsNullOrEmpty(idlote)) throw new Exception("A Id do Lote deve ser informada!");
+                //var idlote = Funcoes.InpuBox(this, titulo, "Identificador de controle do Lote de envio:");
+                //if (string.IsNullOrEmpty(idlote)) throw new Exception("A Id do Lote deve ser informada!");
 
-                var sequenciaEvento = Funcoes.InpuBox(this, titulo, "Número sequencial do evento:");
-                if (string.IsNullOrEmpty(sequenciaEvento))
-                    throw new Exception("O número sequencial deve ser informado!");
+                //var sequenciaEvento = Funcoes.InpuBox(this, titulo, "Número sequencial do evento:");
+                //if (string.IsNullOrEmpty(sequenciaEvento))
+                //    throw new Exception("O número sequencial deve ser informado!");
 
-                var protocolo = Funcoes.InpuBox(this, titulo, "Protocolo de Autorização da NFe:");
-                if (string.IsNullOrEmpty(protocolo)) throw new Exception("O protocolo deve ser informado!");
+                //var protocolo = Funcoes.InpuBox(this, titulo, "Protocolo de Autorização da NFe:");
+                //if (string.IsNullOrEmpty(protocolo)) throw new Exception("O protocolo deve ser informado!");
 
-                var chave = Funcoes.InpuBox(this, titulo, "Chave da NFe:");
-                if (string.IsNullOrEmpty(chave)) throw new Exception("A Chave deve ser informada!");
-                if (chave.Length != 44) throw new Exception("Chave deve conter 44 caracteres!");
+                //var chave = Funcoes.InpuBox(this, titulo, "Chave da NFe:");
+                //if (string.IsNullOrEmpty(chave)) throw new Exception("A Chave deve ser informada!");
+                //if (chave.Length != 44) throw new Exception("Chave deve conter 44 caracteres!");
 
-                var justificativa = Funcoes.InpuBox(this, titulo, "Justificativa do cancelamento");
-                if (string.IsNullOrEmpty(justificativa)) throw new Exception("A justificativa deve ser informada!");
+                //var justificativa = Funcoes.InpuBox(this, titulo, "Justificativa do cancelamento");
+                //if (string.IsNullOrEmpty(justificativa)) throw new Exception("A justificativa deve ser informada!");
+                FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(nFeEmission.CompanyId);
+                NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(nFeEmission.NaturezaOperacaoId);
 
-                var servicoNFe = new ServicosNFe(_configuracoes.CfgServico);
-                var cpfcnpj = string.IsNullOrEmpty(_configuracoes.Emitente.CNPJ)
-                    ? _configuracoes.Emitente.CPF
-                    : _configuracoes.Emitente.CNPJ;
-                var retornoCancelamento = servicoNFe.RecepcaoEventoCancelamento(Convert.ToInt32(idlote),
-                    Convert.ToInt16(sequenciaEvento), protocolo, chave, justificativa, cpfcnpj);
-                if (respostaCancelamento.Success)
+                byte[] certbyte = await ObterCertificado(fiscalConfiguration.CertificadoDigital.Arquivo);
+                //_currentFiscalConfiguration = fiscalConfiguration;
+                //_currentNaturezaOperacao = naturezaOperacao;
+                _configuracaoApp = criarConfiguracaoApp(fiscalConfiguration, naturezaOperacao, certbyte);
+                var servicoNFe = new ServicosNFe(_configuracaoApp.CfgServico);
+                var cpfcnpj = string.IsNullOrEmpty(_configuracaoApp.Emitente.CNPJ)
+                    ? _configuracaoApp.Emitente.CPF
+                    : _configuracaoApp.Emitente.CNPJ;
+                var retornoCancelamento = servicoNFe. RecepcaoEventoCancelamento(
+                    Convert.ToInt32(nFeEmission.Numero),
+                    Convert.ToInt16(1), nFeEmission.Protocolo, nFeEmission.ChaveAcesso,cancelarNota.Justificativa, cpfcnpj);
+            
+                int cstat = retornoCancelamento?.Retorno?.retEvento?.FirstOrDefault()?.infEvento?.cStat??0;
+                if (NfeSituacao.Cancelada(cstat) )
                 {
+              
                     nFeEmission.Sent = true;
-                    nFeEmission.ResponseJson = respostaCancelamento.Message;
+                    nFeEmission.MotivoCancelamento = cancelarNota.Justificativa;
                     nFeEmission.UpdatedAt = DateTime.UtcNow;
+                    nFeEmission.StatusNfe = StatusNfe.cancelada;
+                    nFeEmission.XmlCompleto = retornoCancelamento.Retorno.ObterXmlString();
                     await repository.UpdateAsync(nFeEmission.Id, nFeEmission);
+
+                    return new ResponseGeneric { Success = true };
                 }
-                return respostaCancelamento;
+                else
+                {
+                    return new ResponseGeneric
+                    {
+                        Success = false,
+                        Message = $"Erro ao cancelar NFe: {retornoCancelamento.Retorno.xMotivo}"
+                    };
+                }
+
+         
             }
             catch (Exception ex)
             {
@@ -1098,6 +1129,6 @@ namespace Service
         Task update(NFeEmissionDto attempt);
         Task<byte[]> ObterXml(int id);
         Task<string> ObterNomeArquivoXml(int id);
-        Task<ResponseGeneric> CancelarNfe(int id);
+        Task<ResponseGeneric> CancelarNfe(CancelarNotaRequest cancelarNota);
     }
 }
