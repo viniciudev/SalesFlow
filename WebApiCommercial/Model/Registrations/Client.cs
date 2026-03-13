@@ -27,6 +27,9 @@ namespace Model
         public ICollection<ServicesProvision> ServiceProvisions { get; set; }
         public ICollection<Sale> Sale { get; set; }
         public ICollection<Financial> Financials { get; set; }
+        public string Numero { get; set; }
+        public long CodigoMunicipio { get; set; }
+
         public enum statusType
         {
             Ativo,

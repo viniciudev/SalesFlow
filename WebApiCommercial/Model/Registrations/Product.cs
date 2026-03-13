@@ -24,5 +24,6 @@ namespace Model.Registrations
         public string ImageBytes { get; set; }
         public string Reference { get; set; }
         public decimal CostPrice { get; set; }
+        public string Ncm { get; set; }
     }
 }

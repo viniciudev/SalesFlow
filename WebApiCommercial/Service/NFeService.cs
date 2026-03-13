@@ -60,6 +60,7 @@ namespace Service
         private ConfiguracaoApp _configuracaoApp;
         private FiscalConfiguration _currentFiscalConfiguration;
         private NaturezaOperacao _currentNaturezaOperacao;
+        private Sale _currentSale;
 
         public NFeService(IGenericRepository<NFeEmission> repository,
             ISaleRepository saleRepository,
@@ -201,6 +202,7 @@ namespace Service
                 byte[] certbyte = await ObterCertificado(fiscalConfiguration.CertificadoDigital.Arquivo);
                 _currentFiscalConfiguration = fiscalConfiguration;
                 _currentNaturezaOperacao = naturezaOperacao;
+                _currentSale=sale;
                 _configuracaoApp = criarConfiguracaoApp(fiscalConfiguration, naturezaOperacao, certbyte);
                 _nfe = ObterNfeValidada(VersaoServico.Versao400, ModeloDocumento.NFCe,
                     numero, new ConfiguracaoCsc
@@ -240,6 +242,7 @@ namespace Service
             {
                 _currentFiscalConfiguration = null;
                 _currentNaturezaOperacao = null;
+                _currentSale=null;
             }
         }
         public static string LimparString(string texto, bool manterEspacos = false)
@@ -430,9 +433,11 @@ namespace Service
                 transp = GetTransporte()
             };
 
-            for (var i = 0; i < 5; i++)
+            int index = 0;
+            foreach (var i in _currentSale.SaleItems)
             {
-                infNFe.det.Add(GetDetalhe(i, infNFe.emit.CRT, modelo));
+                index++;
+                infNFe.det.Add(GetDetalhe(index, i, infNFe.emit.CRT, modelo));
             }
 
             infNFe.total = GetTotal(versao, infNFe.det,modelo);
@@ -495,24 +500,24 @@ namespace Service
 
             return c;
         }
-        protected virtual prod GetProduto(int i)
+        protected virtual prod GetProduto(SaleItems i)
         {
             var p = new prod
             {
-                cProd = i.ToString().PadLeft(5, '0'),
-                cEAN = "7770000000012",
-                xProd = i == 1 ? "NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL" : "ABRACADEIRA NYLON 6.6 BRANCA 91X92 " + i,
-                NCM = "84159090",
-                CFOP = 5102,
+                cProd = i.Product.Id. ToString().PadLeft(5, '0'),
+                cEAN =i.Product.Code??"",
+                xProd = i.Product.Name,
+                NCM = i.Product.Ncm,
+                CFOP =int.Parse( _currentNaturezaOperacao.Cfop),
                 uCom = "UNID",
-                qCom = 1,
-                vUnCom = 1.1m,
-                vProd = 1.1m,
-                vDesc = 0.10m,
-                cEANTrib = "7770000000012",
+                qCom = i.Amount,
+                vUnCom = i.Value,
+                vProd = (i.Value *i.Amount),
+                vDesc = 0,
+                cEANTrib = i.Product.Code,
                 uTrib = "UNID",
-                qTrib = 1,
-                vUnTrib = 1.1m,
+                qTrib = i.Amount,
+                vUnTrib = i.Value,
                 indTot = IndicadorTotal.ValorDoItemCompoeTotalNF,
                 //NVE = {"AA0001", "AB0002", "AC0002"},
                 //CEST = ?
@@ -527,13 +532,13 @@ namespace Service
             };
             return p;
         }
-        protected virtual det GetDetalhe(int i, CRT crt, ModeloDocumento modelo)
+        protected virtual det GetDetalhe(int index,SaleItems i, CRT crt, ModeloDocumento modelo)
         {
-            var produto = GetProduto(i + 1);
+            var produto = GetProduto(i);
 
             var det = new det
             {
-                nItem = i + 1,
+                nItem = index,
                 prod = produto,
                 imposto = new imposto
                 {
@@ -793,7 +798,7 @@ namespace Service
                 cUF = _configuracaoApp.EnderecoEmitente.UF,
                 natOp = "VENDA",
                 mod = modelo,
-                serie = 1,
+                serie = int.Parse(_currentFiscalConfiguration.NumeracaoDocumentos.Nfce.Serie),
                 nNF = numero,
                 tpNF = TipoNFe.tnSaida,
                 cMunFG = _configuracaoApp.EnderecoEmitente.cMun,
@@ -809,7 +814,7 @@ namespace Service
             if (ide.tpEmis != TipoEmissao.teNormal)
             {
                 ide.dhCont = DateTime.Now;
-                ide.xJust = "TESTE DE CONTIGÊNCIA PARA NFe/NFCe";
+                ide.xJust = "CONTIGÊNCIA PARA NFe/NFCe";
             }
 
             #region V2.00
@@ -884,8 +889,8 @@ namespace Service
         {
             var dest = new dest(versao)
             {
-                CNPJ = "99999999000191",
-                //CPF = "99999999999",
+                //CNPJ = "99999999000191",
+                CPF = _currentSale?.Client?.Document??"99999999999",
             };
             dest.xNome = "NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"; //Obrigatório para NFe e opcional para NFCe
             dest.enderDest = GetEnderecoDestinatario(); //Obrigatório para NFe e opcional para NFCe
@@ -895,20 +900,20 @@ namespace Service
             if (versao == VersaoServico.Versao200) return dest;
 
             dest.indIEDest = indIEDest.NaoContribuinte; //NFCe: Tem que ser não contribuinte V3.00 Somente
-            dest.email = "teste@gmail.com"; //V3.00 Somente
+            dest.email = _currentSale?.Client?.Email?? "servicebox@gmail.com"; //V3.00 Somente
             return dest;
         }
         protected virtual enderDest GetEnderecoDestinatario()
         {
             var enderDest = new enderDest
             {
-                xLgr = "RUA ...",
-                nro = "S/N",
-                xBairro = "CENTRO",
-                cMun = 2802908,
-                xMun = "ITABAIANA",
-                UF = "SE",
-                CEP = "49500000",
+                xLgr = _currentSale?.Client?.Address?? "RUA ...",
+                nro = _currentSale?.Client?.Numero?? "S/N",
+                xBairro = _currentSale?.Client?.Bairro ?? "CENTRO",
+                cMun = _currentSale?.Client?.CodigoMunicipio ?? 3170206,
+                xMun = _currentSale?.Client?.NameCity?? "UBERLANDIA",
+                UF = _currentSale?.Client?.NameState?? "MG",
+                CEP = _currentSale?.Client?.ZipCode ??"49500000",
                 cPais = 1058,
                 xPais = "BRASIL"
             };
