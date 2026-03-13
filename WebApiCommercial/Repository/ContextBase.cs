@@ -263,12 +263,8 @@ namespace Repository
                 client.ToTable("tb_client");
                 client.HasKey(c => c.Id);
                 client.Property(c => c.Id).ValueGeneratedOnAdd();
-                client.Property(c => c.Name).HasMaxLength(150);
                 client.Property(c => c.Email).HasMaxLength(100);
-                client.Property(c => c.CellPhone).HasMaxLength(15);
-                client.Property(c => c.Address).HasMaxLength(150);
                 client.Property(c => c.Bairro).HasMaxLength(100);
-                client.Property(c => c.Complement).HasMaxLength(150);
             });
             builder.Entity<Client>()
       .HasOne(dc => dc.Company)

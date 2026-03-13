@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Repository;
@@ -11,9 +12,11 @@ using Repository;
 namespace Repository.Migrations
 {
     [DbContext(typeof(ContextBase))]
-    partial class ContextBaseModelSnapshot : ModelSnapshot
+    [Migration("20260313193113_novascolunasprodecliente")]
+    partial class novascolunasprodecliente
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -101,46 +104,26 @@ namespace Repository.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Address")
-                        .HasColumnType("text");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("Bairro")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<DateTime?>("BirthDate")
+                    b.Property<DateTime>("BirthDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CellPhone")
-                        .HasColumnType("text");
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)");
 
-                    b.Property<string>("Cep")
-                        .IsRequired()
-                        .HasMaxLength(8)
-                        .HasColumnType("character varying(8)");
+                    b.Property<long>("CodigoMunicipio")
+                        .HasColumnType("bigint");
 
-                    b.Property<string>("CodMunicipioIbge")
-                        .IsRequired()
-                        .HasMaxLength(7)
-                        .HasColumnType("character varying(7)");
-
-                    b.Property<string>("CodPais")
-                        .HasMaxLength(4)
-                        .HasColumnType("character varying(4)");
-
-                    b.Property<string>("Complemento")
-                        .HasMaxLength(60)
-                        .HasColumnType("character varying(60)");
-
-                    b.Property<string>("ConsumidorFinal")
-                        .IsRequired()
-                        .HasMaxLength(1)
-                        .HasColumnType("character varying(1)");
-
-                    b.Property<string>("CpfCnpj")
-                        .IsRequired()
-                        .HasMaxLength(14)
-                        .HasColumnType("character varying(14)");
+                    b.Property<string>("Complement")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<DateTime>("CreatDate")
                         .HasColumnType("timestamp with time zone");
@@ -155,31 +138,9 @@ namespace Repository.Migrations
                     b.Property<int>("IdCompany")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Ie")
-                        .HasMaxLength(14)
-                        .HasColumnType("character varying(14)");
-
-                    b.Property<string>("IndicadorIE")
-                        .IsRequired()
-                        .HasMaxLength(1)
-                        .HasColumnType("character varying(1)");
-
-                    b.Property<string>("InscricaoMunicipal")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("Logradouro")
-                        .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("character varying(60)");
-
-                    b.Property<string>("Municipio")
-                        .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("character varying(60)");
-
                     b.Property<string>("Name")
-                        .HasColumnType("text");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("NameCity")
                         .HasColumnType("text");
@@ -187,36 +148,11 @@ namespace Repository.Migrations
                     b.Property<string>("NameState")
                         .HasColumnType("text");
 
-                    b.Property<string>("NomeRazao")
-                        .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("character varying(60)");
-
                     b.Property<string>("Numero")
-                        .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("character varying(60)");
-
-                    b.Property<string>("Pais")
-                        .HasMaxLength(60)
-                        .HasColumnType("character varying(60)");
+                        .HasColumnType("text");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
-
-                    b.Property<string>("Telefone")
-                        .HasMaxLength(14)
-                        .HasColumnType("character varying(14)");
-
-                    b.Property<string>("TipoPessoa")
-                        .IsRequired()
-                        .HasMaxLength(1)
-                        .HasColumnType("character varying(1)");
-
-                    b.Property<string>("Uf")
-                        .IsRequired()
-                        .HasMaxLength(2)
-                        .HasColumnType("character varying(2)");
 
                     b.Property<string>("ZipCode")
                         .HasColumnType("text");

@@ -448,7 +448,7 @@ namespace Service
                 infNFe.pag = GetPagamento(infNFe.total.ICMSTot, versao); //NFCe Somente  
 
             if (infNFe.ide.mod == ModeloDocumento.NFCe & versao != VersaoServico.Versao400)
-                infNFe.infAdic = new infAdic() { infCpl = "Troco: 10,00" }; //Susgestão para impressão do troco em NFCe
+                infNFe.infAdic = new infAdic() { infCpl = "" }; //Susgestão para impressão do troco em NFCe
 
             return infNFe;
         }
@@ -907,10 +907,10 @@ namespace Service
         {
             var enderDest = new enderDest
             {
-                xLgr = _currentSale?.Client?.Address?? "RUA ...",
+                xLgr = _currentSale?.Client?.Logradouro?? "RUA ...",
                 nro = _currentSale?.Client?.Numero?? "S/N",
                 xBairro = _currentSale?.Client?.Bairro ?? "CENTRO",
-                cMun = _currentSale?.Client?.CodigoMunicipio ?? 3170206,
+                cMun =long.Parse( _currentSale?.Client?.InscricaoMunicipal) ,
                 xMun = _currentSale?.Client?.NameCity?? "UBERLANDIA",
                 UF = _currentSale?.Client?.NameState?? "MG",
                 CEP = _currentSale?.Client?.ZipCode ??"49500000",
