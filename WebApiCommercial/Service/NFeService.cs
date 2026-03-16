@@ -907,12 +907,12 @@ namespace Service
         {
             var enderDest = new enderDest
             {
-                xLgr = _currentSale?.Client?.Logradouro?? "RUA ...",
+                xLgr = _currentSale?.Client?.Address?? "RUA ...",
                 nro = _currentSale?.Client?.Numero?? "S/N",
                 xBairro = _currentSale?.Client?.Bairro ?? "CENTRO",
                 cMun =long.Parse( _currentSale?.Client?.InscricaoMunicipal) ,
-                xMun = _currentSale?.Client?.NameCity?? "UBERLANDIA",
-                UF = _currentSale?.Client?.NameState?? "MG",
+                xMun = _currentSale?.Client?.Municipio?? "UBERLANDIA",
+                UF = _currentSale?.Client?.Uf?? "MG",
                 CEP = _currentSale?.Client?.ZipCode ??"49500000",
                 cPais = 1058,
                 xPais = "BRASIL"

@@ -60,11 +60,11 @@ namespace Model
         [Required]
         [StringLength(60)]
         [Uppercase]
-        public string NomeRazao { get; set; }
+        public string Name { get; set; }
 
         [Required]
-        [StringLength(14)]
-        public string CpfCnpj { get; set; } // somente números
+       
+        public string Document { get; set; } // somente números
 
         [Required]
         [StringLength(1)]
@@ -76,7 +76,7 @@ namespace Model
 
         [Required]
         [StringLength(60)]
-        public string Logradouro { get; set; }
+        public string Address { get; set; }
 
         [Required]
         [StringLength(60)]
@@ -100,7 +100,7 @@ namespace Model
 
         [Required]
         [StringLength(8)]
-        public string Cep { get; set; }
+        public string ZipCode { get; set; }
 
         // Campos Necessários
         [StringLength(60)]
@@ -116,8 +116,7 @@ namespace Model
         [EmailAddress]
         public string Email { get; set; }
 
-        [StringLength(14)]
-        public string Telefone { get; set; }
+        public string CellPhone { get; set; }
 
         [StringLength(60)]
         public string Pais { get; set; } = "Brasil";
@@ -126,40 +125,40 @@ namespace Model
         public string CodPais { get; set; } = "1058";
 
         // Campos existentes (mantidos para compatibilidade)
-        [Obsolete("Use NomeRazao instead")]
-        public string Name
-        {
-            get => NomeRazao;
-            set => NomeRazao = value;
-        }
+        //[Obsolete("Use NomeRazao instead")]
+        //public string Name
+        //{
+        //    get => NomeRazao;
+        //    set => NomeRazao = value;
+        //}
 
-        [Obsolete("Use Document instead")]
-        public string Document
-        {
-            get => CpfCnpj;
-            set => CpfCnpj = value;
-        }
+        //[Obsolete("Use Document instead")]
+        //public string Document
+        //{
+        //    get => CpfCnpj;
+        //    set => CpfCnpj = value;
+        //}
 
-        [Obsolete("Use Address instead")]
-        public string Address
-        {
-            get => Logradouro;
-            set => Logradouro = value;
-        }
+        //[Obsolete("Use Address instead")]
+        //public string Address
+        //{
+        //    get => Logradouro;
+        //    set => Logradouro = value;
+        //}
 
-        [Obsolete("Use CellPhone instead")]
-        public string CellPhone
-        {
-            get => Telefone;
-            set => Telefone = value;
-        }
+        //[Obsolete("Use CellPhone instead")]
+        //public string CellPhone
+        //{
+        //    get => Telefone;
+        //    set => Telefone = value;
+        //}
 
-        [Obsolete("Use ZipCode instead")]
-        public string ZipCode
-        {
-            get => Cep;
-            set => Cep = value;
-        }
+        //[Obsolete("Use ZipCode instead")]
+        //public string ZipCode
+        //{
+        //    get => Cep;
+        //    set => Cep = value;
+        //}
 
         [Obsolete("Use NameCity instead")]
         public string NameCity

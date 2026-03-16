@@ -26,7 +26,7 @@ namespace Repository
                .AsNoTracking()
                .WithCaseInsensitive()
                .OrderByDescending(x=>x.Id)
-               .GetPagedAsync<Client>(clientFilter.PageNumber, clientFilter.PageSize);
+               .GetPagedAsync(clientFilter.PageNumber, clientFilter.PageSize);
             return paged;
         }
         public async Task<List<Client>> GetByName(Filters clientFilter)
