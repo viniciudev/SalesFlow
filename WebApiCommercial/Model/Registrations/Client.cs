@@ -163,15 +163,15 @@ namespace Model
         [Obsolete("Use NameCity instead")]
         public string NameCity
         {
-            get => Municipio;
-            set => Municipio = value;
+            get ;
+            set ;
         }
 
         [Obsolete("Use NameState instead")]
         public string NameState
         {
-            get => Uf;
-            set => Uf = value;
+            get ;
+            set ;
         }
 
         // Relacionamentos
