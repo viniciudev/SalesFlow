@@ -27,7 +27,7 @@ namespace Repository
                       .Where(x =>
                       (x.IdCompany==filter.IdCompany)&&
                       (string.IsNullOrEmpty(filter.TextOption) || x.Name.Contains(filter.TextOption)))
-                      
+                      .OrderByDescending(x=>x.Id)
                    .Select(p => new Product
                    {
                        Id = p.Id,
@@ -39,6 +39,7 @@ namespace Repository
                        Reference = p.Reference,
                       CostPrice=p.CostPrice,
                       Observation=p.Observation,
+                      Ncm=p.Ncm
                        //Image = p.Image,
                        // ImageBytes = p.Image != null ? Convert.ToBase64String(p.Image) : null
 
