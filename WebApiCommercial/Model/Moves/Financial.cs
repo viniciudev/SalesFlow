@@ -63,8 +63,8 @@ public enum FinancialStatus
 {
     pending = 1,
     paid = 2,
-    renegotiated=3
-
+    renegotiated=3,
+    Canceled = 4
 }
 //public enum PaymentType
 //{

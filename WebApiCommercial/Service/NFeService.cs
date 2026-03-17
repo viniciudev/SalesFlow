@@ -452,54 +452,204 @@ namespace Service
 
             return infNFe;
         }
+        //protected virtual List<pag> GetPagamento(ICMSTot icmsTot, VersaoServico versao)
+        //{
+        //    var valorPagto = (icmsTot.vNF / 2).Arredondar(2);
+
+        //    if (versao != VersaoServico.Versao400) // difernte de versão 4 retorna isso
+        //    {
+        //        var p = new List<pag>
+        //        {
+        //            new pag {tPag = FormaPagamento.fpDinheiro, vPag = valorPagto},
+        //            new pag {tPag = FormaPagamento.fpCheque, vPag = icmsTot.vNF - valorPagto}
+        //        };
+        //        return p;
+        //    }
+
+
+        //    // igual a versão 4 retorna isso
+        //    var p4 = new List<pag>
+        //    {
+        //        //new pag {detPag = new detPag {tPag = FormaPagamento.fpDinheiro, vPag = valorPagto}},
+        //        //new pag {detPag = new detPag {tPag = FormaPagamento.fpCheque, vPag = icmsTot.vNF - valorPagto}}
+        //        new pag
+        //        {
+        //            detPag = new List<detPag>
+        //            {
+        //                new detPag {tPag = FormaPagamento.fpDinheiro, vPag = valorPagto},
+        //                new detPag {tPag = FormaPagamento.fpCheque, vPag = icmsTot.vNF - valorPagto}
+        //            }
+        //        }
+        //    };
+
+
+        //    return p4;
+        //}
         protected virtual List<pag> GetPagamento(ICMSTot icmsTot, VersaoServico versao)
         {
-            var valorPagto = (icmsTot.vNF / 2).Arredondar(2);
+            if (_currentSale.Financials == null || !_currentSale.Financials.Any())
+                return null;
 
-            if (versao != VersaoServico.Versao400) // difernte de versão 4 retorna isso
+            var pagamentos = _currentSale.Financials
+                .Where(f => f.FinancialType == FinancialType.recipe &&
+                           f.FinancialStatus != FinancialStatus.Canceled)
+                .ToList();
+
+            if (!pagamentos.Any())
+                return null;
+
+            decimal totalPagamentos = pagamentos.Sum(f => f.Value);
+            decimal totalNF = icmsTot.vNF;
+
+            // Validação: o total dos pagamentos deve ser igual ao total da NF
+            if (Math.Abs(totalPagamentos - totalNF) > 0.01m)
             {
-                var p = new List<pag>
-                {
-                    new pag {tPag = FormaPagamento.fpDinheiro, vPag = valorPagto},
-                    new pag {tPag = FormaPagamento.fpCheque, vPag = icmsTot.vNF - valorPagto}
-                };
-                return p;
+                // Log de aviso ou ajuste automático
+                // Pode-se ajustar o último pagamento para igualar
+                var ultimoPagamento = pagamentos.Last();
+                ultimoPagamento.Value = totalNF - (totalPagamentos - ultimoPagamento.Value);
             }
 
-
-            // igual a versão 4 retorna isso
-            var p4 = new List<pag>
+            // Versão 3.10 ou inferior
+            if (versao != VersaoServico.Versao400)
             {
-                //new pag {detPag = new detPag {tPag = FormaPagamento.fpDinheiro, vPag = valorPagto}},
-                //new pag {detPag = new detPag {tPag = FormaPagamento.fpCheque, vPag = icmsTot.vNF - valorPagto}}
-                new pag
+                return pagamentos.Select(f => new pag
                 {
-                    detPag = new List<detPag>
-                    {
-                        new detPag {tPag = FormaPagamento.fpDinheiro, vPag = valorPagto},
-                        new detPag {tPag = FormaPagamento.fpCheque, vPag = icmsTot.vNF - valorPagto}
-                    }
-                }
+                    tPag = ConverterParaFormaPagamento(f.PaymentMethod),
+                    vPag = Math.Round(f.Value, 2)
+                }).ToList();
+            }
+
+            // Versão 4.00
+            var pagamentosV4 = new pag
+            {
+                detPag = pagamentos.Select(f => new detPag
+                {
+                    tPag = ConverterParaFormaPagamento(f.PaymentMethod),
+                    vPag = Math.Round(f.Value, 2)
+                }).ToList()
             };
 
-
-            return p4;
+            return new List<pag> { pagamentosV4 };
         }
+        private FormaPagamento ConverterParaFormaPagamento(PaymentMethod paymentMethod)
+        {
+            // Mapeamento baseado no nome ou ID do método de pagamento
+            switch (paymentMethod.Name?.ToUpper())
+            {
+               
+                case "DINHEIRO":
+                    return FormaPagamento.fpDinheiro;
+
+                case "CHEQUE":
+                    return FormaPagamento.fpCheque;
+
+                case "CARTÃO DE CRÉDITO":
+                case "CARTAO CREDITO":
+                case "CREDITO":
+                    return FormaPagamento.fpCartaoCredito;
+
+                case "CARTÃO DE DÉBITO":
+                case "CARTAO DEBITO":
+                case "DEBITO":
+                    return FormaPagamento.fpCartaoDebito;
+
+                //case "CRÉDITO LOJA":
+                //case "CREDITO LOJA":
+                //    return FormaPagamento.fpCreditoLoja;
+
+                case "VALE ALIMENTAÇÃO":
+                case "VALE ALIMENTACAO":
+                    return FormaPagamento.fpValeAlimentacao;
+
+                case "VALE REFEIÇÃO":
+                case "VALE REFEICAO":
+                    return FormaPagamento.fpValeRefeicao;
+
+                case "VALE PRESENTE":
+                    return FormaPagamento.fpValePresente;
+
+                case "VALE COMBUSTÍVEL":
+                case "VALE COMBUSTIVEL":
+                    return FormaPagamento.fpValeCombustivel;
+
+                case "BOLETO":
+                case "DUPLICATA":
+                    return FormaPagamento.fpBoletoBancario;
+
+                case "SEM PAGAMENTO":
+                    return FormaPagamento.fpSemPagamento;
+
+                case "PIX":
+                    return FormaPagamento.fpPagamentoInstantaneoPIXDinamico;
+
+                default:
+                    return FormaPagamento.fpOutro;
+            }
+        }
+
         protected virtual cobr GetCobranca(ICMSTot icmsTot)
         {
-            var valorParcela = (icmsTot.vNF / 2).Arredondar(2);
-            var c = new cobr
-            {
-                fat = new fat { nFat = "12345678910", vLiq = icmsTot.vNF, vOrig = icmsTot.vNF, vDesc = 0m },
-                dup = new List<dup>
-                {
-                    new dup {nDup = "001", dVenc = DateTime.Now.AddDays(30), vDup = valorParcela},
-                    new dup {nDup = "002", dVenc = DateTime.Now.AddDays(60), vDup = icmsTot.vNF - valorParcela}
-                }
-            };
+            if (_currentSale.Financials == null || !_currentSale.Financials.Any())
+                return null;
 
-            return c;
+            var financials = _currentSale.Financials
+                .Where(f => f.FinancialType == FinancialType.recipe &&
+                           f.FinancialStatus != FinancialStatus.Canceled)
+                .OrderBy(f => f.DueDate)
+                .ToList();
+
+            if (!financials.Any())
+                return null;
+
+            decimal totalParcelas = financials.Sum(f => f.Value);
+            decimal totalNF = icmsTot.vNF;
+
+            // Validação: a soma das parcelas deve ser igual ao total da NF
+            // (considerando uma pequena margem de erro por arredondamento)
+            if (Math.Abs(totalParcelas - totalNF) > 0.01m)
+            {
+                // Log de aviso ou ajuste automático
+                // Pode-se ajustar a última parcela para igualar
+                var ultimaParcela = financials.Last();
+                ultimaParcela.Value = totalNF - (totalParcelas - ultimaParcela.Value);
+            }
+
+            var duplicatas = new List<dup>();
+            int parcelaNumero = 1;
+
+            foreach (var financial in financials)
+            {
+                duplicatas.Add(new dup
+                {
+                    nDup = parcelaNumero.ToString().PadLeft(3, '0'),
+                    dVenc = financial.DueDate,
+                    vDup = Math.Round(financial.Value, 2)
+                });
+                parcelaNumero++;
+            }
+
+            return new cobr
+            {
+                dup = duplicatas
+            };
         }
+        //protected virtual cobr GetCobranca(ICMSTot icmsTot)
+        //{
+
+        //    var valorParcela = (icmsTot.vNF / 2).Arredondar(2);
+        //    var c = new cobr
+        //    {
+        //        fat = new fat { nFat = "12345678910", vLiq = icmsTot.vNF, vOrig = icmsTot.vNF, vDesc = 0m },
+        //        dup = new List<dup>
+        //        {
+        //            new dup {nDup = "001", dVenc = DateTime.Now.AddDays(30), vDup = valorParcela},
+        //            new dup {nDup = "002", dVenc = DateTime.Now.AddDays(60), vDup = icmsTot.vNF - valorParcela}
+        //        }
+        //    };
+
+        //    return c;
+        //}
         protected virtual prod GetProduto(SaleItems i)
         {
             var p = new prod
@@ -532,7 +682,7 @@ namespace Service
             };
             return p;
         }
-        protected virtual det GetDetalhe(int index,SaleItems i, CRT crt, ModeloDocumento modelo)
+        /*protected virtual det GetDetalhe(int index,SaleItems i, CRT crt, ModeloDocumento modelo)
         {
             var produto = GetProduto(i);
 
@@ -574,7 +724,18 @@ namespace Service
                         //TipoCOFINS = ObterCofinsBasico(),
 
                         //Caso você resolva utilizar método ObterCofinsBasico(), comente esta proxima linha
-                        TipoCOFINS = new COFINSOutr { CST = CSTCOFINS.cofins99, pCOFINS = 0, vBC = 0, vCOFINS = 0 }
+                        
+                        TipoCOFINS = !_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarCOFINS ?
+                        new COFINSOutr { CST = CSTCOFINS.cofins99,
+                            pCOFINS = 0, vBC = 0, vCOFINS = 0 }:
+                            new COFINSOutr
+                            {
+                                CST = (CSTCOFINS) Enum.Parse( typeof(CSTCOFINS), _currentNaturezaOperacao.ConfiguracaoTributaria.CstCOFINS),
+                                pCOFINS = _currentNaturezaOperacao.ConfiguracaoTributaria.AliquotaCOFINS,
+                                vBC = i.Value * i.Amount,
+                                vCOFINS = 0
+                            }
+
                     },
 
                     PIS = new PIS
@@ -641,6 +802,161 @@ namespace Service
             //det.impostoDevol = new impostoDevol() { IPI = new IPIDevolvido() { vIPIDevol = 10 }, pDevol = 100 };
 
             return det;
+        }*/
+        protected virtual det GetDetalhe(int index, SaleItems i, CRT crt, ModeloDocumento modelo)
+        {
+            var produto = GetProduto(i);
+            decimal valorTotalItem = i.Value * i.Amount;
+            decimal aliquotaCOFINS = _currentNaturezaOperacao.ConfiguracaoTributaria.AliquotaCOFINS;
+            decimal aliquotaPIS = _currentNaturezaOperacao.ConfiguracaoTributaria.AliquotaPIS ;
+            decimal aliquotaIPI = _currentNaturezaOperacao.ConfiguracaoTributaria.AliquotaIPI;
+
+            var det = new det
+            {
+                nItem = index,
+                prod = produto,
+                imposto = new imposto
+                {
+                    vTotTrib = CalcularTotalTributos(i, aliquotaCOFINS, aliquotaPIS, aliquotaIPI),
+
+                    ICMS = new ICMS
+                    {
+                        TipoICMS =
+                            crt == CRT.SimplesNacional || crt == CRT.SimplesNacionalMei
+                                ? InformarCSOSN(Csosnicms.Csosn102)
+                                : InformarICMS(Csticms.Cst00, VersaoServico.Versao310)
+                    },
+
+                    COFINS = new COFINS
+                    {
+                        TipoCOFINS = !_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarCOFINS ?
+                            new COFINSOutr
+                            {
+                                CST = CSTCOFINS.cofins99,
+                                pCOFINS = 0,
+                                vBC = valorTotalItem,
+                                vCOFINS = 0
+                            } :
+                            new COFINSOutr
+                            {
+                                CST = (CSTCOFINS)Enum.Parse(typeof(CSTCOFINS), _currentNaturezaOperacao.ConfiguracaoTributaria.CstCOFINS),
+                                pCOFINS = aliquotaCOFINS,
+                                vBC = valorTotalItem,
+                                vCOFINS = CalcularValorCOFINS(valorTotalItem, aliquotaCOFINS)
+                            }
+                    },
+
+                    PIS = new PIS
+                    {
+                        TipoPIS = !_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarPIS ?
+                            new PISOutr
+                            {
+                                CST = CSTPIS.pis99,
+                                pPIS = 0,
+                                vBC = valorTotalItem,
+                                vPIS = 0
+                            } :
+                            new PISOutr
+                            {
+                                CST = (CSTPIS)Enum.Parse(typeof(CSTPIS), _currentNaturezaOperacao.ConfiguracaoTributaria.CstPIS),
+                                pPIS = aliquotaPIS,
+                                vBC = valorTotalItem,
+                                vPIS = CalcularValorPIS(valorTotalItem, aliquotaPIS)
+                            }
+                    }
+                }
+            };
+
+            if (modelo == ModeloDocumento.NFe) //NFCe não aceita grupo "IPI"
+            {
+                det.imposto.IPI = new IPI()
+                {
+                    cEnq = 999,
+
+                    //Se você já tem os dados de toda a tributação persistida no banco em uma única tabela, utilize a linha comentada abaixo para preencher as tags do IPI
+                    //TipoIPI = ObterIPIBasico(),
+
+                    //Caso você resolva utilizar método ObterIPIBasico(), comente esta proxima linha
+                    TipoIPI = new IPITrib() { CST = CSTIPI.ipi00, pIPI = 5, vBC = 1, vIPI = 0.05m }
+                };
+            }
+
+            return det;
+        }
+
+        // Métodos auxiliares
+        private decimal CalcularTotalTributos(SaleItems item, decimal aliquotaCOFINS, decimal aliquotaPIS, decimal aliquotaIPI)
+        {
+            decimal valorTotalItem = item.Value * item.Amount;
+            decimal totalTributos = 0;
+
+            // Adicionar COFINS se aplicável
+            if (_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarCOFINS && aliquotaCOFINS > 0)
+            {
+                totalTributos += valorTotalItem * aliquotaCOFINS / 100;
+            }
+
+            // Adicionar PIS se aplicável
+            if (_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarPIS && aliquotaPIS > 0)
+            {
+                totalTributos += valorTotalItem * aliquotaPIS / 100;
+            }
+
+            // Adicionar IPI se aplicável (apenas para NFe)
+            if (_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIPI && aliquotaIPI > 0)
+            {
+                totalTributos += valorTotalItem * aliquotaIPI / 100;
+            }
+
+            // Adicionar ICMS aproximado se disponível
+            var icms = CalcularICMSAproximado(item);
+            if (icms > 0)
+            {
+                totalTributos += icms;
+            }
+
+            return Math.Round(totalTributos, 2);
+        }
+
+        private decimal CalcularValorCOFINS(decimal valorTotalItem, decimal aliquota)
+        {
+            if (!_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarCOFINS || aliquota <= 0)
+                return 0;
+
+            return Math.Round(valorTotalItem * aliquota / 100, 2);
+        }
+
+        private decimal CalcularValorPIS(decimal valorTotalItem, decimal aliquota)
+        {
+            if (!_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarPIS || aliquota <= 0)
+                return 0;
+
+            return Math.Round(valorTotalItem * aliquota / 100, 2);
+        }
+
+        private decimal CalcularValorIPI(decimal valorTotalItem, decimal aliquota)
+        {
+            if (!_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIPI || aliquota <= 0)
+                return 0;
+
+            return Math.Round(valorTotalItem * aliquota / 100, 2);
+        }
+
+        private decimal CalcularICMSAproximado(SaleItems item)
+        {
+            // Implementar cálculo do ICMS aproximado baseado na configuração
+            // Este é um valor aproximado para o vTotTrib
+            decimal valorTotalItem = item.Value * item.Amount;
+            decimal aliquotaICMS = 18; // Alíquota padrão, ajuste conforme necessidade
+
+            // Verificar se é Simples Nacional
+            if (_configuracaoApp.Emitente.CRT == CRT.SimplesNacional)
+            {
+                // Para Simples Nacional, usar alíquota aproximada do produto
+                aliquotaICMS = 7; // Exemplo: 7% para Simples Nacional
+            }
+
+            return Math.Round(valorTotalItem * aliquotaICMS / 100, 2);
         }
         protected virtual ICMSBasico InformarICMS(Csticms CST, VersaoServico versao)
         {
@@ -796,7 +1112,7 @@ namespace Service
             var ide = new ide
             {
                 cUF = _configuracaoApp.EnderecoEmitente.UF,
-                natOp = "VENDA",
+                natOp = _currentNaturezaOperacao.Descricao,
                 mod = modelo,
                 serie = int.Parse(_currentFiscalConfiguration.NumeracaoDocumentos.Nfce.Serie),
                 nNF = numero,
@@ -892,7 +1208,9 @@ namespace Service
                 //CNPJ = "99999999000191",
                 CPF = _currentSale?.Client?.Document??"99999999999",
             };
-            dest.xNome = "NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"; //Obrigatório para NFe e opcional para NFCe
+            dest.xNome =_currentFiscalConfiguration.Ambiente==AmbienteEnum.Homologacao?
+                "NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
+                :_currentSale.Client.Name; //Obrigatório para NFe e opcional para NFCe
             dest.enderDest = GetEnderecoDestinatario(); //Obrigatório para NFe e opcional para NFCe
 
             //if (versao == VersaoServico.Versao200)
