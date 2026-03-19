@@ -1,5 +1,6 @@
 using DFe.Classes.Entidades;
 using DFe.Classes.Flags;
+using GoogleApi.Entities.Search.Video.Common;
 using Microsoft.AspNetCore.Hosting;
 using Model;
 using Model.DTO;
@@ -73,6 +74,48 @@ namespace Service
             _naturezaOperacaoRepository = naturezaOperacaoRepository;
             _environment = webHostEnvironment;
         }
+        public async Task<ResponseGeneric> CreatedFromSale(NFeEmissionDto nfeDto)
+        {
+            List<NFeEmission> nFeEmissionList = await (repository as INFeRepository).GetBySaleIdAsync(nfeDto.SaleId);
+
+            if (nFeEmissionList.Count>0)
+            {
+                NFeEmission nFeEmission= nFeEmissionList.FirstOrDefault(x => x.StatusNfe == StatusNfe.pendente);
+                if (nFeEmission != null)
+                {
+                    ResponseGeneric responseGeneric = await Resend(nFeEmission.Id);
+                    NFeEmission nFeEmissionResp = responseGeneric.Data as NFeEmission;
+                    if (nFeEmissionResp.StatusNfe != StatusNfe.emitida)
+                    {
+                        return new ResponseGeneric { Success = false, Message = nFeEmissionResp.ErrorMessage };
+                    }
+                    else
+                    {
+                        return new ResponseGeneric
+                        {
+                            Success = true
+                        };
+                    }
+                }
+                return new ResponseGeneric { Success = false, Message = "Não foi encontrado a nota!" };
+            }
+            else
+            {
+                ResponseGeneric responseGeneric =await CreateAttemptAsync(nfeDto);
+                NFeEmission nFeEmissionResp = responseGeneric.Data as NFeEmission;
+                if (nFeEmissionResp.StatusNfe != StatusNfe.emitida)
+                {
+                    return new ResponseGeneric { Success = false, Message = nFeEmissionResp.ErrorMessage };
+                }
+                else
+                {
+                    return new ResponseGeneric
+                    {
+                        Success = true
+                    };
+                }
+            }
+        }
         public async Task<ResponseGeneric> Resend(int id)
         {
             NFeEmission nFeEmission = await (repository as INFeRepository).GetByIdAsync(id);
@@ -86,6 +129,8 @@ namespace Service
             Sale sale = await _saleRepository.GetSaleByCompany(nFeEmission.SaleId, nFeEmission.CompanyId);
             if (sale == null)
                 return new ResponseGeneric { Success = false, Message = "Venda não encontrada para a empresa." };
+            if (sale.Financials == null)
+                return new ResponseGeneric { Success = false, Message = "Venda não possui financeiro!" };
 
             NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(nFeEmission.NaturezaOperacaoId);
             if (naturezaOperacao == null)
@@ -127,7 +172,7 @@ namespace Service
             }
 
             await repository.UpdateAsync(nFeEmission.Id, nFeEmission);
-            return new ResponseGeneric { Success = true };
+            return new ResponseGeneric { Success = true,Data= nFeEmission };
         }
         public async Task<ResponseGeneric> CreateAttemptAsync(NFeEmissionDto attempt)
         {
@@ -143,6 +188,8 @@ namespace Service
             Sale sale = await _saleRepository.GetSaleByCompany(attempt.SaleId, attempt.CompanyId);
             if (sale == null)
                 return new ResponseGeneric { Success = false, Message = "Venda não encontrada para a empresa." };
+            if (sale.Financials == null)
+                return new ResponseGeneric { Success = false, Message = "Venda não possui financeiro!" };
 
             NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(attempt.NaturezaOperacaoId);
             if (naturezaOperacao == null)
@@ -521,16 +568,71 @@ namespace Service
             }
 
             // Versão 4.00
+            // Versão 4.00
             var pagamentosV4 = new pag
             {
                 detPag = pagamentos.Select(f => new detPag
                 {
                     tPag = ConverterParaFormaPagamento(f.PaymentMethod),
-                    vPag = Math.Round(f.Value, 2)
+                    vPag = Math.Round(f.Value, 2),
+                    // Adicionar os dados do cartão se for crédito ou débito
+                    card = (ConverterParaFormaPagamento(f.PaymentMethod) == FormaPagamento.fpCartaoCredito ||
+                            ConverterParaFormaPagamento(f.PaymentMethod) == FormaPagamento.fpCartaoDebito)
+                            ? new card
+                            {
+                                tpIntegra = TipoIntegracaoPagamento.TipNaoIntegrado, // 2=Não integrado
+                                cAut = "NAOINTEGRADO",
+                                CNPJ = "00000000000000", // CNPJ genérico
+                                tBand = BandeiraCartao.bcOutros
+                            }
+                            : null
                 }).ToList()
             };
 
             return new List<pag> { pagamentosV4 };
+
+            return new List<pag> { pagamentosV4 };
+        }
+        private BandeiraCartao? ConverterParaBandeiraCartao(string cardBrand)
+        {
+            if (string.IsNullOrEmpty(cardBrand))
+                return null;
+
+            switch (cardBrand.ToUpper())
+            {
+                case "VISA":
+                case "VISA ELECTRON":
+                    return BandeiraCartao.bcVisa;
+
+                case "MASTERCARD":
+                case "MASTERCARD MAESTRO":
+                    return BandeiraCartao.bcMasterCard;
+
+                case "AMEX":
+                case "AMERICAN EXPRESS":
+                    return BandeiraCartao.bcAmericanExpress;
+
+                case "ELO":
+                    return BandeiraCartao.Elo;
+
+                case "HIPERCARD":
+                    return BandeiraCartao.Hipercard;
+
+                case "DINERS":
+                case "DINERS CLUB":
+                    return BandeiraCartao.bcDinersClub;
+
+                case "JCB":
+                    return BandeiraCartao.JcB;
+
+                case "CREDENCIAL":
+                    return BandeiraCartao.Credz;
+
+                case "OUTROS":
+                case "OUTRA":
+                default:
+                    return BandeiraCartao.bcOutros;
+            }
         }
         private FormaPagamento ConverterParaFormaPagamento(PaymentMethod paymentMethod)
         {
@@ -547,6 +649,8 @@ namespace Service
                 case "CARTÃO DE CRÉDITO":
                 case "CARTAO CREDITO":
                 case "CREDITO":
+                case "CARTAO":
+                case "CARTÃO":
                     return FormaPagamento.fpCartaoCredito;
 
                 case "CARTÃO DE DÉBITO":
@@ -1299,11 +1403,11 @@ namespace Service
                 endereco.nro = cliente.Numero;
                 endereco.xCpl = cliente.Complemento;
                 endereco.xBairro = cliente.Bairro;
-                endereco.cMun = cliente.CodMunicipioIbge?.PadLeft(7, '0') ?? "9999999";
-                endereco.xMun = cliente.Municipio ?? cliente.NameCity; // Usa NameCity como fallback
-                endereco.UF = cliente.Uf ?? cliente.NameState; // Usa NameState como fallback
+                endereco.cMun = long.Parse(cliente.CodMunicipioIbge);
+                endereco.xMun = cliente.Municipio; // Usa NameCity como fallback
+                endereco.UF = cliente.Uf ; // Usa NameState como fallback
                 endereco.CEP = cliente.ZipCode;
-                endereco.cPais = cliente.CodPais ?? "1058";
+                endereco.cPais = int.Parse(cliente.CodPais);
                 endereco.xPais = cliente.Pais ?? "Brasil";
 
                 if (!string.IsNullOrEmpty(cliente.CellPhone))
@@ -1312,7 +1416,7 @@ namespace Service
                     var telefone = new string(cliente.CellPhone.Where(char.IsDigit).ToArray());
                     if (telefone.Length >= 10)
                     {
-                        endereco.fone = telefone;
+                        endereco.fone =long.Parse( telefone);
                     }
                 }
             }
@@ -1548,5 +1652,6 @@ namespace Service
         Task<byte[]> ObterXml(int id);
         Task<string> ObterNomeArquivoXml(int id);
         Task<ResponseGeneric> CancelarNfe(CancelarNotaRequest cancelarNota);
+        Task<ResponseGeneric> CreatedFromSale(NFeEmissionDto nfeDto);
     }
 }

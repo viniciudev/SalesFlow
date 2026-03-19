@@ -66,6 +66,21 @@ namespace WebApiCommercial.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
+        [HttpPost("sale")]
+        public async Task<IActionResult> CreateFromSale([FromHeader] int tenantid, [FromBody] NFeEmissionDto attempt)
+        {
+            if (attempt == null) return BadRequest("Payload inválido.");
+            try
+            {
+                attempt.CompanyId = tenantid;
+                var resp = await _nfeService.CreatedFromSale(attempt);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
 
         [HttpPut]
         public async Task<IActionResult> Update( [FromBody] NFeEmissionDto attempt)

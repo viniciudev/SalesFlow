@@ -302,6 +302,7 @@ namespace Repository
             var data = await (from sale in base._dbContext.Set<Sale>().
                               Include(x => x.SaleItems).ThenInclude(x => x.Product)
                               .Include(x => x.Client)
+                              .Include(x=>x.Financials).ThenInclude(x=>x.PaymentMethod)
                               where sale.Id == idSale
                               && sale.IdCompany == idCompany
                               select sale).AsNoTracking()
