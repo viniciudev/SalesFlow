@@ -81,10 +81,16 @@ namespace Service
             if (nFeEmissionList.Count>0)
             {
                 NFeEmission nFeEmission= nFeEmissionList.FirstOrDefault(x => x.StatusNfe == StatusNfe.pendente);
+
                 if (nFeEmission != null)
                 {
                     ResponseGeneric responseGeneric = await Resend(nFeEmission.Id);
                     NFeEmission nFeEmissionResp = responseGeneric.Data as NFeEmission;
+          if (nFeEmissionResp==null)
+          {
+            return responseGeneric;
+
+					}
                     if (nFeEmissionResp.StatusNfe != StatusNfe.emitida)
                     {
                         return new ResponseGeneric { Success = false, Message = nFeEmissionResp.ErrorMessage };
@@ -93,6 +99,7 @@ namespace Service
                     {
                         return new ResponseGeneric
                         {
+                          //poder ser a danfe
                             Success = true
                         };
                     }
@@ -103,7 +110,12 @@ namespace Service
             {
                 ResponseGeneric responseGeneric =await CreateAttemptAsync(nfeDto);
                 NFeEmission nFeEmissionResp = responseGeneric.Data as NFeEmission;
-                if (nFeEmissionResp.StatusNfe != StatusNfe.emitida)
+				if (nFeEmissionResp == null)
+				{
+					return responseGeneric;
+
+				}
+				if (nFeEmissionResp.StatusNfe != StatusNfe.emitida)
                 {
                     return new ResponseGeneric { Success = false, Message = nFeEmissionResp.ErrorMessage };
                 }
@@ -116,131 +128,274 @@ namespace Service
                 }
             }
         }
-        public async Task<ResponseGeneric> Resend(int id)
-        {
-            NFeEmission nFeEmission = await (repository as INFeRepository).GetByIdAsync(id);
-            if (nFeEmission == null)
-                return new ResponseGeneric { Success = false, Message = "Não foi encontrado a nota!" };
-            //configuraçao da empresa para nfe
-            FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(nFeEmission.CompanyId);
-            if (fiscalConfiguration == null)
-                return new ResponseGeneric { Success = false, Message = "Não encontrado as configurações para emissão de nota!" };
-            //verifica se existe a venda
-            Sale sale = await _saleRepository.GetSaleByCompany(nFeEmission.SaleId, nFeEmission.CompanyId);
-            if (sale == null)
-                return new ResponseGeneric { Success = false, Message = "Venda não encontrada para a empresa." };
-            if (sale.Financials == null)
-                return new ResponseGeneric { Success = false, Message = "Venda não possui financeiro!" };
+	
+			// Método principal para reenvio
+			public async Task<ResponseGeneric> Resend(int id)
+			{
+				NFeEmission nFeEmission = await (repository as INFeRepository).GetByIdAsync(id);
+				if (nFeEmission == null)
+					return new ResponseGeneric { Success = false, Message = "Não foi encontrado a nota!" };
 
-            NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(nFeEmission.NaturezaOperacaoId);
-            if (naturezaOperacao == null)
-                return new ResponseGeneric { Success = false, Message = "Natureza de operação não encontrada." };
+				var (validationResult, fiscalConfig, sale, naturezaOperacao) =
+						await ValidateAndGetDependencies(nFeEmission.CompanyId, nFeEmission.SaleId, nFeEmission.NaturezaOperacaoId);
 
-       
-            //classes externas para gerar nfe
-            var respEmissao = await TransmitirNfe(Convert.ToInt32( nFeEmission.Numero), fiscalConfiguration, sale, naturezaOperacao);
-            if (respEmissao is string mensagemErro)
-            {
-                //mudar status
-                //mensagem de erro
-                nFeEmission.Sent = true;
-                nFeEmission.Numero = nFeEmission.Numero;
-                nFeEmission.StatusNfe = StatusNfe.pendente;
-                //nFeEmission.ResponseJson = responseJson;
-                nFeEmission.ErrorMessage = respEmissao;
-                nFeEmission.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
-                nFeEmission.TryCount += 1;
-                nFeEmission.UpdatedAt = DateTime.UtcNow;
-               
-            }
-            else if (respEmissao is RetornoNFeAutorizacao ret)
-            {
-                protNFe protNFe = ret.Retorno.protNFe;
-                infProt infProt = protNFe?.infProt;
-                //mensagem de erro
-                nFeEmission.Sent = true;
-                nFeEmission.Numero = nFeEmission.Numero;
-                nFeEmission.StatusNfe = NfeSituacao.Autorizada(infProt.cStat)? StatusNfe.emitida: StatusNfe.pendente;
-                nFeEmission.ResponseJson = JsonConvert.SerializeObject (infProt);
-                nFeEmission.ErrorMessage = NfeSituacao.Autorizada(infProt.cStat) ?null: infProt.xMotivo;
-                nFeEmission.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
-                nFeEmission.TryCount += 1;
-                nFeEmission.UpdatedAt = DateTime.UtcNow;
-                nFeEmission.ChaveAcesso = infProt.chNFe;
-                nFeEmission.XmlCompleto = ret.Xml;
-                nFeEmission.Protocolo = infProt.nProt;
-            }
+				if (!validationResult.Success)
+					return validationResult;
 
-            await repository.UpdateAsync(nFeEmission.Id, nFeEmission);
-            return new ResponseGeneric { Success = true,Data= nFeEmission };
-        }
-        public async Task<ResponseGeneric> CreateAttemptAsync(NFeEmissionDto attempt)
-        {
-            //ultima nota emitida com sucesso
-            NFeEmission nFeEmission = await (repository as INFeRepository).GetByCompany(attempt.CompanyId);
+				int numeroNfe = Convert.ToInt32(nFeEmission.Numero);
+				var respEmissao = await TransmitirNfe(numeroNfe, fiscalConfig, sale, naturezaOperacao);
 
-            //configuraçao da empresa para nfe
-            FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(attempt.CompanyId);
-            if (fiscalConfiguration == null)
-                return new ResponseGeneric { Success = false, Message = "Não encontrado as configurações para emissão de nota!" };
+				UpdateNFeEmission(nFeEmission, respEmissao, fiscalConfig);
 
-            //verifica se existe a venda
-            Sale sale = await _saleRepository.GetSaleByCompany(attempt.SaleId, attempt.CompanyId);
-            if (sale == null)
-                return new ResponseGeneric { Success = false, Message = "Venda não encontrada para a empresa." };
-            if (sale.Financials == null)
-                return new ResponseGeneric { Success = false, Message = "Venda não possui financeiro!" };
+				await repository.UpdateAsync(nFeEmission.Id, nFeEmission);
+				return new ResponseGeneric { Success = true, Data = nFeEmission };
+			}
 
-            NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(attempt.NaturezaOperacaoId);
-            if (naturezaOperacao == null)
-                return new ResponseGeneric { Success = false, Message = "Natureza de operação não encontrada." };
-            int proximoNumeroNfe = Convert.ToInt32( nFeEmission == null ? fiscalConfiguration.NumeracaoDocumentos.Nfce.NumeroInicial : nFeEmission.Numero + 1);
-            //classes externas para gerar nfe
-            var respEmissao = await TransmitirNfe(proximoNumeroNfe, fiscalConfiguration, sale, naturezaOperacao);
+			// Método principal para criação
+			public async Task<ResponseGeneric> CreateAttemptAsync(NFeEmissionDto attempt)
+			{
+				var (validationResult, fiscalConfig, sale, naturezaOperacao) =
+						await ValidateAndGetDependencies(attempt.CompanyId, attempt.SaleId, attempt.NaturezaOperacaoId);
 
-            attempt.TryCount = attempt.TryCount <= 0 ? 1 : attempt.TryCount;
-            attempt.CreatedAt = DateTime.UtcNow;
-            var entity = new NFeEmission();
-            if (respEmissao is string mensagemErro)
-            {
-                entity.ResponseJson = "";
-                entity.ErrorMessage = mensagemErro;
-                entity.NaturezaOperacaoId = attempt.NaturezaOperacaoId;
-                entity.SaleId = attempt.SaleId;
-                entity.TipoDocumento = attempt.TipoDocumento;
-                entity.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
-                entity.Numero = proximoNumeroNfe;
-                entity.StatusNfe = StatusNfe.pendente;
-                entity.CreatedAt = DateTime.UtcNow;
-                entity.TryCount = attempt.TryCount;
-                entity.CompanyId = attempt.CompanyId;
-            }
-            else if(respEmissao is RetornoNFeAutorizacao ret)
-            {
-                protNFe protNFe = ret.Retorno.protNFe;
-                infProt infProt = protNFe?.infProt;
-                entity.ResponseJson = JsonConvert.SerializeObject(infProt);
-                entity.ErrorMessage= NfeSituacao.Autorizada(infProt.cStat) ? null : infProt.xMotivo;
-                entity.NaturezaOperacaoId = attempt.NaturezaOperacaoId;
-                entity.SaleId = attempt.SaleId;
-                entity.TipoDocumento = attempt.TipoDocumento;
-                entity.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
-                entity.Numero = proximoNumeroNfe;
-                entity.StatusNfe = NfeSituacao.Autorizada(infProt.cStat) ? StatusNfe.emitida : StatusNfe.pendente; ;
-                entity.CreatedAt = DateTime.UtcNow;
-                entity.TryCount = attempt.TryCount;
-                entity.CompanyId = attempt.CompanyId;
-                entity.XmlCompleto = ret.Xml;
-                entity.Protocolo = infProt.nProt;
-                entity.ChaveAcesso = infProt.chNFe;
-            }
+				if (!validationResult.Success)
+					return validationResult;
 
-              
-            await repository.CreateAsync(entity);
-            return new ResponseGeneric { Success = true };
-        }
+				NFeEmission ultimaNota = await (repository as INFeRepository).GetByCompany(attempt.CompanyId);
+				int proximoNumeroNfe = CalculateNextNumber(ultimaNota, fiscalConfig);
 
-        private async Task<dynamic> TransmitirNfe(int numero, FiscalConfiguration fiscalConfiguration, Sale sale, NaturezaOperacao naturezaOperacao)
+				var respEmissao = await TransmitirNfe(proximoNumeroNfe, fiscalConfig, sale, naturezaOperacao);
+
+				var entity = CreateNFeEmission(attempt, respEmissao, fiscalConfig, proximoNumeroNfe);
+
+				await repository.CreateAsync(entity);
+				return new ResponseGeneric { Success = true, Data = entity };
+			}
+
+			// Método privado para validações comuns
+			private async Task<(ResponseGeneric ValidationResult, FiscalConfiguration FiscalConfig, Sale Sale, NaturezaOperacao NaturezaOperacao)>
+					ValidateAndGetDependencies(int companyId, int saleId, int naturezaOperacaoId)
+			{
+				// Configuração da empresa
+				FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(companyId);
+				if (fiscalConfiguration == null)
+					return (new ResponseGeneric { Success = false, Message = "Não encontrado as configurações para emissão de nota!" }, null, null, null);
+
+				// Verifica se existe a venda
+				Sale sale = await _saleRepository.GetSaleByCompany(saleId, companyId);
+				if (sale == null)
+					return (new ResponseGeneric { Success = false, Message = "Venda não encontrada para a empresa." }, null, null, null);
+
+				if (sale.Financials == null|| sale.Financials.Count()==0)
+					return (new ResponseGeneric { Success = false, Message = "Venda não possui financeiro!" }, null, null, null);
+
+				// Natureza da operação
+				NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(naturezaOperacaoId);
+				if (naturezaOperacao == null)
+					return (new ResponseGeneric { Success = false, Message = "Natureza de operação não encontrada." }, null, null, null);
+
+				return (new ResponseGeneric { Success = true }, fiscalConfiguration, sale, naturezaOperacao);
+			}
+
+			// Método privado para atualizar entidade existente
+			private void UpdateNFeEmission(NFeEmission nFeEmission, object respEmissao, FiscalConfiguration fiscalConfig)
+			{
+				nFeEmission.Sent = true;
+				nFeEmission.Serie = fiscalConfig.NumeracaoDocumentos.Nfce.Serie;
+				nFeEmission.TryCount += 1;
+				nFeEmission.UpdatedAt = DateTime.UtcNow;
+
+				if (respEmissao is string mensagemErro)
+				{
+					nFeEmission.StatusNfe = StatusNfe.pendente;
+					nFeEmission.ErrorMessage = mensagemErro;
+					nFeEmission.ResponseJson = null;
+				}
+				else if (respEmissao is RetornoNFeAutorizacao ret)
+				{
+					var infProt = ret.Retorno.protNFe?.infProt;
+					bool isAuthorized = infProt != null && NfeSituacao.Autorizada(infProt.cStat);
+
+					nFeEmission.StatusNfe = isAuthorized ? StatusNfe.emitida : StatusNfe.pendente;
+					nFeEmission.ResponseJson = JsonConvert.SerializeObject(infProt);
+					nFeEmission.ErrorMessage = isAuthorized ? null : infProt?.xMotivo;
+					nFeEmission.ChaveAcesso = infProt?.chNFe;
+					nFeEmission.XmlCompleto = ret.Xml;
+					nFeEmission.Protocolo = infProt?.nProt;
+				}
+			}
+
+			// Método privado para criar nova entidade
+			private NFeEmission CreateNFeEmission(NFeEmissionDto attempt, object respEmissao, FiscalConfiguration fiscalConfig, int numero)
+			{
+				var entity = new NFeEmission
+				{
+					NaturezaOperacaoId = attempt.NaturezaOperacaoId,
+					SaleId = attempt.SaleId,
+					TipoDocumento = attempt.TipoDocumento,
+					Serie = fiscalConfig.NumeracaoDocumentos.Nfce.Serie,
+					Numero = numero,
+					CreatedAt = DateTime.UtcNow,
+					TryCount = attempt.TryCount <= 0 ? 1 : attempt.TryCount,
+					CompanyId = attempt.CompanyId
+				};
+
+				if (respEmissao is string mensagemErro)
+				{
+					entity.StatusNfe = StatusNfe.pendente;
+					entity.ErrorMessage = mensagemErro;
+					entity.ResponseJson = "";
+				}
+				else if (respEmissao is RetornoNFeAutorizacao ret)
+				{
+					var infProt = ret.Retorno.protNFe?.infProt;
+					bool isAuthorized = infProt != null && NfeSituacao.Autorizada(infProt.cStat);
+
+					entity.StatusNfe = isAuthorized ? StatusNfe.emitida : StatusNfe.pendente;
+					entity.ResponseJson = JsonConvert.SerializeObject(infProt);
+					entity.ErrorMessage = isAuthorized ? null : infProt?.xMotivo;
+					entity.XmlCompleto = ret.Xml;
+					entity.Protocolo = infProt?.nProt;
+					entity.ChaveAcesso = infProt?.chNFe;
+				}
+
+				return entity;
+			}
+
+			// Método para calcular próximo número
+			private int CalculateNextNumber(NFeEmission ultimaNota, FiscalConfiguration fiscalConfig)
+			{
+				if (ultimaNota == null)
+					return Convert.ToInt32(fiscalConfig.NumeracaoDocumentos.Nfce.NumeroInicial);
+
+				return Convert.ToInt32(ultimaNota.Numero + 1);
+			}
+		
+		//     public async Task<ResponseGeneric> Resend(int id)
+		//     {
+		//         NFeEmission nFeEmission = await (repository as INFeRepository).GetByIdAsync(id);
+		//         if (nFeEmission == null)
+		//             return new ResponseGeneric { Success = false, Message = "Não foi encontrado a nota!" };
+		//         //configuraçao da empresa para nfe
+		//         FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(nFeEmission.CompanyId);
+		//         if (fiscalConfiguration == null)
+		//             return new ResponseGeneric { Success = false, Message = "Não encontrado as configurações para emissão de nota!" };
+		//         //verifica se existe a venda
+		//         Sale sale = await _saleRepository.GetSaleByCompany(nFeEmission.SaleId, nFeEmission.CompanyId);
+		//         if (sale == null)
+		//             return new ResponseGeneric { Success = false, Message = "Venda não encontrada para a empresa." };
+		//         if (sale.Financials == null)
+		//             return new ResponseGeneric { Success = false, Message = "Venda não possui financeiro!" };
+
+		//         NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(nFeEmission.NaturezaOperacaoId);
+		//         if (naturezaOperacao == null)
+		//             return new ResponseGeneric { Success = false, Message = "Natureza de operação não encontrada." };
+
+
+		//         //classes externas para gerar nfe
+		//         var respEmissao = await TransmitirNfe(Convert.ToInt32( nFeEmission.Numero), fiscalConfiguration, sale, naturezaOperacao);
+		//         if (respEmissao is string mensagemErro)
+		//         {
+		//             //mudar status
+		//             //mensagem de erro
+		//             nFeEmission.Sent = true;
+		//             nFeEmission.Numero = nFeEmission.Numero;
+		//             nFeEmission.StatusNfe = StatusNfe.pendente;
+		//             //nFeEmission.ResponseJson = responseJson;
+		//             nFeEmission.ErrorMessage = respEmissao;
+		//             nFeEmission.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
+		//             nFeEmission.TryCount += 1;
+		//             nFeEmission.UpdatedAt = DateTime.UtcNow;
+
+		//         }
+		//         else if (respEmissao is RetornoNFeAutorizacao ret)
+		//         {
+		//             protNFe protNFe = ret.Retorno.protNFe;
+		//             infProt infProt = protNFe?.infProt;
+		//             //mensagem de erro
+		//             nFeEmission.Sent = true;
+		//             nFeEmission.Numero = nFeEmission.Numero;
+		//             nFeEmission.StatusNfe = NfeSituacao.Autorizada(infProt.cStat)? StatusNfe.emitida: StatusNfe.pendente;
+		//             nFeEmission.ResponseJson = JsonConvert.SerializeObject (infProt);
+		//             nFeEmission.ErrorMessage = NfeSituacao.Autorizada(infProt.cStat) ?null: infProt.xMotivo;
+		//             nFeEmission.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
+		//             nFeEmission.TryCount += 1;
+		//             nFeEmission.UpdatedAt = DateTime.UtcNow;
+		//             nFeEmission.ChaveAcesso = infProt.chNFe;
+		//             nFeEmission.XmlCompleto = ret.Xml;
+		//             nFeEmission.Protocolo = infProt.nProt;
+		//         }
+
+		//         await repository.UpdateAsync(nFeEmission.Id, nFeEmission);
+		//         return new ResponseGeneric { Success = true,Data= nFeEmission };
+		//     }
+		//     public async Task<ResponseGeneric> CreateAttemptAsync(NFeEmissionDto attempt)
+		//     {
+		//         //ultima nota emitida com sucesso
+		//         NFeEmission nFeEmission = await (repository as INFeRepository).GetByCompany(attempt.CompanyId);
+
+		//         //configuraçao da empresa para nfe
+		//         FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(attempt.CompanyId);
+		//         if (fiscalConfiguration == null)
+		//             return new ResponseGeneric { Success = false, Message = "Não encontrado as configurações para emissão de nota!" };
+
+		//         //verifica se existe a venda
+		//         Sale sale = await _saleRepository.GetSaleByCompany(attempt.SaleId, attempt.CompanyId);
+		//         if (sale == null)
+		//             return new ResponseGeneric { Success = false, Message = "Venda não encontrada para a empresa." };
+		//         if (sale.Financials == null)
+		//             return new ResponseGeneric { Success = false, Message = "Venda não possui financeiro!" };
+		//if (sale.Financials == null)
+		//	return new ResponseGeneric { Success = false, Message = "Venda não possui financeiro!" };
+		//NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(attempt.NaturezaOperacaoId);
+		//         if (naturezaOperacao == null)
+		//             return new ResponseGeneric { Success = false, Message = "Natureza de operação não encontrada." };
+		//         int proximoNumeroNfe = Convert.ToInt32( nFeEmission == null ? fiscalConfiguration.NumeracaoDocumentos.Nfce.NumeroInicial : nFeEmission.Numero + 1);
+		//         //classes externas para gerar nfe
+		//         var respEmissao = await TransmitirNfe(proximoNumeroNfe, fiscalConfiguration, sale, naturezaOperacao);
+
+		//         attempt.TryCount = attempt.TryCount <= 0 ? 1 : attempt.TryCount;
+		//         attempt.CreatedAt = DateTime.UtcNow;
+		//         var entity = new NFeEmission();
+		//         if (respEmissao is string mensagemErro)
+		//         {
+		//             entity.ResponseJson = "";
+		//             entity.ErrorMessage = mensagemErro;
+		//             entity.NaturezaOperacaoId = attempt.NaturezaOperacaoId;
+		//             entity.SaleId = attempt.SaleId;
+		//             entity.TipoDocumento = attempt.TipoDocumento;
+		//             entity.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
+		//             entity.Numero = proximoNumeroNfe;
+		//             entity.StatusNfe = StatusNfe.pendente;
+		//             entity.CreatedAt = DateTime.UtcNow;
+		//             entity.TryCount = attempt.TryCount;
+		//             entity.CompanyId = attempt.CompanyId;
+		//         }
+		//         else if(respEmissao is RetornoNFeAutorizacao ret)
+		//         {
+		//             protNFe protNFe = ret.Retorno.protNFe;
+		//             infProt infProt = protNFe?.infProt;
+		//             entity.ResponseJson = JsonConvert.SerializeObject(infProt);
+		//             entity.ErrorMessage= NfeSituacao.Autorizada(infProt.cStat) ? null : infProt.xMotivo;
+		//             entity.NaturezaOperacaoId = attempt.NaturezaOperacaoId;
+		//             entity.SaleId = attempt.SaleId;
+		//             entity.TipoDocumento = attempt.TipoDocumento;
+		//             entity.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
+		//             entity.Numero = proximoNumeroNfe;
+		//             entity.StatusNfe = NfeSituacao.Autorizada(infProt.cStat) ? StatusNfe.emitida : StatusNfe.pendente; ;
+		//             entity.CreatedAt = DateTime.UtcNow;
+		//             entity.TryCount = attempt.TryCount;
+		//             entity.CompanyId = attempt.CompanyId;
+		//             entity.XmlCompleto = ret.Xml;
+		//             entity.Protocolo = infProt.nProt;
+		//             entity.ChaveAcesso = infProt.chNFe;
+		//         }
+
+
+		//         await repository.CreateAsync(entity);
+		//         return new ResponseGeneric { Success = true,Data = entity };
+		//     }
+
+		private async Task<dynamic> TransmitirNfe(int numero, FiscalConfiguration fiscalConfiguration, Sale sale, NaturezaOperacao naturezaOperacao)
         {
             try
             {
@@ -914,8 +1069,8 @@ namespace Service
             decimal aliquotaCOFINS = _currentNaturezaOperacao.ConfiguracaoTributaria.AliquotaCOFINS;
             decimal aliquotaPIS = _currentNaturezaOperacao.ConfiguracaoTributaria.AliquotaPIS ;
             decimal aliquotaIPI = _currentNaturezaOperacao.ConfiguracaoTributaria.AliquotaIPI;
-
-            var det = new det
+      var value = (CSTPIS)Enum.Parse(typeof(CSTPIS), _currentNaturezaOperacao.ConfiguracaoTributaria.CstPIS);
+						var det = new det
             {
                 nItem = index,
                 prod = produto,
