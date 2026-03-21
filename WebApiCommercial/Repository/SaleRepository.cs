@@ -24,6 +24,7 @@ namespace Repository
                                .Include(x => x.SaleItems)
                                .Include(x => x.Client)
                                .Include(x => x.Financials)
+                               .Include(x=>x.NFeEmissions)
                                where sale.IdCompany == filters.IdCompany
                                && (filters.IdClient == 0 || sale.IdClient == filters.IdClient)
                                && (filters.IdSeller == 0 || sale.IdSeller == filters.IdSeller)
@@ -70,6 +71,7 @@ namespace Repository
                                        BankAccountId=x.BankAccountId,
                                        BankAccountName=x.BankAccount.BankName
                                    }).ToList(),
+                                   NFeEmissions=sale.NFeEmissions.Select(x=>new NFeEmission {Id= x.Id,StatusNfe=x.StatusNfe }).ToList()
                                })
                                .AsNoTracking()
                                .GetPagedAsync<Sale>(filters.PageNumber, filters.PageSize);
