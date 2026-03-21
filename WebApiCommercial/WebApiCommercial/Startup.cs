@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO.Compression;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Settings = ProfControl.WebApi.Settings;
@@ -40,7 +41,51 @@ namespace WebAppCommercial
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers().AddNewtonsoftJson(options =>
+			// ===== CONFIGURAÇÃO SSL MODERNA =====
+			// Configurar um HttpClientHandler global para aceitar certificados da SEFAZ
+			services.AddHttpClient("SEFAZClient", client =>
+			{
+				client.Timeout = TimeSpan.FromMinutes(5);
+			})
+			.ConfigurePrimaryHttpMessageHandler(() =>
+			{
+				var handler = new HttpClientHandler
+				{
+					ServerCertificateCustomValidationCallback = (message, cert, chain, errors) =>
+					{
+						// Aceitar certificados da SEFAZ
+						if (cert.Subject.Contains("SEFAZ") ||
+									cert.Subject.Contains("Fazenda") ||
+									cert.Subject.Contains("sefaz") ||
+									errors == System.Net.Security.SslPolicyErrors.None)
+						{
+							return true;
+						}
+
+						// Log para debug
+						Console.WriteLine($"SSL Error: {errors}");
+						Console.WriteLine($"Certificate: {cert.Subject}");
+
+						// Em desenvolvimento, aceitar todos
+#if DEBUG
+						return true;
+#endif
+
+						return false;
+					}
+				};
+
+				// Forçar TLS 1.2 ou superior
+				handler.SslProtocols = System.Security.Authentication.SslProtocols.Tls12 |
+																	System.Security.Authentication.SslProtocols.Tls13;
+
+				return handler;
+			});
+
+			// Configurar o HttpClient padrão
+			services.AddHttpClient();
+			// ===== FIM CONFIGURAÇÃO SSL =====
+			services.AddControllers().AddNewtonsoftJson(options =>
             {
                 options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
                 options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
