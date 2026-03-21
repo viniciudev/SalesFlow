@@ -31,7 +31,12 @@ WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
+# Copia os arquivos publicados
 COPY --from=build /publish .
+
+# COPIA A PASTA NFSchemas - ADICIONE ESTA LINHA
+# A pasta NFSchemas está localizada em WebApiCommercial/NFSchemas no código fonte
+COPY --from=build /src/WebApiCommercial/NFSchemas ./NFSchemas
 
 # Configura a porta que o Render espera
 ENV ASPNETCORE_URLS=http://+:80
