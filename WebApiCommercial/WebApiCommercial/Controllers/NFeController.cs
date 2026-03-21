@@ -124,7 +124,29 @@ namespace WebApiCommercial.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-        [HttpGet("{id}/xml")]
+		[HttpGet("{id}/danfeSale")]
+		public async Task<IActionResult> DanfeSale(int id)
+		{
+			try
+			{
+				byte[] pdfBytes = await _nfeService.Danfe(id);
+
+				// Verifica se o array está vazio
+				if (pdfBytes == null || pdfBytes.Length == 0)
+				{
+					return BadRequest(new { error = "PDF não gerado" });
+				}
+
+				// Retorna como arquivo PDF com Content-Type correto
+				return File(pdfBytes, "application/pdf", $"cupom_{id}.pdf");
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(new { error = ex.Message });
+			}
+		}
+
+		[HttpGet("{id}/xml")]
         public async Task<IActionResult> BaixarXml(int id)
         {
             try
