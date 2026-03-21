@@ -8,7 +8,7 @@ using Model.Enums;
 using Model.Moves;
 using Model.Registrations;
 using Newtonsoft.Json;
-using NFe.AppTeste;
+using NFe.App;
 using NFe.Classes;
 using NFe.Classes.Informacoes;
 using NFe.Classes.Informacoes.Cobranca;
@@ -55,7 +55,7 @@ namespace Service
 		private readonly INaturezaOperacaoRepository _naturezaOperacaoRepository;
 		private readonly IWebHostEnvironment _environment;
 		private NFe.Classes.NFe _nfe;
-		private ConfiguracaoApp _configuracaoApp;
+		private   ConfiguracaoApp _configuracaoApp;
 		private FiscalConfiguration _currentFiscalConfiguration;
 		private NaturezaOperacao _currentNaturezaOperacao;
 		private Sale _currentSale;

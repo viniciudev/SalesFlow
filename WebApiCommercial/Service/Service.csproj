@@ -16,7 +16,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NFe\NFe.AppTeste.NetCore\NFe.AppTeste.NetCore.csproj" />
-    <ProjectReference Include="..\NFe\NFe.AppTeste\NFe.AppTeste.csproj" />
+    <ProjectReference Include="..\NFe\NFe.Danfe.Base\NFe.Danfe.Base.csproj" />
+    <ProjectReference Include="..\NFe\NFe.Danfe.Nativo\NFe.Danfe.Nativo.csproj" />
     <ProjectReference Include="..\Repository\Repository.csproj" />
   </ItemGroup>
 

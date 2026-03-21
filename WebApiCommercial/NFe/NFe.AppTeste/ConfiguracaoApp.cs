@@ -3,7 +3,6 @@ using System.IO;
 using System.Net;
 using DFe.Classes.Flags;
 using DFe.Utils;
-using NFe.AppTeste.Properties;
 using NFe.Classes.Informacoes.Emitente;
 using NFe.Classes.Informacoes.Identificacao.Tipos;
 using NFe.Danfe.Base;
@@ -12,7 +11,7 @@ using NFe.Utils;
 using NFe.Utils.Email;
 using Shared.NFe.Utils.Enderecos.NovasUrlsCeara;
 
-namespace NFe.AppTeste
+namespace NFe.App
 {
     public class ConfiguracaoApp
     {
