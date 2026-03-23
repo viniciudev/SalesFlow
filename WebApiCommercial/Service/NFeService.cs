@@ -497,34 +497,33 @@ namespace Service
 		}
 		public async Task<byte[]> ObterCertificado(string caminhoRelativo)
 		{
-			// Remove a barra inicial se necessário
-			caminhoRelativo = caminhoRelativo.TrimStart('/');
+			// Extrai apenas o nome do arquivo do caminho salvo no banco
+			// Exemplo: "/certs/399ff91c-fe15-43f3-b1cf-0d773e9f49cd.pfx" -> "399ff91c-fe15-43f3-b1cf-0d773e9f49cd.pfx"
+			string nomeArquivo = Path.GetFileName(caminhoRelativo.TrimStart('/'));
 
 			string caminhoCompleto;
 
-			// Verifica se está no Render (ambiente de produção)
+			// Verifica se está no Render
 			if (Environment.GetEnvironmentVariable("RENDER") == "true")
 			{
-				// Usa o caminho absoluto do disk mount
-				var certsPath = "/app/wwwroot/certs";
-				caminhoCompleto = Path.Combine(certsPath, Path.GetFileName(caminhoRelativo));
+				// NO RENDER: usa o caminho ABSOLUTO do Disk mount
+				caminhoCompleto = Path.Combine("/app/wwwroot/certs", nomeArquivo);
 			}
 			else
 			{
-				// Ambiente de desenvolvimento
-				caminhoCompleto = Path.Combine(_environment.WebRootPath, caminhoRelativo);
+				// LOCAL: usa WebRootPath
+				caminhoCompleto = Path.Combine(_environment.WebRootPath, "certs", nomeArquivo);
 			}
 
-			// Log para debug
-			Console.WriteLine($"Tentando carregar certificado de: {caminhoCompleto}");
-
-			// Verifica se o arquivo existe
 			if (!System.IO.File.Exists(caminhoCompleto))
 			{
-				throw new FileNotFoundException($"Certificado não encontrado: {caminhoCompleto}");
+				throw new FileNotFoundException(
+						$"Certificado não encontrado. Procurado em: {caminhoCompleto}. " +
+						$"Nome do arquivo: {nomeArquivo}. " +
+						$"Caminho original: {caminhoRelativo}"
+				);
 			}
 
-			// Lê o arquivo
 			return await System.IO.File.ReadAllBytesAsync(caminhoCompleto);
 		}
 		private ConfiguracaoApp criarConfiguracaoApp(FiscalConfiguration fiscalConfiguration, NaturezaOperacao naturezaOperacao,
