@@ -97,62 +97,98 @@ namespace WebApiCommercial.Controllers
             return Ok(cfg);
         }
 
-        // Helper: salva o arquivo TSX enviado (IFormFile) ou decodifica base64 e grava no disco.
-        private async Task<string?> SaveCertificadoAsync(CertificadoDigitalRequest? cert)
-        {
-            if (cert == null) return null;
+		// Helper: salva o arquivo TSX enviado (IFormFile) ou decodifica base64 e grava no disco.
+		private async Task<string?> SaveCertificadoAsync(CertificadoDigitalRequest? cert)
+		{
+			if (cert == null) return null;
 
-            // pasta relativa (wwwroot/certs)
-            var relativeFolder = Path.Combine("certs");
-            var absoluteFolder = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), relativeFolder);
+			// Determina o caminho correto baseado no ambiente
+			string certsPath;
+			if (Environment.GetEnvironmentVariable("RENDER") == "true")
+			{
+				certsPath = "/app/wwwroot/certs";
+			}
+			else
+			{
+				certsPath = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "certs");
+			}
 
-            if (!Directory.Exists(absoluteFolder))
-                Directory.CreateDirectory(absoluteFolder);
+			if (!Directory.Exists(certsPath))
+				Directory.CreateDirectory(certsPath);
 
-            // Prioriza arquivo enviado via multipart/form-data
-            if (cert.ArquivoFile != null && cert.ArquivoFile.Length > 0)
-            {
-                var ext = Path.GetExtension(cert.ArquivoFile.FileName);
-                if (string.IsNullOrEmpty(ext)) ext = ".tsx";
-                var fileName = $"{Guid.NewGuid()}{ext}";
-                var filePath = Path.Combine(absoluteFolder, fileName);
+			string? filePath = null;
 
-                await using var stream = new FileStream(filePath, FileMode.Create);
-                await cert.ArquivoFile.CopyToAsync(stream);
+			try
+			{
+				// Prioriza arquivo enviado via multipart/form-data
+				if (cert.ArquivoFile != null && cert.ArquivoFile.Length > 0)
+				{
+					var ext = Path.GetExtension(cert.ArquivoFile.FileName);
+					if (string.IsNullOrEmpty(ext)) ext = ".pfx"; // Altere para a extensão correta
+					var fileName = $"{Guid.NewGuid()}{ext}";
+					filePath = Path.Combine(certsPath, fileName);
 
-                // retorna caminho relativo para storage (ex: /certs/xxx.tsx)
-                return "/" + Path.Combine(relativeFolder, fileName).Replace("\\", "/");
-            }
+					await using var stream = new FileStream(filePath, FileMode.Create);
+					await cert.ArquivoFile.CopyToAsync(stream);
+				}
+				// Se veio base64
+				else if (!string.IsNullOrEmpty(cert.ArquivoBase64))
+				{
+					var base64 = cert.ArquivoBase64;
+					var comma = base64.IndexOf(',');
+					if (comma >= 0) base64 = base64[(comma + 1)..];
 
-            // Se veio base64 (campo ArquivoBase64), decodifica e salva
-            if (!string.IsNullOrEmpty(cert.ArquivoBase64))
-            {
-                // aceita data-uri ou puro base64
-                var base64 = cert.ArquivoBase64;
-                var comma = base64.IndexOf(',');
-                if (comma >= 0) base64 = base64[(comma + 1)..];
+					byte[] bytes = Convert.FromBase64String(base64);
+					var fileName = $"{Guid.NewGuid()}.pfx";
+					filePath = Path.Combine(certsPath, fileName);
+					await System.IO.File.WriteAllBytesAsync(filePath, bytes);
+				}
+				else if (!string.IsNullOrEmpty(cert.Arquivo))
+				{
+					return cert.Arquivo;
+				}
 
-                byte[] bytes;
-                try
-                {
-                    bytes = Convert.FromBase64String(base64);
-                }
-                catch
-                {
-                    // inválido
-                    return null;
-                }
+				// Valida se o arquivo foi salvo e é um certificado válido
+				if (filePath != null && System.IO.File.Exists(filePath))
+				{
+					// Tenta carregar como certificado para validar
+					try
+					{
+						// Verifica se o arquivo não está vazio
+						var fileInfo = new FileInfo(filePath);
+						if (fileInfo.Length == 0)
+						{
+							throw new Exception("Arquivo vazio");
+						}
 
-                var ext = ".tsx";
-                var fileName = $"{Guid.NewGuid()}{ext}";
-                var filePath = Path.Combine(absoluteFolder, fileName);
-                await System.IO.File.WriteAllBytesAsync(filePath, bytes);
+						// Retorna caminho relativo baseado no ambiente
+						if (Environment.GetEnvironmentVariable("RENDER") == "true")
+						{
+							// Para o Render, retorna apenas o nome do arquivo
+							return Path.GetFileName(filePath);
+						}
+						else
+						{
+							// Para desenvolvimento, retorna caminho relativo
+							return "/certs/" + Path.GetFileName(filePath);
+						}
+					}
+					catch (Exception ex)
+					{
+						// Se falhar ao validar, deleta o arquivo e retorna erro
+						System.IO.File.Delete(filePath);
+						throw new Exception($"Arquivo não é um certificado válido: {ex.Message}");
+					}
+				}
 
-                return "/" + Path.Combine(relativeFolder, fileName).Replace("\\", "/");
-            }
-
-            // sem arquivo
-            return cert.Arquivo;
-        }
-    }
+				return null;
+			}
+			catch (Exception ex)
+			{
+				// Log do erro
+				Console.WriteLine($"Erro ao salvar certificado: {ex.Message}");
+				throw;
+			}
+		}
+	}
 }

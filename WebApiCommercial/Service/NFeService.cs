@@ -497,12 +497,26 @@ namespace Service
 		}
 		public async Task<byte[]> ObterCertificado(string caminhoRelativo)
 		{
-			// O caminho relativo vindo do banco: "/certs/1918d285-171a-4cf7-8c07-27a06481fbd4.pfx"
 			// Remove a barra inicial se necessário
 			caminhoRelativo = caminhoRelativo.TrimStart('/');
 
-			// Combina com o caminho da wwwroot
-			string caminhoCompleto = Path.Combine(_environment.WebRootPath, caminhoRelativo);
+			string caminhoCompleto;
+
+			// Verifica se está no Render (ambiente de produção)
+			if (Environment.GetEnvironmentVariable("RENDER") == "true")
+			{
+				// Usa o caminho absoluto do disk mount
+				var certsPath = "/app/wwwroot/certs";
+				caminhoCompleto = Path.Combine(certsPath, Path.GetFileName(caminhoRelativo));
+			}
+			else
+			{
+				// Ambiente de desenvolvimento
+				caminhoCompleto = Path.Combine(_environment.WebRootPath, caminhoRelativo);
+			}
+
+			// Log para debug
+			Console.WriteLine($"Tentando carregar certificado de: {caminhoCompleto}");
 
 			// Verifica se o arquivo existe
 			if (!System.IO.File.Exists(caminhoCompleto))
