@@ -412,9 +412,13 @@ namespace Service
 				//_nfe.infNFeSupl.ObterUrlQrCode3();
 				var xml = _nfe.ObterXmlString();
 				var servicoNFe = new ServicosNFe(_configuracaoApp.CfgServico);
+				Console.WriteLine("=== INICIANDO TRANSMISSÃO NFCe ===");
+				Console.WriteLine($"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+				Console.WriteLine($"Environment: {Environment.GetEnvironmentVariable("RENDER")}");
 				var retornoEnvio = servicoNFe.NFeAutorizacao(int.Parse(fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie), IndicadorSincronizacao.Sincrono, new List<NFe.Classes.NFe> { _nfe }, false/*Envia a mensagem compactada para a SEFAZ*/);
 				/*             var resp=OnSucessoSync(retornoEnvio)*/
 				;
+				Console.WriteLine($"retorno: {retornoEnvio.Retorno.xMotivo}");
 
 				//ExibeNfe();
 
@@ -497,10 +501,14 @@ namespace Service
 		}
 		public async Task<byte[]> ObterCertificado(string caminhoRelativo)
 		{
+			try
+			{
+
+		
 			// Extrai apenas o nome do arquivo do caminho salvo no banco
 			// Exemplo: "/certs/399ff91c-fe15-43f3-b1cf-0d773e9f49cd.pfx" -> "399ff91c-fe15-43f3-b1cf-0d773e9f49cd.pfx"
 			string nomeArquivo = Path.GetFileName(caminhoRelativo.TrimStart('/'));
-
+			Console.WriteLine($"Nome do arquivo extraído: {nomeArquivo}");
 			string caminhoCompleto;
 
 			// Verifica se está no Render
@@ -508,6 +516,8 @@ namespace Service
 			{
 				// NO RENDER: usa o caminho ABSOLUTO do Disk mount
 				caminhoCompleto = Path.Combine("/app/wwwroot/certs", nomeArquivo);
+				Console.WriteLine($"Caminho completo: {caminhoCompleto}");
+			
 			}
 			else
 			{
@@ -525,6 +535,13 @@ namespace Service
 			}
 
 			return await System.IO.File.ReadAllBytesAsync(caminhoCompleto);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"ERRO ao ler arquivo: {ex.Message}");
+				Console.WriteLine($"StackTrace: {ex.StackTrace}");
+				return [];
+			}
 		}
 		private ConfiguracaoApp criarConfiguracaoApp(FiscalConfiguration fiscalConfiguration, NaturezaOperacao naturezaOperacao,
 				byte[] certbyte)
