@@ -1,15 +1,17 @@
 
-using System;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Service;
-using Model.Registrations;
-using WebApiCommercial.Dtos;
 using Model.DTO;
+using Model.Registrations;
+using Service;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using WebApiCommercial.Dtos;
 
 namespace WebApiCommercial.Controllers
 {
@@ -96,6 +98,55 @@ namespace WebApiCommercial.Controllers
             if (cfg == null) return NotFound();
             return Ok(cfg);
         }
+		[HttpGet("debug/check-db-path")]
+		public async Task<IActionResult> CheckDbPath([FromQuery] int  id)
+		{
+			try
+			{
+				var config = await _service.GetByIdAsync(id);
+
+				if (config?.CertificadoDigital == null)
+					return BadRequest("Certificado não encontrado");
+
+				var caminhoBanco = config.CertificadoDigital.Arquivo;
+
+				// Log detalhado
+				
+
+				// Extrai nome do arquivo
+				var nomeArquivo = Path.GetFileName(caminhoBanco?.TrimStart('/') ?? "");
+				
+
+				// Caminho que será usado
+				var caminhoCompleto = Path.Combine("/app/wwwroot/certs", nomeArquivo);
+				
+
+				var arquivoExiste = System.IO.File.Exists(caminhoCompleto);
+			
+
+				// Lista arquivos disponíveis
+				var certsDir = "/app/wwwroot/certs";
+				var arquivos = Directory.Exists(certsDir)
+						? Directory.GetFiles(certsDir).Select(Path.GetFileName).ToList()
+						: new List<string>();
+				
+
+				return Ok(new
+				{
+					dbPath = caminhoBanco,
+					fileName = nomeArquivo,
+					fullPath = caminhoCompleto,
+					fileExists = arquivoExiste,
+					availableFiles = arquivos,
+					renderEnv = Environment.GetEnvironmentVariable("RENDER")
+				});
+			}
+			catch (Exception ex)
+			{
+			
+				return StatusCode(500, new { error = ex.Message, inner = ex.InnerException?.Message });
+			}
+		}
 
 		// Helper: salva o arquivo TSX enviado (IFormFile) ou decodifica base64 e grava no disco.
 		private async Task<string?> SaveCertificadoAsync(CertificadoDigitalRequest? cert)
