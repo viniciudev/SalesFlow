@@ -587,6 +587,7 @@ namespace Service
 						{
 							TipoCertificado = DFe.Utils.TipoCertificado.A1ByteArray,
 							ArrayBytesArquivo = certbyte,
+							
 							Senha = fiscalConfiguration.CertificadoDigital.Senha,
 							ManterDadosEmCache = false,
 						KeyStorageFlags= X509KeyStorageFlags.MachineKeySet |

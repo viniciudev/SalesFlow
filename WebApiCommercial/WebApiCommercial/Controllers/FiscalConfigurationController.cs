@@ -8,8 +8,10 @@ using Model.Registrations;
 using Service;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using WebApiCommercial.Dtos;
@@ -105,48 +107,48 @@ namespace WebApiCommercial.Controllers
 		{
 			try
 			{
-				var config = await _service.GetByIdAsync(id);
-
-				if (config?.CertificadoDigital == null)
-					return BadRequest("Certificado não encontrado");
-
-				var caminhoBanco = config.CertificadoDigital.Arquivo;
-
-				// Log detalhado
-				
-
-				// Extrai nome do arquivo
-				var nomeArquivo = Path.GetFileName(caminhoBanco?.TrimStart('/') ?? "");
-				
-
-				// Caminho que será usado
-				var caminhoCompleto = Path.Combine("/app/wwwroot/certs", nomeArquivo);
-				
-
-				var arquivoExiste = System.IO.File.Exists(caminhoCompleto);
+				var config = await _service .GetByIdAsync(id);
+				var cert = new DFe.Utils.ConfiguracaoCertificado
+				{
+					Arquivo= config.CertificadoDigital.Arquivo,
+					Senha= config.CertificadoDigital.Senha,
+					TipoCertificado=DFe.Utils.TipoCertificado.A1Arquivo,
+					KeyStorageFlags= X509KeyStorageFlags.MachineKeySet |
+						X509KeyStorageFlags.PersistKeySet |
+						X509KeyStorageFlags.Exportable
+				};
 			
-
-				// Lista arquivos disponíveis
-				var certsDir = "/app/wwwroot/certs";
-				var arquivos = Directory.Exists(certsDir)
-						? Directory.GetFiles(certsDir).Select(Path.GetFileName).ToList()
-						: new List<string>();
 				
+				var certificado = DFe.Utils.Assinatura.CertificadoDigital.ObterCertificado(cert);
+
+				//var certificado = new X509Certificate2(
+				//		certBytes,
+				//		config.CertificadoDigital.Senha,
+				//		X509KeyStorageFlags.MachineKeySet |
+				//		X509KeyStorageFlags.PersistKeySet |
+				//		X509KeyStorageFlags.Exportable
+				//);
 
 				return Ok(new
 				{
-					dbPath = caminhoBanco,
-					fileName = nomeArquivo,
-					fullPath = caminhoCompleto,
-					fileExists = arquivoExiste,
-					availableFiles = arquivos,
-					renderEnv = Environment.GetEnvironmentVariable("RENDER")
+					success = true,
+					subject = certificado.Subject,
+					issuer = certificado.Issuer,
+					hasPrivateKey = certificado.HasPrivateKey,
+					notAfter = certificado.NotAfter,
+					notBefore = certificado.NotBefore,
+					thumbprint = certificado.Thumbprint,
+					bytesLength = certificado
 				});
 			}
 			catch (Exception ex)
 			{
-			
-				return StatusCode(500, new { error = ex.Message, inner = ex.InnerException?.Message });
+				return StatusCode(500, new
+				{
+					success = false,
+					error = ex.Message,
+					inner = ex.InnerException?.Message
+				});
 			}
 		}
 
