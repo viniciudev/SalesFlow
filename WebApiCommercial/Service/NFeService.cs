@@ -41,6 +41,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -587,7 +588,10 @@ namespace Service
 							TipoCertificado = DFe.Utils.TipoCertificado.A1ByteArray,
 							ArrayBytesArquivo = certbyte,
 							Senha = fiscalConfiguration.CertificadoDigital.Senha,
-							ManterDadosEmCache = false
+							ManterDadosEmCache = false,
+						KeyStorageFlags= X509KeyStorageFlags.MachineKeySet |
+		X509KeyStorageFlags.PersistKeySet |
+		X509KeyStorageFlags.Exportable
 						}
 					},
 					Emitente = new emit
