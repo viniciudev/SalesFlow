@@ -1,4 +1,5 @@
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -98,6 +99,7 @@ namespace WebApiCommercial.Controllers
             if (cfg == null) return NotFound();
             return Ok(cfg);
         }
+		[AllowAnonymous]
 		[HttpGet("debug/check-db-path")]
 		public async Task<IActionResult> CheckDbPath([FromQuery] int  id)
 		{
