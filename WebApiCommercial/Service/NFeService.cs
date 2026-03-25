@@ -592,7 +592,10 @@ namespace Service
 							ManterDadosEmCache = false,
 						KeyStorageFlags= X509KeyStorageFlags.MachineKeySet |
 		X509KeyStorageFlags.PersistKeySet |
-		X509KeyStorageFlags.Exportable
+		X509KeyStorageFlags.Exportable,
+						SignatureMethodSignedXml= "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
+						DigestMethodReference= "http://www.w3.org/2000/09/xmldsig#sha1"
+
 						}
 					},
 					Emitente = new emit
