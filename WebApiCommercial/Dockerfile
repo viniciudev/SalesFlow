@@ -30,7 +30,9 @@ RUN apt-get update && \
     apt-get install -y ca-certificates openssl wget curl && \
     update-ca-certificates
 
-RUN wget https://acraiz.icpbrasil.gov.br/ACRAIZ.cer \
+# baixar ICP-Brasil ignorando validação apenas no download
+RUN wget --no-check-certificate \
+    https://acraiz.icpbrasil.gov.br/ACRAIZ.cer \
     -O /usr/local/share/ca-certificates/icpbrasil.crt && \
     chmod 644 /usr/local/share/ca-certificates/icpbrasil.crt && \
     update-ca-certificates
