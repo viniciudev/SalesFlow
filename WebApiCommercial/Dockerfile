@@ -27,11 +27,12 @@ RUN dotnet publish WebApiCommercial/WebApiCommercial.csproj -c Release -o /publi
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 
 RUN apt-get update && \
-    apt-get install -y ca-certificates && \
-    update-ca-certificates --fresh
-    
-    # instala cadeia ICP Brasil
-RUN wget https://acraiz.icpbrasil.gov.br/ACRAIZ.cer -O /usr/local/share/ca-certificates/icpbrasil.crt && \
+    apt-get install -y ca-certificates openssl wget curl && \
+    update-ca-certificates
+
+RUN wget https://acraiz.icpbrasil.gov.br/ACRAIZ.cer \
+    -O /usr/local/share/ca-certificates/icpbrasil.crt && \
+    chmod 644 /usr/local/share/ca-certificates/icpbrasil.crt && \
     update-ca-certificates
 
 WORKDIR /app
