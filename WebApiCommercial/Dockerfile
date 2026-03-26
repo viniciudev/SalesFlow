@@ -30,12 +30,14 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         openssl \
-        curl \
-    && update-ca-certificates
+        curl && \
+    update-ca-certificates
 
-# 🔴 bundle completo CA (resolve SEFAZ)
-RUN curl -L https://curl.se/ca/cacert.pem \
-    -o /etc/ssl/certs/ca-certificates.crt
+# 🔴 Importa automaticamente cadeia da SEFAZ GO
+RUN echo | openssl s_client -showcerts -connect nfe.sefaz.go.gov.br:443 2>/dev/null \
+    | awk '/BEGIN CERTIFICATE/,/END CERTIFICATE/{ print }' \
+    > /usr/local/share/ca-certificates/sefaz-go.crt && \
+    update-ca-certificates
 
 WORKDIR /app
 
