@@ -29,6 +29,10 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 RUN apt-get update && \
     apt-get install -y ca-certificates && \
     update-ca-certificates --fresh
+    
+    # instala cadeia ICP Brasil
+RUN wget https://acraiz.icpbrasil.gov.br/ACRAIZ.cer -O /usr/local/share/ca-certificates/icpbrasil.crt && \
+    update-ca-certificates
 
 WORKDIR /app
 
