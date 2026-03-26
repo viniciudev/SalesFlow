@@ -120,7 +120,10 @@ namespace DFe.Utils
         /// <returns></returns>
         public static X509Certificate2 ObterDosBytes(byte[] bytes, SecureString password, X509KeyStorageFlags? keyStorageFlags)
         {
-            var cert = new X509Certificate2(bytes, password, keyStorageFlags ?? (X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable));
+            var cert = new 
+        
+        
+        X509Certificate2(bytes, password, keyStorageFlags ?? (X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable));
             return cert;
         }
 

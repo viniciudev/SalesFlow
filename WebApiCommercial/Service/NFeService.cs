@@ -572,7 +572,7 @@ namespace Service
 						VersaoNFeRetAutorizacao = VersaoServico.Versao400,
 						VersaoLayout = VersaoServico.Versao400,
 						cUF = (Estado)Enum.Parse(typeof(Estado), fiscalConfiguration.Emitente.EmitenteEndereco.Uf),
-						ProtocoloDeSeguranca = System.Net.SecurityProtocolType.Tls13,
+						ProtocoloDeSeguranca = System.Net.SecurityProtocolType.Tls12,
 						VersaoConsultaGTIN = VersaoServico.Versao400,
 						VersaoNfceAministracaoCSC = VersaoServico.Versao400,
 						VersaoNfeDownloadNF = VersaoServico.Versao400,

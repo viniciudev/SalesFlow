@@ -26,6 +26,10 @@ RUN dotnet publish WebApiCommercial/WebApiCommercial.csproj -c Release -o /publi
 # Etapa 2 — Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 
+RUN apt-get update && \
+    apt-get install -y ca-certificates && \
+    update-ca-certificates --fresh
+
 WORKDIR /app
 
 EXPOSE 80
