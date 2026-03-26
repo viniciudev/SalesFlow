@@ -26,13 +26,16 @@ RUN dotnet publish WebApiCommercial/WebApiCommercial.csproj -c Release -o /publi
 # Etapa 2 — Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 
-# 🔴 ESSENCIAL para SEFAZ (SSL ICP-Brasil)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         openssl \
-    && update-ca-certificates --fresh \
-    && rm -rf /var/lib/apt/lists/*
+        curl \
+    && update-ca-certificates
+
+# 🔴 bundle completo CA (resolve SEFAZ)
+RUN curl -L https://curl.se/ca/cacert.pem \
+    -o /etc/ssl/certs/ca-certificates.crt
 
 WORKDIR /app
 
