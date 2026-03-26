@@ -26,16 +26,13 @@ RUN dotnet publish WebApiCommercial/WebApiCommercial.csproj -c Release -o /publi
 # Etapa 2 — Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 
+# 🔴 ESSENCIAL para SEFAZ (SSL ICP-Brasil)
 RUN apt-get update && \
-    apt-get install -y ca-certificates openssl wget curl && \
-    update-ca-certificates
-
-# baixar ICP-Brasil ignorando validação apenas no download
-RUN wget --no-check-certificate \
-    https://acraiz.icpbrasil.gov.br/ACRAIZ.cer \
-    -O /usr/local/share/ca-certificates/icpbrasil.crt && \
-    chmod 644 /usr/local/share/ca-certificates/icpbrasil.crt && \
-    update-ca-certificates
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        openssl \
+    && update-ca-certificates --fresh \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
