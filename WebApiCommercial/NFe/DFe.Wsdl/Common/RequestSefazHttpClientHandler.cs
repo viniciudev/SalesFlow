@@ -49,14 +49,13 @@ namespace DFe.Wsdl.Common
 		}
 
 		public string SendRequest(
-				XmlDocument xmlEnvelop,
-				X509Certificate2 certificadoDigital,
-				string url,
-				int timeOut,
-				TipoEvento? tipoEvento = null,
-				string actionUrn = "")
+		XmlDocument xmlEnvelop,
+		X509Certificate2 certificadoDigital,
+		string url,
+		int timeOut,
+		TipoEvento? tipoEvento = null,
+		string actionUrn = "")
 		{
-			// Validações
 			if (certificadoDigital == null)
 				throw new ArgumentNullException(nameof(certificadoDigital));
 
@@ -72,52 +71,61 @@ namespace DFe.Wsdl.Common
 			if (tipoEvento.HasValue)
 				actionUrn = new SoapUrls().GetSoapUrl(tipoEvento.Value);
 
+			// Remove ?wsdl da URL se existir
+			string cleanUrl = url;
+			if (cleanUrl.Contains("?wsdl"))
+				cleanUrl = cleanUrl.Replace("?wsdl", "");
+
 			string xmlSoap = xmlEnvelop.InnerXml;
 
-			// Log para debug
-			Console.WriteLine("=== DEBUG CERT ===");
-			Console.WriteLine($"Subject: {certificadoDigital.Subject}");
-			Console.WriteLine($"Issuer: {certificadoDigital.Issuer}");
-			Console.WriteLine($"HasPrivateKey: {certificadoDigital.HasPrivateKey}");
-			Console.WriteLine($"Thumbprint: {certificadoDigital.Thumbprint}");
-			Console.WriteLine($"Url: {url}");
+			Console.WriteLine("=== ENVIANDO PARA SEFAZ ===");
+			Console.WriteLine($"URL: {cleanUrl}");
 			Console.WriteLine($"SOAPAction: {actionUrn}");
+			Console.WriteLine($"Certificado Subject: {certificadoDigital.Subject}");
+			Console.WriteLine($"Certificado Issuer: {certificadoDigital.Issuer}");
+			Console.WriteLine($"HasPrivateKey: {certificadoDigital.HasPrivateKey}");
 
-			// Configurações globais
+			// Configurações de segurança
 			ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 			ServicePointManager.CheckCertificateRevocationList = false;
-			ServicePointManager.ServerCertificateValidationCallback = (sender, cert, chain, errors) => true;
+			ServicePointManager.ServerCertificateValidationCallback = (sender, cert, chain, errors) =>
+			{
+				if (errors == SslPolicyErrors.None)
+					return true;
 
-			// Cria a requisição com HttpWebRequest (funciona no Linux)
-			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+				Console.WriteLine($"SSL Error: {errors}");
+				Console.WriteLine($"Server Cert Subject: {cert.Subject}");
+
+				// Aceita em homologação para teste
+				return true;
+			};
+
+			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(cleanUrl);
 			request.Method = "POST";
 			request.ContentType = "application/soap+xml; charset=utf-8";
 			request.Headers.Add("SOAPAction", actionUrn);
 			request.Timeout = timeOut == 0 ? 60000 : timeOut;
-			request.ReadWriteTimeout = timeOut == 0 ? 60000 : timeOut;
-			request.KeepAlive = false;
+			request.KeepAlive = true;
 			request.ProtocolVersion = HttpVersion.Version11;
 			request.UserAgent = "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)";
 
-			// 🔑 ADICIONA O CERTIFICADO (aqui está a diferença)
+			// Adiciona o certificado
 			request.ClientCertificates.Add(certificadoDigital);
 
 			try
 			{
-				// Envia o XML
 				using (Stream stream = request.GetRequestStream())
 				using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8))
 				{
 					writer.Write(xmlSoap);
 				}
 
-				// Recebe a resposta
 				using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
 				using (Stream stream = response.GetResponseStream())
 				using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
 				{
 					string result = reader.ReadToEnd();
-					Console.WriteLine($"Resposta recebida com sucesso. Tamanho: {result.Length} bytes");
+					Console.WriteLine($"✅ Sucesso! Resposta: {result.Length} bytes");
 					return result;
 				}
 			}
@@ -132,19 +140,8 @@ namespace DFe.Wsdl.Common
 					}
 				}
 
-				Console.WriteLine("=== ERRO NA REQUISIÇÃO ===");
-				Console.WriteLine($"Status: {(ex.Response as HttpWebResponse)?.StatusCode}");
-				Console.WriteLine($"Message: {ex.Message}");
-				Console.WriteLine($"Response: {responseBody}");
-
-				throw new Exception($"Erro na requisição: {ex.Message}. Resposta: {responseBody}", ex);
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine("=== ERRO INESPERADO ===");
-				Console.WriteLine($"Type: {ex.GetType().FullName}");
-				Console.WriteLine($"Message: {ex.Message}");
-				Console.WriteLine($"StackTrace: {ex.StackTrace}");
+				Console.WriteLine($"❌ Erro: {ex.Message}");
+				Console.WriteLine($"Resposta: {responseBody}");
 				throw;
 			}
 		}
