@@ -30,15 +30,16 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         openssl \
-        curl && \
+        wget && \
     update-ca-certificates
 
-# Bootstrap ICP Brasil
-RUN curl -k -L https://acraiz.icpbrasil.gov.br/ICP-Brasilv10.crt \
-    -o /usr/local/share/ca-certificates/icpbrasilv10.crt
+# ICP Brasil Root
+RUN wget http://acraiz.icpbrasil.gov.br/ICP-Brasilv10.crt \
+    -O /usr/local/share/ca-certificates/icpbrasilv10.crt
 
-RUN curl -k -L https://ccd.acsoluti.com.br/lcr/ac-soluti-ssl-ev-v10-g4.crt \
-    -o /usr/local/share/ca-certificates/soluti-g4.crt
+# SyngularID intermediária
+RUN wget https://acsyngularid.icpbrasil.gov.br/ACSyngularIDMultipla.crt \
+    -O /usr/local/share/ca-certificates/syngularid-multipla.crt
 
 RUN update-ca-certificates
 

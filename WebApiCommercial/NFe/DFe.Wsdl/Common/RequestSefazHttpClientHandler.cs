@@ -179,17 +179,8 @@ namespace DFe.Wsdl.Common
 					}
 					catch (HttpRequestException ex)
 					{
-						Console.WriteLine("=== HTTP ERROR ===");
-						Console.WriteLine($"StatusCode: {response?.StatusCode}");
-						Console.WriteLine($"Reason: {response?.ReasonPhrase}");
-
-						var body = response?.Content.ReadAsStringAsync().Result;
-						Console.WriteLine("=== RESPONSE BODY ===");
-						Console.WriteLine(body);
-
-						Console.WriteLine("=== EXCEPTION ===");
-						Console.WriteLine(ex.Message);
-
+						Console.WriteLine("=== ERRO AO ENVIAR REQUEST ===");
+						PrintException(ex);
 						throw;
 					}
 
@@ -197,6 +188,20 @@ namespace DFe.Wsdl.Common
 				}
 			}
 
+		}
+		private void PrintException(Exception ex, int level = 0)
+		{
+			if (ex == null) return;
+
+			Console.WriteLine($"--- LEVEL {level} ---");
+			Console.WriteLine($"Type: {ex.GetType().FullName}");
+			Console.WriteLine($"Message: {ex.Message}");
+			Console.WriteLine($"StackTrace: {ex.StackTrace}");
+
+			if (ex.InnerException != null)
+			{
+				PrintException(ex.InnerException, level + 1);
+			}
 		}
 	}
 }
