@@ -43,52 +43,59 @@ namespace DFe.Wsdl.Common
 			return xmlDocument;
 		}
 
-		public async Task<string> SendRequestAsync(XmlDocument xmlEnvelop, X509Certificate2 certificadoDigital,
-				string url, int timeOut,
-				TipoEvento? tipoEvento = null, string actionUrn = "")
+		public async Task<string> SendRequestAsync(
+		XmlDocument xmlEnvelop,
+		X509Certificate2 certificadoDigital,
+		string url,
+		int timeOut,
+		TipoEvento? tipoEvento = null,
+		string actionUrn = "")
 		{
 			if (!tipoEvento.HasValue && string.IsNullOrWhiteSpace(actionUrn))
-			{
-				throw new ArgumentNullException(
-						"Pelo menos uma das propriedades tipoEvento ou actionUrl devem ser definidos para executar a action na requisição soap");
-			}
+				throw new ArgumentNullException("Informe tipoEvento ou actionUrn");
 
 			if (tipoEvento.HasValue)
-			{
 				actionUrn = new SoapUrls().GetSoapUrl(tipoEvento.Value);
-			}
 
 			string xmlSoap = xmlEnvelop.InnerXml;
 
+			var cert = new X509Certificate2(
+					certificadoDigital.Export(X509ContentType.Pkcs12),
+					(string)null,
+					X509KeyStorageFlags.MachineKeySet |
+					X509KeyStorageFlags.PersistKeySet |
+					X509KeyStorageFlags.Exportable
+			);
+
 			using (HttpClientHandler handler = new HttpClientHandler())
 			{
-				ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;//para net8 ou outras versoes
-				handler.SslProtocols = System.Security.Authentication.SslProtocols.Tls12;//NET 9+
-
-				ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => { return true; };//para net8 ou outras versoes
-				handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };//NET 9+
-
+				handler.SslProtocols = System.Security.Authentication.SslProtocols.Tls12;
 				handler.ClientCertificateOptions = ClientCertificateOption.Manual;
 				handler.CheckCertificateRevocationList = false;
+
 				handler.ClientCertificates.Clear();
-				handler.ClientCertificates.Add(certificadoDigital);
+				handler.ClientCertificates.Add(cert);
 
 				using (HttpClient client = new HttpClient(handler))
 				{
-					client.Timeout = TimeSpan.FromMilliseconds(timeOut == 0 ? 2000 : timeOut);
+					client.Timeout = TimeSpan.FromSeconds(30);
 
-					HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url);
-					request.Content = new StringContent(xmlSoap, Encoding.UTF8, "application/soap+xml");
+					HttpRequestMessage request =
+							new HttpRequestMessage(HttpMethod.Post, url);
+
+					request.Content =
+							new StringContent(xmlSoap, Encoding.UTF8, "application/soap+xml");
+
 					request.Headers.Add("SOAPAction", actionUrn);
 
-					HttpResponseMessage response = await client.SendAsync(request);
+					HttpResponseMessage response =
+							await client.SendAsync(request);
 
 					response.EnsureSuccessStatusCode();
 
 					return await response.Content.ReadAsStringAsync();
 				}
 			}
-
 		}
 
 		public string SendRequest(XmlDocument xmlEnvelop, X509Certificate2 certificadoDigital, string url, int timeOut,
@@ -107,23 +114,30 @@ namespace DFe.Wsdl.Common
 
 			string xmlSoap = xmlEnvelop.InnerXml;
 
+			var cert = new X509Certificate2(
+		certificadoDigital.Export(X509ContentType.Pkcs12),
+		(string)null,
+		X509KeyStorageFlags.MachineKeySet |
+		X509KeyStorageFlags.PersistKeySet |
+		X509KeyStorageFlags.Exportable
+);
 
 			using (HttpClientHandler handler = new HttpClientHandler())
 			{
-				ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;//para net8 ou outras versoes
+				//ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;//para net8 ou outras versoes
 				handler.SslProtocols = System.Security.Authentication.SslProtocols.Tls12;//NET 9+
 
-				ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => { return true; };//para net8 ou outras versoes
-				handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };//NET 9+
+				//ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => { return true; };//para net8 ou outras versoes
+				//handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };//NET 9+
 
 				handler.ClientCertificateOptions = ClientCertificateOption.Manual;
 				handler.CheckCertificateRevocationList = false;
 				handler.ClientCertificates.Clear();
-				handler.ClientCertificates.Add(certificadoDigital);
+				handler.ClientCertificates.Add(cert);
 
 				using (HttpClient client = new HttpClient(handler))
 				{
-					client.Timeout = TimeSpan.FromMilliseconds(timeOut == 0 ? 2000 : timeOut);
+					client.Timeout = TimeSpan.FromSeconds(30);//TimeSpan.FromMilliseconds(timeOut == 0 ? 2000 : timeOut);
 
 					HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url);
 					request.Content = new StringContent(xmlSoap, Encoding.UTF8, "application/soap+xml");
