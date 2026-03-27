@@ -34,9 +34,10 @@ RUN apt-get update && \
     update-ca-certificates
 
 # ✔ ICP Brasil (OBRIGATÓRIO)
-RUN curl -L https://acraiz.icpbrasil.gov.br/ACRAIZ.cer \
-    -o /usr/local/share/ca-certificates/icpbrasil.crt && \
-    update-ca-certificates
+RUN curl -k -L https://acraiz.icpbrasil.gov.br/ACRAIZ.cer \
+    -o /usr/local/share/ca-certificates/icpbrasil.crt \
+    && chmod 644 /usr/local/share/ca-certificates/icpbrasil.crt \
+    && update-ca-certificates
 
 # ✔ cadeia da SEFAZ GO (opcional, mas ajuda)
 RUN echo | openssl s_client -showcerts -connect nfe.sefaz.go.gov.br:443 2>/dev/null \
