@@ -42,6 +42,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.ConstrainedExecution;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -393,7 +394,32 @@ namespace Service
 		//         await repository.CreateAsync(entity);
 		//         return new ResponseGeneric { Success = true,Data = entity };
 		//     }
+		private X509Certificate2 ValidarCertificado(byte[] certBytes, string senha)
+		{
+			var cert = new X509Certificate2(
+					certBytes,
+					senha,
+					X509KeyStorageFlags.MachineKeySet |
+					X509KeyStorageFlags.PersistKeySet |
+					X509KeyStorageFlags.Exportable
+			);
 
+			Console.WriteLine("===== VALIDAÇÃO CERTIFICADO =====");
+			Console.WriteLine($"Subject: {cert.Subject}");
+			Console.WriteLine($"Issuer: {cert.Issuer}");
+			Console.WriteLine($"Valido de: {cert.NotBefore}");
+			Console.WriteLine($"Valido até: {cert.NotAfter}");
+			Console.WriteLine($"HasPrivateKey: {cert.HasPrivateKey}");
+			Console.WriteLine($"Thumbprint: {cert.Thumbprint}");
+
+			if (!cert.HasPrivateKey)
+				throw new Exception("Certificado sem chave privada (HasPrivateKey=false)");
+
+			if (DateTime.Now < cert.NotBefore || DateTime.Now > cert.NotAfter)
+				throw new Exception("Certificado expirado ou ainda não válido");
+
+			return cert;
+		}
 		private async Task<dynamic> TransmitirNfe(int numero, FiscalConfiguration fiscalConfiguration, Sale sale, NaturezaOperacao naturezaOperacao)
 		{
 			try
@@ -401,6 +427,10 @@ namespace Service
 				//var numero = Funcoes.InpuBox(this, "Criar e Enviar NFe", "Número da Nota:");
 				//if (string.IsNullOrEmpty(numero)) throw new Exception("O Número deve ser informado!");
 				byte[] certbyte = await ObterCertificado(fiscalConfiguration.CertificadoDigital.Arquivo);
+				var cert = ValidarCertificado(
+			certbyte,
+			fiscalConfiguration.CertificadoDigital.Senha
+	);
 				_currentFiscalConfiguration = fiscalConfiguration;
 				_currentNaturezaOperacao = naturezaOperacao;
 				_currentSale = sale;
@@ -526,8 +556,9 @@ namespace Service
 				// LOCAL: usa WebRootPath
 				caminhoCompleto = Path.Combine(_environment.WebRootPath, "certs", nomeArquivo);
 			}
+			
 
-			if (!System.IO.File.Exists(caminhoCompleto))
+				if (!System.IO.File.Exists(caminhoCompleto))
 			{
 				throw new FileNotFoundException(
 						$"Certificado não encontrado. Procurado em: {caminhoCompleto}. " +
