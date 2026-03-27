@@ -36,6 +36,7 @@ using NFe.Utils.Email;
 using NFe.Utils.Evento;
 using NFe.Utils.InformacoesSuplementares;
 using NFe.Utils.NFe;
+using Org.BouncyCastle.Tls;
 using Repository;
 using System;
 using System.Collections.Generic;
@@ -519,7 +520,20 @@ namespace Service
 			try
 			{
 
+				var Certificado = new DFe.Utils.ConfiguracaoCertificado
+				{
+					TipoCertificado = DFe.Utils.TipoCertificado.A1ByteArray,
+					ArrayBytesArquivo = certbyte,
 
+					Senha = fiscalConfiguration.CertificadoDigital.Senha,
+					ManterDadosEmCache = false,
+					KeyStorageFlags = X509KeyStorageFlags.MachineKeySet |
+		X509KeyStorageFlags.PersistKeySet |
+		X509KeyStorageFlags.Exportable,
+					SignatureMethodSignedXml = "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
+					DigestMethodReference = "http://www.w3.org/2000/09/xmldsig#sha1"
+
+				};
 				var ConfiguracaoEmail = new ConfiguracaoEmail();
 				var ConfiguracaoCsc = new ConfiguracaoCsc
 				{
@@ -552,13 +566,7 @@ namespace Service
 						tpAmb = fiscalConfiguration.Ambiente == AmbienteEnum.Homologacao ?
 														TipoAmbiente.Homologacao : TipoAmbiente.Producao,
 						tpEmis = TipoEmissao.teNormal,
-						Certificado = new DFe.Utils.ConfiguracaoCertificado
-						{
-							TipoCertificado = DFe.Utils.TipoCertificado.A1ByteArray,
-							ArrayBytesArquivo = certbyte,
-							Senha = fiscalConfiguration.CertificadoDigital.Senha,
-							ManterDadosEmCache = false
-						}
+						Certificado= Certificado
 					},
 					Emitente = new emit
 					{
