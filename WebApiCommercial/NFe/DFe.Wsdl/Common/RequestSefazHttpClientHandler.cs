@@ -1,6 +1,7 @@
 ﻿using CTe.CTeOSDocumento.Common;
 using CTe.CTeOSDocumento.Soap;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -59,6 +60,12 @@ namespace DFe.Wsdl.Common
 
 			string xmlSoap = xmlEnvelop.InnerXml;
 
+			Console.WriteLine("=== DEBUG CERT ===SendRequestAsync");
+			Console.WriteLine($"Subject: {certificadoDigital.Subject}");
+			Console.WriteLine($"Issuer: {certificadoDigital.Issuer}");
+			Console.WriteLine($"HasPrivateKey: {certificadoDigital.HasPrivateKey}");
+			Console.WriteLine($"Thumbprint: {certificadoDigital.Thumbprint}");
+
 			var cert = new X509Certificate2(
 					certificadoDigital.Export(X509ContentType.Pkcs12),
 					(string)null,
@@ -113,7 +120,11 @@ namespace DFe.Wsdl.Common
 			}
 
 			string xmlSoap = xmlEnvelop.InnerXml;
-
+			Console.WriteLine("=== DEBUG CERT ===SendRequest");
+			Console.WriteLine($"Subject: {certificadoDigital.Subject}");
+			Console.WriteLine($"Issuer: {certificadoDigital.Issuer}");
+			Console.WriteLine($"HasPrivateKey: {certificadoDigital.HasPrivateKey}");
+			Console.WriteLine($"Thumbprint: {certificadoDigital.Thumbprint}");
 			var cert = new X509Certificate2(
 		certificadoDigital.Export(X509ContentType.Pkcs12),
 		(string)null,
