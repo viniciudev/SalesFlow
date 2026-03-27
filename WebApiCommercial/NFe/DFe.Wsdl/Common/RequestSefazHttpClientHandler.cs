@@ -1,10 +1,9 @@
 ﻿using CTe.CTeOSDocumento.Common;
 using CTe.CTeOSDocumento.Soap;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Net.Http;
+using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -18,20 +17,15 @@ namespace DFe.Wsdl.Common
 	{
 		public XmlDocument SerealizeDocument<T>(T soapEnvelope)
 		{
-			// instancia do objeto responsável pela serialização
 			XmlSerializer soapserializer = new XmlSerializer(typeof(T));
-
-			// Armazena os dados em memória para manipulação
 			MemoryStream memoryStream = new MemoryStream();
 			XmlTextWriter xmlTextWriter = new XmlTextWriter(memoryStream, Encoding.UTF8);
 
-			//Serializa o objeto de acordo com o formato
 			soapserializer.Serialize(xmlTextWriter, soapEnvelope);
 			xmlTextWriter.Formatting = Formatting.None;
 
 			XmlDocument xmlDocument = new XmlDocument();
 
-			//Remove o caractere especial BOM (byte order mark)
 			string output = Encoding.UTF8.GetString(memoryStream.ToArray());
 			string _byteOrderMarkUtf8 = Encoding.UTF8.GetString(Encoding.UTF8.GetPreamble());
 			if (output.StartsWith(_byteOrderMarkUtf8))
@@ -39,20 +33,39 @@ namespace DFe.Wsdl.Common
 				output = output.Remove(0, _byteOrderMarkUtf8.Length);
 			}
 
-			//Carrega os dados na instancia do XmlDocument
 			xmlDocument.LoadXml(output);
-
 			return xmlDocument;
 		}
 
 		public async Task<string> SendRequestAsync(
-		XmlDocument xmlEnvelop,
-		X509Certificate2 certificadoDigital,
-		string url,
-		int timeOut,
-		TipoEvento? tipoEvento = null,
-		string actionUrn = "")
+				XmlDocument xmlEnvelop,
+				X509Certificate2 certificadoDigital,
+				string url,
+				int timeOut,
+				TipoEvento? tipoEvento = null,
+				string actionUrn = "")
 		{
+			return await Task.Run(() => SendRequest(xmlEnvelop, certificadoDigital, url, timeOut, tipoEvento, actionUrn));
+		}
+
+		public string SendRequest(
+				XmlDocument xmlEnvelop,
+				X509Certificate2 certificadoDigital,
+				string url,
+				int timeOut,
+				TipoEvento? tipoEvento = null,
+				string actionUrn = "")
+		{
+			// Validações
+			if (certificadoDigital == null)
+				throw new ArgumentNullException(nameof(certificadoDigital));
+
+			if (!certificadoDigital.HasPrivateKey)
+				throw new ArgumentException("Certificado digital não contém chave privada");
+
+			if (certificadoDigital.NotAfter < DateTime.Now)
+				throw new ArgumentException($"Certificado expirado em {certificadoDigital.NotAfter}");
+
 			if (!tipoEvento.HasValue && string.IsNullOrWhiteSpace(actionUrn))
 				throw new ArgumentNullException("Informe tipoEvento ou actionUrn");
 
@@ -61,146 +74,78 @@ namespace DFe.Wsdl.Common
 
 			string xmlSoap = xmlEnvelop.InnerXml;
 
-			Console.WriteLine("=== DEBUG CERT ===SendRequestAsync");
+			// Log para debug
+			Console.WriteLine("=== DEBUG CERT ===");
 			Console.WriteLine($"Subject: {certificadoDigital.Subject}");
 			Console.WriteLine($"Issuer: {certificadoDigital.Issuer}");
 			Console.WriteLine($"HasPrivateKey: {certificadoDigital.HasPrivateKey}");
 			Console.WriteLine($"Thumbprint: {certificadoDigital.Thumbprint}");
+			Console.WriteLine($"Url: {url}");
+			Console.WriteLine($"SOAPAction: {actionUrn}");
 
-			var cert = new X509Certificate2(
-					certificadoDigital.Export(X509ContentType.Pkcs12),
-					(string)null,
-					X509KeyStorageFlags.MachineKeySet |
-					X509KeyStorageFlags.PersistKeySet |
-					X509KeyStorageFlags.Exportable
-			);
-
-			using (HttpClientHandler handler = new HttpClientHandler())
-			{
-				handler.SslProtocols = System.Security.Authentication.SslProtocols.Tls12;
-				handler.ClientCertificateOptions = ClientCertificateOption.Manual;
-				handler.CheckCertificateRevocationList = false;
-
-				handler.ClientCertificates.Clear();
-				handler.ClientCertificates.Add(cert);
-
-				using (HttpClient client = new HttpClient(handler))
-				{
-					client.Timeout = TimeSpan.FromSeconds(30);
-
-					HttpRequestMessage request =
-							new HttpRequestMessage(HttpMethod.Post, url);
-
-					request.Content =
-							new StringContent(xmlSoap, Encoding.UTF8, "application/soap+xml");
-
-					request.Headers.Add("SOAPAction", actionUrn);
-
-					HttpResponseMessage response =
-							await client.SendAsync(request);
-
-					response.EnsureSuccessStatusCode();
-
-					return await response.Content.ReadAsStringAsync();
-				}
-			}
-		}
-
-		public string SendRequest(XmlDocument xmlEnvelop, X509Certificate2 certificadoDigital, string url, int timeOut,
-				TipoEvento? tipoEvento = null, string actionUrn = "")
-		{
-			if (!tipoEvento.HasValue && string.IsNullOrWhiteSpace(actionUrn))
-			{
-				throw new ArgumentNullException(
-						"Pelo menos uma das propriedades tipoEvento ou actionUrl devem ser definidos para executar a action na requisição soap");
-			}
-
-			if (tipoEvento.HasValue)
-			{
-				actionUrn = new SoapUrls().GetSoapUrl(tipoEvento.Value);
-			}
-
-			string xmlSoap = xmlEnvelop.InnerXml;
-			Console.WriteLine("=== DEBUG CERT ===SendRequest");
-			Console.WriteLine($"Subject: {certificadoDigital.Subject}");
-			Console.WriteLine($"Issuer: {certificadoDigital.Issuer}");
-			Console.WriteLine($"HasPrivateKey: {certificadoDigital.HasPrivateKey}");
-			Console.WriteLine($"Thumbprint: {certificadoDigital.Thumbprint}");
-			ServicePointManager.Expect100Continue = false;
+			// Configurações globais
 			ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-			AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2Support", false);
+			ServicePointManager.CheckCertificateRevocationList = false;
+			ServicePointManager.ServerCertificateValidationCallback = (sender, cert, chain, errors) => true;
 
-			using (HttpClientHandler handler = new HttpClientHandler())
+			// Cria a requisição com HttpWebRequest (funciona no Linux)
+			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+			request.Method = "POST";
+			request.ContentType = "application/soap+xml; charset=utf-8";
+			request.Headers.Add("SOAPAction", actionUrn);
+			request.Timeout = timeOut == 0 ? 60000 : timeOut;
+			request.ReadWriteTimeout = timeOut == 0 ? 60000 : timeOut;
+			request.KeepAlive = false;
+			request.ProtocolVersion = HttpVersion.Version11;
+			request.UserAgent = "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)";
+
+			// 🔑 ADICIONA O CERTIFICADO (aqui está a diferença)
+			request.ClientCertificates.Add(certificadoDigital);
+
+			try
 			{
-				handler.SslProtocols = SslProtocols.Tls12;
-				handler.ClientCertificateOptions = ClientCertificateOption.Manual;
-				handler.CheckCertificateRevocationList = false;
-
-				handler.ClientCertificates.Add(certificadoDigital);
-
-				using (HttpClient client = new HttpClient(handler))
+				// Envia o XML
+				using (Stream stream = request.GetRequestStream())
+				using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8))
 				{
-					client.Timeout = TimeSpan.FromSeconds(30);
+					writer.Write(xmlSoap);
+				}
 
-					HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url);
-					request.Version = HttpVersion.Version11;
-
-					request.Content = new StringContent(xmlSoap, Encoding.UTF8, "application/soap+xml");
-					request.Headers.Add("SOAPAction", actionUrn);
-
-					HttpResponseMessage response;
-
-					try
-					{
-						response = client.SendAsync(request).Result;
-					}
-					catch (Exception ex)
-					{
-						Console.WriteLine("=== ERRO AO ENVIAR REQUEST ===");
-						Console.WriteLine($"Message: {ex.Message}");
-						Console.WriteLine($"Type: {ex.GetType().FullName}");
-
-						if (ex.InnerException != null)
-						{
-							Console.WriteLine("=== INNER EXCEPTION ===");
-							Console.WriteLine($"Message: {ex.InnerException.Message}");
-							Console.WriteLine($"Type: {ex.InnerException.GetType().FullName}");
-						}
-
-						Console.WriteLine("=== STACKTRACE ===");
-						Console.WriteLine(ex.StackTrace);
-
-						throw;
-					}
-
-					try
-					{
-						response.EnsureSuccessStatusCode();
-					}
-					catch (HttpRequestException ex)
-					{
-						Console.WriteLine("=== ERRO AO ENVIAR REQUEST ===");
-						PrintException(ex);
-						throw;
-					}
-
-					return response.Content.ReadAsStringAsync().Result;
+				// Recebe a resposta
+				using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+				using (Stream stream = response.GetResponseStream())
+				using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
+				{
+					string result = reader.ReadToEnd();
+					Console.WriteLine($"Resposta recebida com sucesso. Tamanho: {result.Length} bytes");
+					return result;
 				}
 			}
-
-		}
-		private void PrintException(Exception ex, int level = 0)
-		{
-			if (ex == null) return;
-
-			Console.WriteLine($"--- LEVEL {level} ---");
-			Console.WriteLine($"Type: {ex.GetType().FullName}");
-			Console.WriteLine($"Message: {ex.Message}");
-			Console.WriteLine($"StackTrace: {ex.StackTrace}");
-
-			if (ex.InnerException != null)
+			catch (WebException ex)
 			{
-				PrintException(ex.InnerException, level + 1);
+				string responseBody = "";
+				if (ex.Response != null)
+				{
+					using (StreamReader reader = new StreamReader(ex.Response.GetResponseStream(), Encoding.UTF8))
+					{
+						responseBody = reader.ReadToEnd();
+					}
+				}
+
+				Console.WriteLine("=== ERRO NA REQUISIÇÃO ===");
+				Console.WriteLine($"Status: {(ex.Response as HttpWebResponse)?.StatusCode}");
+				Console.WriteLine($"Message: {ex.Message}");
+				Console.WriteLine($"Response: {responseBody}");
+
+				throw new Exception($"Erro na requisição: {ex.Message}. Resposta: {responseBody}", ex);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("=== ERRO INESPERADO ===");
+				Console.WriteLine($"Type: {ex.GetType().FullName}");
+				Console.WriteLine($"Message: {ex.Message}");
+				Console.WriteLine($"StackTrace: {ex.StackTrace}");
+				throw;
 			}
 		}
 	}
