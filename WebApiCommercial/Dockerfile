@@ -38,6 +38,10 @@ RUN curl -k -L https://acraiz.icpbrasil.gov.br/ACRAIZ.cer \
     -o /usr/local/share/ca-certificates/icpbrasil.crt \
     && chmod 644 /usr/local/share/ca-certificates/icpbrasil.crt \
     && update-ca-certificates
+    
+# SOLUTI (necessária para SEFAZ GO)
+RUN curl -k -L http://ccd.acsoluti.com.br/lcr/ac-soluti-ssl-ev-v10-g4.crt \
+    -o /usr/local/share/ca-certificates/soluti.crt
 
 # ✔ cadeia da SEFAZ GO (opcional, mas ajuda)
 RUN echo | openssl s_client -showcerts -connect nfe.sefaz.go.gov.br:443 2>/dev/null \
