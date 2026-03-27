@@ -26,39 +26,15 @@ RUN dotnet publish WebApiCommercial/WebApiCommercial.csproj -c Release -o /publi
 # Etapa 2 — Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 
-# Instala dependências e certificados
+# Instala dependências e atualiza certificados
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         openssl \
-        curl \
-        wget && \
+        curl && \
     update-ca-certificates
 
-# 🔧 INSTALA A CADEIA COMPLETA DE CERTIFICADOS ICP-BRASIL
-# AC Raiz ICP-Brasil v10
-RUN wget -q -O /usr/local/share/ca-certificates/icpbrasilv10.crt \
-    https://acraiz.icpbrasil.gov.br/ICP-Brasilv10.crt
-
-# AC SOLUTI SSL EV G4
-RUN wget -q -O /usr/local/share/ca-certificates/soluti-g4.crt \
-    https://ccd.acsoluti.com.br/lcr/ac-soluti-ssl-ev-v10-g4.crt
-
-# 🔧 AC SyngularID (cadeia completa)
-RUN wget -q -O /tmp/syngularid.p7b \
-    http://syngularid.com.br/repositorio/ac-syngularid-multipla/certificados/ac-syngularid-multipla.p7b && \
-    openssl pkcs7 -inform DER -in /tmp/syngularid.p7b -print_certs -out /tmp/syngularid.pem && \
-    cat /tmp/syngularid.pem >> /usr/local/share/ca-certificates/syngularid.crt && \
-    rm /tmp/syngularid.p7b /tmp/syngularid.pem
-
-# AC SyngularID Multipla (intermediária) - se disponível
-RUN wget -q -O /usr/local/share/ca-certificates/syngularid-multipla.crt \
-    http://syngularid.com.br/repositorio/ac-syngularid-multipla/certificados/ac-syngularid-multipla.p7b 2>/dev/null || true
-
-# Atualiza os certificados do sistema
-RUN update-ca-certificates --verbose
-
-# 🔧 Configurações do .NET (todas centralizadas)
+# 🔧 Configurações do .NET para compatibilidade com certificados
 ENV DOTNET_SYSTEM_NET_SECURITY_PROTOCOLS=Tls12
 ENV DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER=0
 ENV COMPlus_SystemNetHttp_UseSocketsHttpHandler=false
