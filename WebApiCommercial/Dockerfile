@@ -33,7 +33,12 @@ RUN apt-get update && \
         curl && \
     update-ca-certificates
 
-# 🔴 Importa automaticamente cadeia da SEFAZ GO
+# ✔ ICP Brasil (OBRIGATÓRIO)
+RUN curl -L https://acraiz.icpbrasil.gov.br/ACRAIZ.cer \
+    -o /usr/local/share/ca-certificates/icpbrasil.crt && \
+    update-ca-certificates
+
+# ✔ cadeia da SEFAZ GO (opcional, mas ajuda)
 RUN echo | openssl s_client -showcerts -connect nfe.sefaz.go.gov.br:443 2>/dev/null \
     | awk '/BEGIN CERTIFICATE/,/END CERTIFICATE/{ print }' \
     > /usr/local/share/ca-certificates/sefaz-go.crt && \
