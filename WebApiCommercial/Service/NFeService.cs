@@ -42,6 +42,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.ConstrainedExecution;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -426,15 +427,13 @@ namespace Service
 			{
 				//var numero = Funcoes.InpuBox(this, "Criar e Enviar NFe", "Número da Nota:");
 				//if (string.IsNullOrEmpty(numero)) throw new Exception("O Número deve ser informado!");
-				byte[] certbyte = await ObterCertificado(fiscalConfiguration.CertificadoDigital.Arquivo);
-				var cert = ValidarCertificado(
-			certbyte,
-			fiscalConfiguration.CertificadoDigital.Senha
-	);
+				//byte[] certbyte = await ObterCertificado(fiscalConfiguration.CertificadoDigital.Arquivo);
+				
+
 				_currentFiscalConfiguration = fiscalConfiguration;
 				_currentNaturezaOperacao = naturezaOperacao;
 				_currentSale = sale;
-				_configuracaoApp = criarConfiguracaoApp(fiscalConfiguration, naturezaOperacao, certbyte);
+				_configuracaoApp = criarConfiguracaoApp(fiscalConfiguration, naturezaOperacao);
 				_nfe = ObterNfeValidada(VersaoServico.Versao400, ModeloDocumento.NFCe,
 						numero, new ConfiguracaoCsc
 						{
@@ -443,6 +442,12 @@ namespace Service
 						});
 				//_nfe.infNFeSupl.ObterUrlQrCode3();
 				var xml = _nfe.ObterXmlString();
+				ServicePointManager.Expect100Continue = false;
+				ServicePointManager.SecurityProtocol =
+						SecurityProtocolType.Tls12 |
+						SecurityProtocolType.Tls11 |
+						SecurityProtocolType.Tls;
+
 				var servicoNFe = new ServicosNFe(_configuracaoApp.CfgServico);
 				Console.WriteLine("=== INICIANDO TRANSMISSÃO NFCe ===");
 				Console.WriteLine($"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
@@ -531,70 +536,73 @@ namespace Service
 				return xml;
 			}
 		}
-		public async Task<byte[]> ObterCertificado(string caminhoRelativo)
-		{
-			try
-			{
+		//public async Task<byte[]> ObterCertificado(string caminhoRelativo)
+		//{
+		//	try
+		//	{
 
 		
-			// Extrai apenas o nome do arquivo do caminho salvo no banco
-			// Exemplo: "/certs/399ff91c-fe15-43f3-b1cf-0d773e9f49cd.pfx" -> "399ff91c-fe15-43f3-b1cf-0d773e9f49cd.pfx"
-			string nomeArquivo = Path.GetFileName(caminhoRelativo.TrimStart('/'));
-			Console.WriteLine($"Nome do arquivo extraído: {nomeArquivo}");
-			string caminhoCompleto;
+		//	// Extrai apenas o nome do arquivo do caminho salvo no banco
+		//	// Exemplo: "/certs/399ff91c-fe15-43f3-b1cf-0d773e9f49cd.pfx" -> "399ff91c-fe15-43f3-b1cf-0d773e9f49cd.pfx"
+		//	string nomeArquivo = Path.GetFileName(caminhoRelativo.TrimStart('/'));
+		//	Console.WriteLine($"Nome do arquivo extraído: {nomeArquivo}");
+		//	string caminhoCompleto;
 
-			// Verifica se está no Render
-			if (Environment.GetEnvironmentVariable("RENDER") == "true")
-			{
-				// NO RENDER: usa o caminho ABSOLUTO do Disk mount
-				caminhoCompleto = Path.Combine("/app/wwwroot/certs", nomeArquivo);
-				Console.WriteLine($"Caminho completo: {caminhoCompleto}");
+		//	// Verifica se está no Render
+		//	if (Environment.GetEnvironmentVariable("RENDER") == "true")
+		//	{
+		//		// NO RENDER: usa o caminho ABSOLUTO do Disk mount
+		//		caminhoCompleto = Path.Combine("/app/wwwroot/certs", nomeArquivo);
+		//		Console.WriteLine($"Caminho completo: {caminhoCompleto}");
 			
-			}
-			else
-			{
-				// LOCAL: usa WebRootPath
-				caminhoCompleto = Path.Combine(_environment.WebRootPath, "certs", nomeArquivo);
-			}
+		//	}
+		//	else
+		//	{
+		//		// LOCAL: usa WebRootPath
+		//		caminhoCompleto = Path.Combine(_environment.WebRootPath, "certs", nomeArquivo);
+		//	}
 			
 
-				if (!System.IO.File.Exists(caminhoCompleto))
-			{
-				throw new FileNotFoundException(
-						$"Certificado não encontrado. Procurado em: {caminhoCompleto}. " +
-						$"Nome do arquivo: {nomeArquivo}. " +
-						$"Caminho original: {caminhoRelativo}"
-				);
-			}
+		//		if (!System.IO.File.Exists(caminhoCompleto))
+		//	{
+		//		throw new FileNotFoundException(
+		//				$"Certificado não encontrado. Procurado em: {caminhoCompleto}. " +
+		//				$"Nome do arquivo: {nomeArquivo}. " +
+		//				$"Caminho original: {caminhoRelativo}"
+		//		);
+		//	}
 
-			return await System.IO.File.ReadAllBytesAsync(caminhoCompleto);
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"ERRO ao ler arquivo: {ex.Message}");
-				Console.WriteLine($"StackTrace: {ex.StackTrace}");
-				return [];
-			}
-		}
-		private ConfiguracaoApp criarConfiguracaoApp(FiscalConfiguration fiscalConfiguration, NaturezaOperacao naturezaOperacao,
-				byte[] certbyte)
+		//	return await System.IO.File.ReadAllBytesAsync(caminhoCompleto);
+		//	}
+		//	catch (Exception ex)
+		//	{
+		//		Console.WriteLine($"ERRO ao ler arquivo: {ex.Message}");
+		//		Console.WriteLine($"StackTrace: {ex.StackTrace}");
+		//		return [];
+		//	}
+		//}
+		private ConfiguracaoApp criarConfiguracaoApp(FiscalConfiguration fiscalConfiguration, NaturezaOperacao naturezaOperacao)
 		{
 			try
 			{
+
+				string nomeArquivo = Path.GetFileName(fiscalConfiguration.CertificadoDigital.Arquivo);
+
+				string caminhoCertificado =
+						Environment.GetEnvironmentVariable("RENDER") == "true"
+								? Path.Combine("/app/wwwroot/certs", nomeArquivo)
+								: Path.Combine(_environment.WebRootPath, "certs", nomeArquivo);
 
 				var Certificado = new DFe.Utils.ConfiguracaoCertificado
 				{
-					TipoCertificado = DFe.Utils.TipoCertificado.A1ByteArray,
-					ArrayBytesArquivo = certbyte,
-
+					TipoCertificado = DFe.Utils.TipoCertificado.A1Arquivo,
+					Arquivo = caminhoCertificado,
 					Senha = fiscalConfiguration.CertificadoDigital.Senha,
 					ManterDadosEmCache = false,
-					KeyStorageFlags = X509KeyStorageFlags.MachineKeySet |
-		X509KeyStorageFlags.PersistKeySet |
-		X509KeyStorageFlags.Exportable,
-					SignatureMethodSignedXml = "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
-					DigestMethodReference = "http://www.w3.org/2000/09/xmldsig#sha1"
-
+					KeyStorageFlags =
+								X509KeyStorageFlags.MachineKeySet |
+								X509KeyStorageFlags.PersistKeySet |
+								X509KeyStorageFlags.Exportable
 				};
 				var ConfiguracaoEmail = new ConfiguracaoEmail();
 				var ConfiguracaoCsc = new ConfiguracaoCsc
@@ -628,6 +636,7 @@ namespace Service
 						tpAmb = fiscalConfiguration.Ambiente == AmbienteEnum.Homologacao ?
 														TipoAmbiente.Homologacao : TipoAmbiente.Producao,
 						tpEmis = TipoEmissao.teNormal,
+						ValidarCertificadoDoServidor=false,
 						Certificado= Certificado
 					},
 					Emitente = new emit
@@ -1924,10 +1933,10 @@ namespace Service
 				FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(nFeEmission.CompanyId);
 				NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(nFeEmission.NaturezaOperacaoId);
 
-				byte[] certbyte = await ObterCertificado(fiscalConfiguration.CertificadoDigital.Arquivo);
+				//byte[] certbyte = await ObterCertificado(fiscalConfiguration.CertificadoDigital.Arquivo);
 				//_currentFiscalConfiguration = fiscalConfiguration;
 				//_currentNaturezaOperacao = naturezaOperacao;
-				_configuracaoApp = criarConfiguracaoApp(fiscalConfiguration, naturezaOperacao, certbyte);
+				_configuracaoApp = criarConfiguracaoApp(fiscalConfiguration, naturezaOperacao);
 				var servicoNFe = new ServicosNFe(_configuracaoApp.CfgServico);
 				var cpfcnpj = string.IsNullOrEmpty(_configuracaoApp.Emitente.CNPJ)
 						? _configuracaoApp.Emitente.CPF
