@@ -33,15 +33,13 @@ RUN apt-get update && \
         curl && \
     update-ca-certificates
 
-# ICP Brasil v10
-RUN curl -L http://acraiz.icpbrasil.gov.br/ACRAIZv10.cer -o icp.cer \
-    && openssl x509 -inform DER -in icp.cer -out /usr/local/share/ca-certificates/icpbrasilv10.crt \
-    && rm icp.cer
+# ICP Brasil v10 (RAIZ)
+RUN curl -L https://acraiz.icpbrasil.gov.br/ICP-Brasilv10.crt \
+    -o /usr/local/share/ca-certificates/icpbrasilv10.crt
 
-# SOLUTI G4
-RUN curl -L http://ccd.acsoluti.com.br/lcr/ac-soluti-ssl-ev-v10-g4.crt -o soluti.cer \
-    && openssl x509 -inform DER -in soluti.cer -out /usr/local/share/ca-certificates/soluti.crt \
-    && rm soluti.cer
+# SOLUTI G4 (intermediária)
+RUN curl -L https://ccd.acsoluti.com.br/lcr/ac-soluti-ssl-ev-v10-g4.crt \
+    -o /usr/local/share/ca-certificates/soluti-g4.crt
 
 RUN update-ca-certificates
 
