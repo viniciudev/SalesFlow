@@ -33,15 +33,15 @@ RUN apt-get update && \
         curl && \
     update-ca-certificates
 
-# ✔ ICP Brasil (OBRIGATÓRIO)
-RUN curl -k -L https://acraiz.icpbrasil.gov.br/ACRAIZ.cer \
-    -o /usr/local/share/ca-certificates/icpbrasil.crt \
-    && chmod 644 /usr/local/share/ca-certificates/icpbrasil.crt \
-    && update-ca-certificates
-    
-# SOLUTI (necessária para SEFAZ GO)
+# ICP Brasil v10 (RAIZ correta)
+RUN curl -k -L http://acraiz.icpbrasil.gov.br/ACRAIZv10.cer \
+    -o /usr/local/share/ca-certificates/icpbrasilv10.crt
+
+# Intermediária SOLUTI
 RUN curl -k -L http://ccd.acsoluti.com.br/lcr/ac-soluti-ssl-ev-v10-g4.crt \
     -o /usr/local/share/ca-certificates/soluti.crt
+
+RUN update-ca-certificates
 
 # ✔ cadeia da SEFAZ GO (opcional, mas ajuda)
 RUN echo | openssl s_client -showcerts -connect nfe.sefaz.go.gov.br:443 2>/dev/null \
