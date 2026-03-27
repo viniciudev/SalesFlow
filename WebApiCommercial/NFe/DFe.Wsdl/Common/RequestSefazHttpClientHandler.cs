@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
@@ -125,38 +126,72 @@ namespace DFe.Wsdl.Common
 			Console.WriteLine($"Issuer: {certificadoDigital.Issuer}");
 			Console.WriteLine($"HasPrivateKey: {certificadoDigital.HasPrivateKey}");
 			Console.WriteLine($"Thumbprint: {certificadoDigital.Thumbprint}");
-			var cert = new X509Certificate2(
-		certificadoDigital.Export(X509ContentType.Pkcs12),
-		(string)null,
-		X509KeyStorageFlags.MachineKeySet |
-		X509KeyStorageFlags.PersistKeySet |
-		X509KeyStorageFlags.Exportable
-);
+			ServicePointManager.Expect100Continue = false;
+			ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+			AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2Support", false);
 
 			using (HttpClientHandler handler = new HttpClientHandler())
 			{
-				//ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;//para net8 ou outras versoes
-				handler.SslProtocols = System.Security.Authentication.SslProtocols.Tls12;//NET 9+
-
-				//ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => { return true; };//para net8 ou outras versoes
-				//handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };//NET 9+
-
+				handler.SslProtocols = SslProtocols.Tls12;
 				handler.ClientCertificateOptions = ClientCertificateOption.Manual;
 				handler.CheckCertificateRevocationList = false;
-				handler.ClientCertificates.Clear();
-				handler.ClientCertificates.Add(cert);
+
+				handler.ClientCertificates.Add(certificadoDigital);
 
 				using (HttpClient client = new HttpClient(handler))
 				{
-					client.Timeout = TimeSpan.FromSeconds(30);//TimeSpan.FromMilliseconds(timeOut == 0 ? 2000 : timeOut);
+					client.Timeout = TimeSpan.FromSeconds(30);
 
 					HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url);
+					request.Version = HttpVersion.Version11;
+
 					request.Content = new StringContent(xmlSoap, Encoding.UTF8, "application/soap+xml");
 					request.Headers.Add("SOAPAction", actionUrn);
 
-					HttpResponseMessage response = client.SendAsync(request).Result;
+					HttpResponseMessage response;
 
-					response.EnsureSuccessStatusCode();
+					try
+					{
+						response = client.SendAsync(request).Result;
+					}
+					catch (Exception ex)
+					{
+						Console.WriteLine("=== ERRO AO ENVIAR REQUEST ===");
+						Console.WriteLine($"Message: {ex.Message}");
+						Console.WriteLine($"Type: {ex.GetType().FullName}");
+
+						if (ex.InnerException != null)
+						{
+							Console.WriteLine("=== INNER EXCEPTION ===");
+							Console.WriteLine($"Message: {ex.InnerException.Message}");
+							Console.WriteLine($"Type: {ex.InnerException.GetType().FullName}");
+						}
+
+						Console.WriteLine("=== STACKTRACE ===");
+						Console.WriteLine(ex.StackTrace);
+
+						throw;
+					}
+
+					try
+					{
+						response.EnsureSuccessStatusCode();
+					}
+					catch (HttpRequestException ex)
+					{
+						Console.WriteLine("=== HTTP ERROR ===");
+						Console.WriteLine($"StatusCode: {response?.StatusCode}");
+						Console.WriteLine($"Reason: {response?.ReasonPhrase}");
+
+						var body = response?.Content.ReadAsStringAsync().Result;
+						Console.WriteLine("=== RESPONSE BODY ===");
+						Console.WriteLine(body);
+
+						Console.WriteLine("=== EXCEPTION ===");
+						Console.WriteLine(ex.Message);
+
+						throw;
+					}
 
 					return response.Content.ReadAsStringAsync().Result;
 				}
