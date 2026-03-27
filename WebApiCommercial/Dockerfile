@@ -26,28 +26,48 @@ RUN dotnet publish WebApiCommercial/WebApiCommercial.csproj -c Release -o /publi
 # Etapa 2 — Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 
+# Instala dependências e certificados
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         openssl \
-        curl && \
+        curl \
+        wget && \
     update-ca-certificates
 
-# Bootstrap ICP Brasil
-RUN curl -k -L https://acraiz.icpbrasil.gov.br/ICP-Brasilv10.crt \
-    -o /usr/local/share/ca-certificates/icpbrasilv10.crt
+# 🔧 INSTALA A CADEIA COMPLETA DE CERTIFICADOS ICP-BRASIL
+# AC Raiz ICP-Brasil v10
+RUN wget -q -O /usr/local/share/ca-certificates/icpbrasilv10.crt \
+    https://acraiz.icpbrasil.gov.br/ICP-Brasilv10.crt
 
-RUN curl -k -L https://ccd.acsoluti.com.br/lcr/ac-soluti-ssl-ev-v10-g4.crt \
-    -o /usr/local/share/ca-certificates/soluti-g4.crt
+# AC SOLUTI SSL EV G4
+RUN wget -q -O /usr/local/share/ca-certificates/soluti-g4.crt \
+    https://ccd.acsoluti.com.br/lcr/ac-soluti-ssl-ev-v10-g4.crt
 
-RUN update-ca-certificates
+# 🔧 AC SyngularID (cadeia completa)
+RUN wget -q -O /tmp/syngularid.p7b \
+    http://syngularid.com.br/repositorio/ac-syngularid-multipla/certificados/ac-syngularid-multipla.p7b && \
+    openssl pkcs7 -inform DER -in /tmp/syngularid.p7b -print_certs -out /tmp/syngularid.pem && \
+    cat /tmp/syngularid.pem >> /usr/local/share/ca-certificates/syngularid.crt && \
+    rm /tmp/syngularid.p7b /tmp/syngularid.pem
 
+# AC SyngularID Multipla (intermediária) - se disponível
+RUN wget -q -O /usr/local/share/ca-certificates/syngularid-multipla.crt \
+    http://syngularid.com.br/repositorio/ac-syngularid-multipla/certificados/ac-syngularid-multipla.p7b 2>/dev/null || true
+
+# Atualiza os certificados do sistema
+RUN update-ca-certificates --verbose
+
+# 🔧 Configurações do .NET (todas centralizadas)
 ENV DOTNET_SYSTEM_NET_SECURITY_PROTOCOLS=Tls12
+ENV DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER=0
+ENV COMPlus_SystemNetHttp_UseSocketsHttpHandler=false
+ENV ASPNETCORE_URLS=http://+:80
+ENV RENDER=true
 
 WORKDIR /app
 
 EXPOSE 80
-EXPOSE 443
 
 # Copia os arquivos publicados
 COPY --from=build /publish .
@@ -55,18 +75,13 @@ COPY --from=build /publish .
 # Copia as pastas estáticas necessárias
 COPY --from=build /src/WebApiCommercial/NFSchemas ./NFSchemas
 
-# Copia a pasta wwwroot, mas exclui a pasta certs (será gerenciada pelo volume)
+# Copia a pasta wwwroot (os certificados serão gerenciados pelo volume)
 COPY --from=build /src/WebApiCommercial/wwwroot ./wwwroot
 
 # Remove a pasta certs que veio do código fonte (se existir)
-# para garantir que o volume seja usado
 RUN rm -rf ./wwwroot/certs 2>/dev/null || true
 
 # Cria o diretório onde o volume será montado
 RUN mkdir -p /app/wwwroot/certs
-
-# Configura a porta que o Render espera
-ENV ASPNETCORE_URLS=http://+:80
-ENV RENDER=true
 
 ENTRYPOINT ["dotnet", "WebApiCommercial.dll"]

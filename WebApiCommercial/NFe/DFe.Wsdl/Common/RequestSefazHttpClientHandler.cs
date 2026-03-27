@@ -85,32 +85,52 @@ namespace DFe.Wsdl.Common
 			Console.WriteLine($"Certificado Issuer: {certificadoDigital.Issuer}");
 			Console.WriteLine($"HasPrivateKey: {certificadoDigital.HasPrivateKey}");
 
-			// Configurações de segurança
+			// 🔧 Configuração crítica para Linux
 			ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 			ServicePointManager.CheckCertificateRevocationList = false;
+
+			// 🔧 Força o uso do ServicePointManager com validação de certificado
 			ServicePointManager.ServerCertificateValidationCallback = (sender, cert, chain, errors) =>
 			{
-				if (errors == SslPolicyErrors.None)
-					return true;
-
-				Console.WriteLine($"SSL Error: {errors}");
+				Console.WriteLine($"=== VALIDAÇÃO SSL ===");
 				Console.WriteLine($"Server Cert Subject: {cert.Subject}");
+				Console.WriteLine($"Server Cert Issuer: {cert.Issuer}");
+				Console.WriteLine($"Errors: {errors}");
 
-				// Aceita em homologação para teste
+				if (chain != null)
+				{
+					Console.WriteLine($"Chain length: {chain.ChainElements.Count}");
+					foreach (var element in chain.ChainElements)
+					{
+						Console.WriteLine($"  - {element.Certificate.Subject} | Status: {element.ChainElementStatus.Length}");
+					}
+				}
+
+				// Aceita todos em homologação para teste
 				return true;
 			};
 
+			// 🔧 Configuração do request
 			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(cleanUrl);
 			request.Method = "POST";
 			request.ContentType = "application/soap+xml; charset=utf-8";
 			request.Headers.Add("SOAPAction", actionUrn);
-			request.Timeout = timeOut == 0 ? 60000 : timeOut;
-			request.KeepAlive = true;
+			request.Timeout = timeOut == 0 ? 90000 : timeOut; // 90 segundos
+			request.ReadWriteTimeout = timeOut == 0 ? 90000 : timeOut;
+			request.KeepAlive = false;
 			request.ProtocolVersion = HttpVersion.Version11;
 			request.UserAgent = "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)";
+			request.AuthenticationLevel = System.Net.Security.AuthenticationLevel.MutualAuthRequested;
 
-			// Adiciona o certificado
+			// 🔑 Adiciona o certificado
 			request.ClientCertificates.Add(certificadoDigital);
+
+			// Log dos certificados no request
+			Console.WriteLine($"Certificados no request: {request.ClientCertificates.Count}");
+			foreach (X509Certificate cert in request.ClientCertificates)
+			{
+				Console.WriteLine($"  - {cert.Subject}");
+			}
 
 			try
 			{
@@ -141,7 +161,14 @@ namespace DFe.Wsdl.Common
 				}
 
 				Console.WriteLine($"❌ Erro: {ex.Message}");
+				Console.WriteLine($"Status: {(ex.Response as HttpWebResponse)?.StatusCode}");
 				Console.WriteLine($"Resposta: {responseBody}");
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+				}
+
 				throw;
 			}
 		}
