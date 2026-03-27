@@ -33,15 +33,16 @@ RUN apt-get update && \
         curl && \
     update-ca-certificates
 
-# ICP Brasil v10 (RAIZ)
-RUN curl -L https://acraiz.icpbrasil.gov.br/ICP-Brasilv10.crt \
+# Bootstrap ICP Brasil
+RUN curl -k -L https://acraiz.icpbrasil.gov.br/ICP-Brasilv10.crt \
     -o /usr/local/share/ca-certificates/icpbrasilv10.crt
 
-# SOLUTI G4 (intermediária)
-RUN curl -L https://ccd.acsoluti.com.br/lcr/ac-soluti-ssl-ev-v10-g4.crt \
+RUN curl -k -L https://ccd.acsoluti.com.br/lcr/ac-soluti-ssl-ev-v10-g4.crt \
     -o /usr/local/share/ca-certificates/soluti-g4.crt
 
 RUN update-ca-certificates
+
+ENV DOTNET_SYSTEM_NET_SECURITY_PROTOCOLS=Tls12
 
 WORKDIR /app
 
