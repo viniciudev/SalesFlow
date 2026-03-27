@@ -33,21 +33,17 @@ RUN apt-get update && \
         curl && \
     update-ca-certificates
 
-# ICP Brasil v10 (RAIZ correta)
-RUN curl -k -L http://acraiz.icpbrasil.gov.br/ACRAIZv10.cer \
-    -o /usr/local/share/ca-certificates/icpbrasilv10.crt
+# ICP Brasil v10
+RUN curl -L http://acraiz.icpbrasil.gov.br/ACRAIZv10.cer -o icp.cer \
+    && openssl x509 -inform DER -in icp.cer -out /usr/local/share/ca-certificates/icpbrasilv10.crt \
+    && rm icp.cer
 
-# Intermediária SOLUTI
-RUN curl -k -L http://ccd.acsoluti.com.br/lcr/ac-soluti-ssl-ev-v10-g4.crt \
-    -o /usr/local/share/ca-certificates/soluti.crt
+# SOLUTI G4
+RUN curl -L http://ccd.acsoluti.com.br/lcr/ac-soluti-ssl-ev-v10-g4.crt -o soluti.cer \
+    && openssl x509 -inform DER -in soluti.cer -out /usr/local/share/ca-certificates/soluti.crt \
+    && rm soluti.cer
 
 RUN update-ca-certificates
-
-# ✔ cadeia da SEFAZ GO (opcional, mas ajuda)
-RUN echo | openssl s_client -showcerts -connect nfe.sefaz.go.gov.br:443 2>/dev/null \
-    | awk '/BEGIN CERTIFICATE/,/END CERTIFICATE/{ print }' \
-    > /usr/local/share/ca-certificates/sefaz-go.crt && \
-    update-ca-certificates
 
 WORKDIR /app
 
