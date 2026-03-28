@@ -31,36 +31,18 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         openssl \
-        libssl3 \
-        wget && \
-    # Ativa o módulo de algoritmos legados
-    sed -i 's/^#\(openssl_conf = openssl_init\)/\1/' /etc/ssl/openssl.cnf && \
+        libssl3 && \
+    # Configura OpenSSL para aceitar algoritmos legados (Triple DES, SHA1)
+    sed -i 's/^#\(openssl_conf = openssl_init\)/\1/' /etc/ssl/openssl.cnf 2>/dev/null || true && \
+    # Adiciona configuração para ativar provedor legado
     echo "\n[openssl_init]\nssl_conf = ssl_sect\n\n[ssl_sect]\nsystem_default = system_default_sect\n\n[system_default_sect]\nCipherString = DEFAULT@SECLEVEL=1\n" >> /etc/ssl/openssl.cnf && \
-    # Instala e ativa o provedor legado (suporte a Triple DES e SHA1)
-    mkdir -p /usr/local/ssl && \
-    echo "openssl_conf = openssl_init" > /usr/local/ssl/openssl.cnf && \
-    echo "[openssl_init]" >> /usr/local/ssl/openssl.cnf && \
-    echo "providers = provider_sect" >> /usr/local/ssl/openssl.cnf && \
-    echo "[provider_sect]" >> /usr/local/ssl/openssl.cnf && \
-    echo "default = default_sect" >> /usr/local/ssl/openssl.cnf && \
-    echo "legacy = legacy_sect" >> /usr/local/ssl/openssl.cnf && \
-    echo "[default_sect]" >> /usr/local/ssl/openssl.cnf && \
-    echo "activate = 1" >> /usr/local/ssl/openssl.cnf && \
-    echo "[legacy_sect]" >> /usr/local/ssl/openssl.cnf && \
-    echo "activate = 1" >> /usr/local/ssl/openssl.cnf && \
-    # Configura ambiente para usar esta configuração
-    export OPENSSL_CONF=/usr/local/ssl/openssl.cnf
-
-# Instala certificados ICP-Brasil
-RUN wget -q -O /usr/local/share/ca-certificates/icpbrasilv10.crt \
-    https://acraiz.icpbrasil.gov.br/ICP-Brasilv10.crt && \
-    update-ca-certificates
+    # Atualiza certificados (já inclui ICP-Brasil no pacote ca-certificates)
+    update-ca-certificates --fresh
 
 # Configurações .NET
 ENV DOTNET_SYSTEM_NET_SECURITY_PROTOCOLS=Tls12
 ENV DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER=0
 ENV COMPlus_SystemNetHttp_UseSocketsHttpHandler=false
-ENV OPENSSL_CONF=/usr/local/ssl/openssl.cnf
 ENV ASPNETCORE_URLS=http://+:80
 ENV RENDER=true
 
