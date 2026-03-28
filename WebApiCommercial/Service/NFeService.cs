@@ -1837,8 +1837,7 @@ namespace Service
 		{
 			NFeEmission nFeEmission = await repository.GetByIdAsync(id);
 			//new nfeProc().CarregarDeXmlString(nFeEmission.XmlCompleto);//Funcoes.BuscarArquivoXml();
-			try
-			{
+		
 				nfeProc proc = null;
 				NFe.Classes.NFe nfe = null;
 				string arquivo = string.Empty;
@@ -1877,11 +1876,8 @@ namespace Service
 				//impr.Imprimir(salvarArquivoPdfEm: fileDialog.FileName.Replace(".pdf", "") + ".pdf");
 				//var bytes = impr.PdfBytes();
 				//var base64 = Convert.ToBase64String(bytes);
-			}
-			catch (Exception ex)
-			{
-				return [];
-			}
+			
+		
 		}
 		public async Task<byte[]> ObterXml(int id)
 		{
