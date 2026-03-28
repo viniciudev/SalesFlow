@@ -203,7 +203,7 @@ namespace Service
 			nFeEmission.Sent = true;
 			nFeEmission.Serie = fiscalConfig.NumeracaoDocumentos.Nfce.Serie;
 			nFeEmission.TryCount += 1;
-			nFeEmission.UpdatedAt = DateTime.UtcNow;
+			nFeEmission.UpdatedAt = DateTime.Now;
 
 			if (respEmissao is string mensagemErro)
 			{
@@ -235,7 +235,7 @@ namespace Service
 				TipoDocumento = attempt.TipoDocumento,
 				Serie = fiscalConfig.NumeracaoDocumentos.Nfce.Serie,
 				Numero = numero,
-				CreatedAt = DateTime.UtcNow,
+				CreatedAt = DateTime.Now,
 				TryCount = attempt.TryCount <= 0 ? 1 : attempt.TryCount,
 				CompanyId = attempt.CompanyId
 			};
@@ -305,7 +305,7 @@ namespace Service
 		//             nFeEmission.ErrorMessage = respEmissao;
 		//             nFeEmission.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
 		//             nFeEmission.TryCount += 1;
-		//             nFeEmission.UpdatedAt = DateTime.UtcNow;
+		//             nFeEmission.UpdatedAt = DateTime.Now;
 
 		//         }
 		//         else if (respEmissao is RetornoNFeAutorizacao ret)
@@ -320,7 +320,7 @@ namespace Service
 		//             nFeEmission.ErrorMessage = NfeSituacao.Autorizada(infProt.cStat) ?null: infProt.xMotivo;
 		//             nFeEmission.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
 		//             nFeEmission.TryCount += 1;
-		//             nFeEmission.UpdatedAt = DateTime.UtcNow;
+		//             nFeEmission.UpdatedAt = DateTime.Now;
 		//             nFeEmission.ChaveAcesso = infProt.chNFe;
 		//             nFeEmission.XmlCompleto = ret.Xml;
 		//             nFeEmission.Protocolo = infProt.nProt;
@@ -355,7 +355,7 @@ namespace Service
 		//         var respEmissao = await TransmitirNfe(proximoNumeroNfe, fiscalConfiguration, sale, naturezaOperacao);
 
 		//         attempt.TryCount = attempt.TryCount <= 0 ? 1 : attempt.TryCount;
-		//         attempt.CreatedAt = DateTime.UtcNow;
+		//         attempt.CreatedAt = DateTime.Now;
 		//         var entity = new NFeEmission();
 		//         if (respEmissao is string mensagemErro)
 		//         {
@@ -367,7 +367,7 @@ namespace Service
 		//             entity.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
 		//             entity.Numero = proximoNumeroNfe;
 		//             entity.StatusNfe = StatusNfe.pendente;
-		//             entity.CreatedAt = DateTime.UtcNow;
+		//             entity.CreatedAt = DateTime.Now;
 		//             entity.TryCount = attempt.TryCount;
 		//             entity.CompanyId = attempt.CompanyId;
 		//         }
@@ -383,7 +383,7 @@ namespace Service
 		//             entity.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
 		//             entity.Numero = proximoNumeroNfe;
 		//             entity.StatusNfe = NfeSituacao.Autorizada(infProt.cStat) ? StatusNfe.emitida : StatusNfe.pendente; ;
-		//             entity.CreatedAt = DateTime.UtcNow;
+		//             entity.CreatedAt = DateTime.Now;
 		//             entity.TryCount = attempt.TryCount;
 		//             entity.CompanyId = attempt.CompanyId;
 		//             entity.XmlCompleto = ret.Xml;
@@ -450,7 +450,7 @@ namespace Service
 
 				var servicoNFe = new ServicosNFe(_configuracaoApp.CfgServico);
 				Console.WriteLine("=== INICIANDO TRANSMISSÃO NFCe ===");
-				Console.WriteLine($"Timestamp: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}");
+				Console.WriteLine($"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
 				Console.WriteLine($"Environment: {Environment.GetEnvironmentVariable("RENDER")}");
 				var retornoEnvio = servicoNFe.NFeAutorizacao(int.Parse(fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie), IndicadorSincronizacao.Sincrono, new List<NFe.Classes.NFe> { _nfe }, false/*Envia a mensagem compactada para a SEFAZ*/);
 				/*             var resp=OnSucessoSync(retornoEnvio)*/
@@ -1573,7 +1573,7 @@ namespace Service
 
 			if (ide.tpEmis != TipoEmissao.teNormal)
 			{
-				ide.dhCont = DateTime.UtcNow;
+				ide.dhCont = DateTime.Now;
 				ide.xJust = "CONTIGÊNCIA PARA NFe/NFCe";
 			}
 
@@ -1598,11 +1598,12 @@ namespace Service
 
 
 			ide.idDest = DestinoOperacao.doInterna;
-			ide.dhEmi = DateTime.UtcNow;
-			Console.WriteLine($"DataEmissão>>>>>>>>>>{ DateTime.UtcNow}");
+			ide.dhEmi = DateTime.Now;
+			Console.WriteLine($"DataEmissão>>>>>>>>>>{ DateTime.Now}");
+			Console.WriteLine($"DataEmissãoUTC>>>>>>>>>>{DateTime.UtcNow}");
 			//Mude aqui para enviar a nfe vinculada ao EPEC, V3.10
 			if (ide.mod == ModeloDocumento.NFe)
-				ide.dhSaiEnt = DateTime.UtcNow;
+				ide.dhSaiEnt = DateTime.Now;
 			else
 				ide.tpImp = TipoImpressao.tiNFCe;
 			ide.procEmi = ProcessoEmissao.peAplicativoContribuinte;
@@ -1800,7 +1801,7 @@ namespace Service
 			existing.ResponseJson = responseJson;
 			existing.ErrorMessage = errorMessage;
 			existing.TryCount += 1;
-			existing.UpdatedAt = DateTime.UtcNow;
+			existing.UpdatedAt = DateTime.Now;
 
 			await repository.UpdateAsync(existing.Id, existing);
 		}
@@ -1897,7 +1898,7 @@ namespace Service
 			if (nfe == null)
 				return $"nfe-{id}.xml";
 
-			return $"nfe-{nfe.Numero}-{DateTime.UtcNow:yyyyMMddHHmmss}.xml";
+			return $"nfe-{nfe.Numero}-{DateTime.Now:yyyyMMddHHmmss}.xml";
 		}
 		public async Task update(NFeEmissionDto attempt)
 		{
@@ -1952,7 +1953,7 @@ namespace Service
 
 					nFeEmission.Sent = true;
 					nFeEmission.MotivoCancelamento = cancelarNota.Justificativa;
-					nFeEmission.UpdatedAt = DateTime.UtcNow;
+					nFeEmission.UpdatedAt = DateTime.Now;
 					nFeEmission.StatusNfe = StatusNfe.cancelada;
 					nFeEmission.XmlCompleto = retornoCancelamento.Retorno.ObterXmlString();
 					await repository.UpdateAsync(nFeEmission.Id, nFeEmission);
