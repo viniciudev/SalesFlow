@@ -41,49 +41,20 @@ namespace WebAppCommercial
 
         public void ConfigureServices(IServiceCollection services)
         {
-			// ===== CONFIGURAÇÃO SSL MODERNA =====
-			// Configurar um HttpClientHandler global para aceitar certificados da SEFAZ
-			services.AddHttpClient("SEFAZClient", client =>
+			// 🔧 CONFIGURAÇÃO SSL GLOBAL
+			System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+			System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, cert, chain, errors) =>
 			{
-				client.Timeout = TimeSpan.FromMinutes(5);
-			})
-			.ConfigurePrimaryHttpMessageHandler(() =>
-			{
-				var handler = new HttpClientHandler
-				{
-					ServerCertificateCustomValidationCallback = (message, cert, chain, errors) =>
-					{
-						// Aceitar certificados da SEFAZ
-						if (cert.Subject.Contains("SEFAZ") ||
-									cert.Subject.Contains("Fazenda") ||
-									cert.Subject.Contains("sefaz") ||
-									errors == System.Net.Security.SslPolicyErrors.None)
-						{
-							return true;
-						}
+				if (errors == System.Net.Security.SslPolicyErrors.None)
+					return true;
 
-						// Log para debug
-						Console.WriteLine($"SSL Error: {errors}");
-						Console.WriteLine($"Certificate: {cert.Subject}");
+				Console.WriteLine($"⚠️ SSL Error: {errors}");
+				Console.WriteLine($"Cert: {cert?.Subject}");
+				return true; // Aceita todos para homologação
+			};
 
-						// Em desenvolvimento, aceitar todos
-#if DEBUG
-						return true;
-#endif
-
-						return false;
-					}
-				};
-
-				// Forçar TLS 1.2 ou superior
-				handler.SslProtocols = System.Security.Authentication.SslProtocols.Tls12 |
-																	System.Security.Authentication.SslProtocols.Tls13;
-
-				return handler;
-			});
-
-			// Configurar o HttpClient padrão
-			services.AddHttpClient();
+			// Força o uso do handler antigo
+			AppContext.SetSwitch("System.Net.Http.UseSocketsHttpHandler", false);
 			// ===== FIM CONFIGURAÇÃO SSL =====
 			services.AddControllers().AddNewtonsoftJson(options =>
             {

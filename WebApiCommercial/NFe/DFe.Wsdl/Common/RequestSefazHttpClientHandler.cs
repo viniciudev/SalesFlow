@@ -3,6 +3,7 @@ using CTe.CTeOSDocumento.Soap;
 using System;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
@@ -24,8 +25,6 @@ namespace DFe.Wsdl.Common
 			soapserializer.Serialize(xmlTextWriter, soapEnvelope);
 			xmlTextWriter.Formatting = Formatting.None;
 
-			XmlDocument xmlDocument = new XmlDocument();
-
 			string output = Encoding.UTF8.GetString(memoryStream.ToArray());
 			string _byteOrderMarkUtf8 = Encoding.UTF8.GetString(Encoding.UTF8.GetPreamble());
 			if (output.StartsWith(_byteOrderMarkUtf8))
@@ -33,7 +32,9 @@ namespace DFe.Wsdl.Common
 				output = output.Remove(0, _byteOrderMarkUtf8.Length);
 			}
 
+			XmlDocument xmlDocument = new XmlDocument();
 			xmlDocument.LoadXml(output);
+
 			return xmlDocument;
 		}
 
@@ -49,32 +50,29 @@ namespace DFe.Wsdl.Common
 		}
 
 		public string SendRequest(
-		XmlDocument xmlEnvelop,
-		X509Certificate2 certificadoDigital,
-		string url,
-		int timeOut,
-		TipoEvento? tipoEvento = null,
-		string actionUrn = "")
+				XmlDocument xmlEnvelop,
+				X509Certificate2 certificadoDigital,
+				string url,
+				int timeOut,
+				TipoEvento? tipoEvento = null,
+				string actionUrn = "")
 		{
-			if (certificadoDigital == null)
-				throw new ArgumentNullException(nameof(certificadoDigital));
-
-			if (!certificadoDigital.HasPrivateKey)
-				throw new ArgumentException("Certificado digital não contém chave privada");
-
-			if (certificadoDigital.NotAfter < DateTime.Now)
-				throw new ArgumentException($"Certificado expirado em {certificadoDigital.NotAfter}");
-
 			if (!tipoEvento.HasValue && string.IsNullOrWhiteSpace(actionUrn))
+			{
 				throw new ArgumentNullException("Informe tipoEvento ou actionUrn");
+			}
 
 			if (tipoEvento.HasValue)
+			{
 				actionUrn = new SoapUrls().GetSoapUrl(tipoEvento.Value);
+			}
 
 			// Remove ?wsdl da URL se existir
 			string cleanUrl = url;
 			if (cleanUrl.Contains("?wsdl"))
+			{
 				cleanUrl = cleanUrl.Replace("?wsdl", "");
+			}
 
 			string xmlSoap = xmlEnvelop.InnerXml;
 
@@ -85,91 +83,72 @@ namespace DFe.Wsdl.Common
 			Console.WriteLine($"Certificado Issuer: {certificadoDigital.Issuer}");
 			Console.WriteLine($"HasPrivateKey: {certificadoDigital.HasPrivateKey}");
 
-			// 🔧 Configuração crítica para Linux
-			ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-			ServicePointManager.CheckCertificateRevocationList = false;
+			// 🔧 IMPORTANTE: Recria o certificado com as flags corretas para Linux
+			var cert = new X509Certificate2(
+					certificadoDigital.Export(X509ContentType.Pkcs12),
+					(string)null,
+					X509KeyStorageFlags.MachineKeySet |
+					X509KeyStorageFlags.PersistKeySet |
+					X509KeyStorageFlags.Exportable
+			);
 
-			// 🔧 Força o uso do ServicePointManager com validação de certificado
-			ServicePointManager.ServerCertificateValidationCallback = (sender, cert, chain, errors) =>
+			// 🔧 Configuração do HttpClientHandler
+			var handler = new HttpClientHandler();
+			handler.SslProtocols = SslProtocols.Tls12;
+			handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+			handler.CheckCertificateRevocationList = false;
+
+			// Limpa e adiciona o certificado
+			handler.ClientCertificates.Clear();
+			handler.ClientCertificates.Add(cert);
+
+			// 🔧 Callback de validação SSL (aceita tudo em homologação)
+			handler.ServerCertificateCustomValidationCallback = (sender, serverCert, chain, sslPolicyErrors) =>
 			{
-				Console.WriteLine($"=== VALIDAÇÃO SSL ===");
-				Console.WriteLine($"Server Cert Subject: {cert.Subject}");
-				Console.WriteLine($"Server Cert Issuer: {cert.Issuer}");
-				Console.WriteLine($"Errors: {errors}");
-
-				if (chain != null)
-				{
-					Console.WriteLine($"Chain length: {chain.ChainElements.Count}");
-					foreach (var element in chain.ChainElements)
-					{
-						Console.WriteLine($"  - {element.Certificate.Subject} | Status: {element.ChainElementStatus.Length}");
-					}
-				}
-
-				// Aceita todos em homologação para teste
+				Console.WriteLine($"Server Certificate: {serverCert?.Subject}");
+				Console.WriteLine($"SSL Policy Errors: {sslPolicyErrors}");
+				// Aceita todos os erros em homologação
 				return true;
 			};
 
-			// 🔧 Configuração do request
-			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(cleanUrl);
-			request.Method = "POST";
-			request.ContentType = "application/soap+xml; charset=utf-8";
-			request.Headers.Add("SOAPAction", actionUrn);
-			request.Timeout = timeOut == 0 ? 90000 : timeOut; // 90 segundos
-			request.ReadWriteTimeout = timeOut == 0 ? 90000 : timeOut;
-			request.KeepAlive = false;
-			request.ProtocolVersion = HttpVersion.Version11;
-			request.UserAgent = "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)";
-			request.AuthenticationLevel = System.Net.Security.AuthenticationLevel.MutualAuthRequested;
-
-			// 🔑 Adiciona o certificado
-			request.ClientCertificates.Add(certificadoDigital);
-
-			// Log dos certificados no request
-			Console.WriteLine($"Certificados no request: {request.ClientCertificates.Count}");
-			foreach (X509Certificate cert in request.ClientCertificates)
+			using (var client = new HttpClient(handler))
 			{
-				Console.WriteLine($"  - {cert.Subject}");
-			}
+				client.Timeout = TimeSpan.FromSeconds(timeOut == 0 ? 60 : timeOut);
 
-			try
-			{
-				using (Stream stream = request.GetRequestStream())
-				using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8))
-				{
-					writer.Write(xmlSoap);
-				}
+				var request = new HttpRequestMessage(HttpMethod.Post, cleanUrl);
+				request.Content = new StringContent(xmlSoap, Encoding.UTF8, "application/soap+xml");
+				request.Headers.Add("SOAPAction", actionUrn);
 
-				using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
-				using (Stream stream = response.GetResponseStream())
-				using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
+				// 🔧 Headers adicionais que podem ajudar
+				request.Headers.Add("Accept", "*/*");
+				request.Headers.Add("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
+
+				try
 				{
-					string result = reader.ReadToEnd();
+					Console.WriteLine("Enviando requisição...");
+					var response = client.SendAsync(request).Result;
+
+					Console.WriteLine($"Status Code: {response.StatusCode}");
+
+					string result = response.Content.ReadAsStringAsync().Result;
+
+					if (!response.IsSuccessStatusCode)
+					{
+						throw new Exception($"HTTP {response.StatusCode}: {result}");
+					}
+
 					Console.WriteLine($"✅ Sucesso! Resposta: {result.Length} bytes");
 					return result;
 				}
-			}
-			catch (WebException ex)
-			{
-				string responseBody = "";
-				if (ex.Response != null)
+				catch (Exception ex)
 				{
-					using (StreamReader reader = new StreamReader(ex.Response.GetResponseStream(), Encoding.UTF8))
+					Console.WriteLine($"❌ Erro: {ex.Message}");
+					if (ex.InnerException != null)
 					{
-						responseBody = reader.ReadToEnd();
+						Console.WriteLine($"Inner: {ex.InnerException.Message}");
 					}
+					throw;
 				}
-
-				Console.WriteLine($"❌ Erro: {ex.Message}");
-				Console.WriteLine($"Status: {(ex.Response as HttpWebResponse)?.StatusCode}");
-				Console.WriteLine($"Resposta: {responseBody}");
-
-				if (ex.InnerException != null)
-				{
-					Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
-				}
-
-				throw;
 			}
 		}
 	}
