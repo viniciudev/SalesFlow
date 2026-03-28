@@ -23,21 +23,29 @@ RUN dotnet publish WebApiCommercial/WebApiCommercial.csproj -c Release -o /publi
 # Etapa 2 — Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 
-# 🔧 CONFIGURAÇÃO DE TIMEZONE (BRASÍLIA)
-ENV TZ=America/Sao_Paulo
+# 🔧 INSTALA libgdiplus PARA DANFE
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         openssl \
         libssl3 \
+        libgdiplus \
+        libc6-dev \
         tzdata && \
-    ln -fs /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime && \
-    dpkg-reconfigure -f noninteractive tzdata && \
+    ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll && \
     update-ca-certificates --fresh
 
 # 🔧 Configuração OpenSSL para algoritmos legados
 RUN sed -i 's/^#\(openssl_conf = openssl_init\)/\1/' /etc/ssl/openssl.cnf 2>/dev/null || true && \
     echo "\n[openssl_init]\nssl_conf = ssl_sect\n\n[ssl_sect]\nsystem_default = system_default_sect\n\n[system_default_sect]\nCipherString = DEFAULT@SECLEVEL=1\n" >> /etc/ssl/openssl.cnf
+
+# 🔧 CONFIGURAÇÃO DE TIMEZONE
+ENV TZ=America/Sao_Paulo
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# 🔧 Configuração para libgdiplus
+ENV COMPlus_EnableDiagnostics=0
+ENV System_Drawing_EnableUnixSupport=1
 
 # Configurações .NET
 ENV DOTNET_SYSTEM_NET_SECURITY_PROTOCOLS=Tls12
