@@ -1599,6 +1599,7 @@ namespace Service
 
 			ide.idDest = DestinoOperacao.doInterna;
 			ide.dhEmi = DateTime.UtcNow;
+			Console.WriteLine($"DataEmissão>>>>>>>>>>{ DateTime.UtcNow}");
 			//Mude aqui para enviar a nfe vinculada ao EPEC, V3.10
 			if (ide.mod == ModeloDocumento.NFe)
 				ide.dhSaiEnt = DateTime.UtcNow;
