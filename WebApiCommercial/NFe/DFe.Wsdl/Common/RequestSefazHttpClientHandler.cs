@@ -142,11 +142,25 @@ namespace DFe.Wsdl.Common
 				}
 				catch (Exception ex)
 				{
-					Console.WriteLine($"❌ Erro: {ex.Message}");
+					// Captura detalhes completos do erro SSL
+					Console.WriteLine("=== ERRO SSL DETALHADO ===");
+					Console.WriteLine($"Exception Type: {ex.GetType().FullName}");
+					Console.WriteLine($"Message: {ex.Message}");
+
 					if (ex.InnerException != null)
 					{
-						Console.WriteLine($"Inner: {ex.InnerException.Message}");
+						Console.WriteLine($"Inner Type: {ex.InnerException.GetType().FullName}");
+						Console.WriteLine($"Inner Message: {ex.InnerException.Message}");
+
+						// Tenta obter a mensagem de erro do OpenSSL
+						if (ex.InnerException.Message.Contains("SSL") || ex.InnerException.Message.Contains("CERT"))
+						{
+							Console.WriteLine($"OpenSSL Error: {ex.InnerException.Message}");
+						}
 					}
+
+					// Log da pilha completa
+					Console.WriteLine($"StackTrace: {ex.StackTrace}");
 					throw;
 				}
 			}
