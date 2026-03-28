@@ -450,7 +450,7 @@ namespace Service
 
 				var servicoNFe = new ServicosNFe(_configuracaoApp.CfgServico);
 				Console.WriteLine("=== INICIANDO TRANSMISSÃO NFCe ===");
-				Console.WriteLine($"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+				Console.WriteLine($"Timestamp: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}");
 				Console.WriteLine($"Environment: {Environment.GetEnvironmentVariable("RENDER")}");
 				var retornoEnvio = servicoNFe.NFeAutorizacao(int.Parse(fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie), IndicadorSincronizacao.Sincrono, new List<NFe.Classes.NFe> { _nfe }, false/*Envia a mensagem compactada para a SEFAZ*/);
 				/*             var resp=OnSucessoSync(retornoEnvio)*/
@@ -1573,7 +1573,7 @@ namespace Service
 
 			if (ide.tpEmis != TipoEmissao.teNormal)
 			{
-				ide.dhCont = DateTime.Now;
+				ide.dhCont = DateTime.UtcNow;
 				ide.xJust = "CONTIGÊNCIA PARA NFe/NFCe";
 			}
 
@@ -1598,10 +1598,10 @@ namespace Service
 
 
 			ide.idDest = DestinoOperacao.doInterna;
-			ide.dhEmi = DateTime.Now;
+			ide.dhEmi = DateTime.UtcNow;
 			//Mude aqui para enviar a nfe vinculada ao EPEC, V3.10
 			if (ide.mod == ModeloDocumento.NFe)
-				ide.dhSaiEnt = DateTime.Now;
+				ide.dhSaiEnt = DateTime.UtcNow;
 			else
 				ide.tpImp = TipoImpressao.tiNFCe;
 			ide.procEmi = ProcessoEmissao.peAplicativoContribuinte;
@@ -1896,7 +1896,7 @@ namespace Service
 			if (nfe == null)
 				return $"nfe-{id}.xml";
 
-			return $"nfe-{nfe.Numero}-{DateTime.Now:yyyyMMddHHmmss}.xml";
+			return $"nfe-{nfe.Numero}-{DateTime.UtcNow:yyyyMMddHHmmss}.xml";
 		}
 		public async Task update(NFeEmissionDto attempt)
 		{
