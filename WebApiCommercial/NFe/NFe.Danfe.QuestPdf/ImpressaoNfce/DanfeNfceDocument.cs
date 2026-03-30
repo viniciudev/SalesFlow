@@ -1,18 +1,18 @@
 ﻿using System.Text;
-using DFe.Classes.Flags;
-using DFe.Utils;
-using NFe.Classes;
-using NFe.Classes.Informacoes.Destinatario;
-using NFe.Classes.Informacoes.Identificacao.Tipos;
-using NFe.Classes.Informacoes.Pagamento;
-using NFe.Utils;
-using NFe.Utils.InformacoesSuplementares;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using SkiaSharp;
 using SkiaSharp.QrCode.Image;
-
+using QuestPDF;
+using NFe.Classes;
+using DFe.Classes.Flags;
+using NFe.Utils;
+using NFe.Utils.InformacoesSuplementares;
+using NFe.Classes.Informacoes.Destinatario;
+using DFe.Utils;
+using NFe.Classes.Informacoes.Identificacao.Tipos;
+using NFe.Classes.Informacoes.Pagamento;
 namespace NFe.Danfe.QuestPdf.ImpressaoNfce;
 
 public class DanfeNfceDocument : IDocument
@@ -29,7 +29,8 @@ public class DanfeNfceDocument : IDocument
         CarregarXml(xml);
     }
 
-    public void TamanhoImpressao(TamanhoImpressao tamanhoImpressao)
+
+	public void TamanhoImpressao(TamanhoImpressao tamanhoImpressao)
     {
         switch (tamanhoImpressao)
         {
@@ -626,4 +627,10 @@ public class DanfeNfceDocument : IDocument
         else
             throw new ArgumentException("Forma pagamento inválida");
     }
+	// Método para gerar os bytes do PDF
+	public byte[] GerarPdfBytes()
+	{
+		// O método GeneratePdf() é um método de extensão do QuestPDF
+		return this.GeneratePdf();
+	}
 }

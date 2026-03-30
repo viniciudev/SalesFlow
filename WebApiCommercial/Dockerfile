@@ -13,6 +13,7 @@ COPY ["NFe/NFe.Classes/NFe.Classes.csproj", "NFe/NFe.Classes/"]
 COPY ["NFe/NFe.Utils/NFe.Utils.csproj", "NFe/NFe.Utils/"]
 COPY ["NFe/NFe.Servicos/NFe.Servicos.csproj", "NFe/NFe.Servicos/"]
 COPY ["NFe/NFe.Wsdl.Standard/NFe.Wsdl.Standard.csproj", "NFe/NFe.Wsdl.Standard/"]
+COPY ["NFe/NFe.Danfe.QuestPdf/NFe.Danfe.QuestPdf.csproj", "NFe/NFe.Danfe.QuestPdf/"]
 
 RUN dotnet restore WebApiCommercial/WebApiCommercial.csproj
 
@@ -23,31 +24,32 @@ RUN dotnet publish WebApiCommercial/WebApiCommercial.csproj -c Release -o /publi
 # Etapa 2 — Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 
-# 🔧 INSTALA libgdiplus PARA DANFE
+# 🔧 INSTALA DEPENDÊNCIAS PARA SKIASHARP E OPENSSL
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         openssl \
         libssl3 \
-        libgdiplus \
+        libfontconfig1 \
+        libfreetype6 \
+        libpng-dev \
+        libjpeg-dev \
+        libgif-dev \
+        libwebp-dev \
+        libbrotli-dev \
         libc6-dev \
         tzdata && \
-    ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll && \
     update-ca-certificates --fresh
 
-# 🔧 Configuração OpenSSL para algoritmos legados
+# 🔧 CONFIGURAÇÃO OPENSSL PARA ALGORITMOS LEGADOS
 RUN sed -i 's/^#\(openssl_conf = openssl_init\)/\1/' /etc/ssl/openssl.cnf 2>/dev/null || true && \
     echo "\n[openssl_init]\nssl_conf = ssl_sect\n\n[ssl_sect]\nsystem_default = system_default_sect\n\n[system_default_sect]\nCipherString = DEFAULT@SECLEVEL=1\n" >> /etc/ssl/openssl.cnf
 
-# 🔧 CONFIGURAÇÃO DE TIMEZONE
+# 🔧 TIMEZONE BRASÍLIA
 ENV TZ=America/Sao_Paulo
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# 🔧 Configuração para libgdiplus
-ENV COMPlus_EnableDiagnostics=0
-ENV System_Drawing_EnableUnixSupport=1
-
-# Configurações .NET
+# 🔧 CONFIGURAÇÕES .NET
 ENV DOTNET_SYSTEM_NET_SECURITY_PROTOCOLS=Tls12
 ENV DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER=0
 ENV COMPlus_SystemNetHttp_UseSocketsHttpHandler=false
@@ -60,6 +62,7 @@ EXPOSE 80
 COPY --from=build /publish .
 COPY --from=build /src/WebApiCommercial/NFSchemas ./NFSchemas
 COPY --from=build /src/WebApiCommercial/wwwroot ./wwwroot
+
 RUN rm -rf ./wwwroot/certs 2>/dev/null || true && mkdir -p /app/wwwroot/certs
 
 ENTRYPOINT ["dotnet", "WebApiCommercial.dll"]

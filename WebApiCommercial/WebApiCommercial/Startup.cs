@@ -16,6 +16,7 @@ using Model.Registrations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using ProfControl.WebApi;
+using QuestPDF.Infrastructure;
 using Repository;
 using Repository.Providers;
 using Service;
@@ -23,24 +24,24 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO.Compression;
-using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Settings = ProfControl.WebApi.Settings;
 
 namespace WebAppCommercial
 {
-    public class Startup
-    {
-        public Startup(IConfiguration configuration)
-        {
-            Configuration = configuration;
-        }
+	public class Startup
+	{
+		public Startup(IConfiguration configuration)
+		{
+			Configuration = configuration;
+		}
 
-        public IConfiguration Configuration { get; }
+		public IConfiguration Configuration { get; }
 
-        public void ConfigureServices(IServiceCollection services)
-        {
+		public void ConfigureServices(IServiceCollection services)
+		{
+			QuestPDF.Settings.License = LicenseType.Community;
 			// 🔧 CONFIGURAÇÃO SSL GLOBAL
 			System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
 			System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, cert, chain, errors) =>
@@ -57,419 +58,419 @@ namespace WebAppCommercial
 			AppContext.SetSwitch("System.Net.Http.UseSocketsHttpHandler", false);
 			// ===== FIM CONFIGURAÇÃO SSL =====
 			services.AddControllers().AddNewtonsoftJson(options =>
-            {
-                options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-                options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
-            });
+						{
+							options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+							options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+							options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+						});
 
-            services.AddDbContext<ContextBase>(options =>
-                 options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
+			services.AddDbContext<ContextBase>(options =>
+					 options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
 
-            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-            services.Configure<GzipCompressionProviderOptions>(options =>
-            {
-                options.Level = CompressionLevel.Optimal;
-            });
+			AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+			services.Configure<GzipCompressionProviderOptions>(options =>
+			{
+				options.Level = CompressionLevel.Optimal;
+			});
 
-            services.AddResponseCompression(options =>
-            {
-                IEnumerable<string> MimeTypes = new[]
-                {
+			services.AddResponseCompression(options =>
+			{
+				IEnumerable<string> MimeTypes = new[]
+							{
     // General
     "text/plain",
-    "text/html",
-    "text/css",
-    "font/woff2",
-    "application/javascript",
-    "image/x-icon",
-    "image/png"
-   };
+		"text/html",
+		"text/css",
+		"font/woff2",
+		"application/javascript",
+		"image/x-icon",
+		"image/png"
+};
 
-                options.EnableForHttps = true;
-                options.MimeTypes = MimeTypes;
-                options.Providers.Add<GzipCompressionProvider>();
-            });
+				options.EnableForHttps = true;
+				options.MimeTypes = MimeTypes;
+				options.Providers.Add<GzipCompressionProvider>();
+			});
 
-            #region Registions
-            //Usuário
-            services.AddTransient<IUserService, UserService>();
-            services.AddTransient<IGenericRepository<User>, UserRepository>();
-            services.AddTransient<IUserRepository, UserRepository>();
-            services.AddTransient<IBaseService<User>, UserService>();
-            //Client
-            services.AddTransient<IClientService, ClientService>();
-            services.AddTransient<IGenericRepository<Client>, ClientRepository>();
-            services.AddTransient<IClientRepository, ClientRepository>();
-            services.AddTransient<IBaseService<Client>, ClientService>();
-            //File
-            services.AddTransient<IFileService, FileService>();
-            services.AddTransient<IGenericRepository<File>, FileRepository>();
-            services.AddTransient<IFileRepository, FileRepository>();
-            services.AddTransient<IBaseService<File>, FileService>();
-            //company
-            services.AddTransient<ICompanyService, CompanyService>();
-            services.AddTransient<IGenericRepository<Company>, CompanyRepository>();
-            services.AddTransient<ICompanyRepository, CompanyRepository>();
-            services.AddTransient<IBaseService<Company>, CompanyService>();
-            //DescriptionFiles
-            services.AddTransient<IDescriptionFilesService, DescriptionFilesService>();
-            services.AddTransient<IGenericRepository<DescriptionFiles>, DescriptionFilesRepository>();
-            services.AddTransient<IDescriptionFilesRepository, DescriptionFilesRepository>();
-            services.AddTransient<IBaseService<DescriptionFiles>, DescriptionFilesService>();
-            //PlanCompany
-            services.AddTransient<IPlanCompanyService, PlanCompanyService>();
-            services.AddTransient<IGenericRepository<PlanCompany>, PlanCompanyRepository>();
-            services.AddTransient<IPlanCompanyRepository, PlanCompanyRepository>();
-            services.AddTransient<IBaseService<PlanCompany>, PlanCompanyService>();
-            //ServiceProvided
-            services.AddTransient<IServiceProvidedService, ServiceProvidedService>();
-            services.AddTransient<IGenericRepository<ServiceProvided>, ServiceProvidedRepository>();
-            services.AddTransient<IServiceProvidedRepository, ServiceProvidedRepository>();
-            services.AddTransient<IBaseService<ServiceProvided>, ServiceProvidedService>();
-            //Budget
-            services.AddTransient<IBudgetService, BudgetService>();
-            services.AddTransient<IGenericRepository<Budget>, BudgetRepository>();
-            services.AddTransient<IBudgetRepository, BudgetRepository>();
-            services.AddTransient<IBaseService<Budget>, BudgetService>();
-            //BudgetItems
-            services.AddTransient<IBudgetItemsService, BudgetItemsService>();
-            services.AddTransient<IGenericRepository<BudgetItems>, BudgetItemsRepository>();
-            services.AddTransient<IBudgetItemsRepository, BudgetItemsRepository>();
-            services.AddTransient<IBaseService<BudgetItems>, BudgetItemsService>();
-            //ServicesProvision
-            services.AddTransient<IServicesProvisionService, ServicesProvisionService>();
-            services.AddTransient<IGenericRepository<ServicesProvision>, ServicesProvisionRepository>();
-            services.AddTransient<IServicesProvisionRepository, ServicesProvisionRepository>();
-            services.AddTransient<IBaseService<ServicesProvision>, ServicesProvisionService>();
-            //ServicesProvisionItems
-            services.AddTransient<IServicesProvisionItemsService, ServicesProvisionItemsService>();
-            services.AddTransient<IGenericRepository<ServicesProvisionItems>, ServicesProvisionItemsRepository>();
-            services.AddTransient<IServicesProvisionItemsRepository, ServicesProvisionItemsRepository>();
-            services.AddTransient<IBaseService<ServicesProvisionItems>, ServicesProvisionItemsService>();
+			#region Registions
+			//Usuário
+			services.AddTransient<IUserService, UserService>();
+			services.AddTransient<IGenericRepository<User>, UserRepository>();
+			services.AddTransient<IUserRepository, UserRepository>();
+			services.AddTransient<IBaseService<User>, UserService>();
+			//Client
+			services.AddTransient<IClientService, ClientService>();
+			services.AddTransient<IGenericRepository<Client>, ClientRepository>();
+			services.AddTransient<IClientRepository, ClientRepository>();
+			services.AddTransient<IBaseService<Client>, ClientService>();
+			//File
+			services.AddTransient<IFileService, FileService>();
+			services.AddTransient<IGenericRepository<File>, FileRepository>();
+			services.AddTransient<IFileRepository, FileRepository>();
+			services.AddTransient<IBaseService<File>, FileService>();
+			//company
+			services.AddTransient<ICompanyService, CompanyService>();
+			services.AddTransient<IGenericRepository<Company>, CompanyRepository>();
+			services.AddTransient<ICompanyRepository, CompanyRepository>();
+			services.AddTransient<IBaseService<Company>, CompanyService>();
+			//DescriptionFiles
+			services.AddTransient<IDescriptionFilesService, DescriptionFilesService>();
+			services.AddTransient<IGenericRepository<DescriptionFiles>, DescriptionFilesRepository>();
+			services.AddTransient<IDescriptionFilesRepository, DescriptionFilesRepository>();
+			services.AddTransient<IBaseService<DescriptionFiles>, DescriptionFilesService>();
+			//PlanCompany
+			services.AddTransient<IPlanCompanyService, PlanCompanyService>();
+			services.AddTransient<IGenericRepository<PlanCompany>, PlanCompanyRepository>();
+			services.AddTransient<IPlanCompanyRepository, PlanCompanyRepository>();
+			services.AddTransient<IBaseService<PlanCompany>, PlanCompanyService>();
+			//ServiceProvided
+			services.AddTransient<IServiceProvidedService, ServiceProvidedService>();
+			services.AddTransient<IGenericRepository<ServiceProvided>, ServiceProvidedRepository>();
+			services.AddTransient<IServiceProvidedRepository, ServiceProvidedRepository>();
+			services.AddTransient<IBaseService<ServiceProvided>, ServiceProvidedService>();
+			//Budget
+			services.AddTransient<IBudgetService, BudgetService>();
+			services.AddTransient<IGenericRepository<Budget>, BudgetRepository>();
+			services.AddTransient<IBudgetRepository, BudgetRepository>();
+			services.AddTransient<IBaseService<Budget>, BudgetService>();
+			//BudgetItems
+			services.AddTransient<IBudgetItemsService, BudgetItemsService>();
+			services.AddTransient<IGenericRepository<BudgetItems>, BudgetItemsRepository>();
+			services.AddTransient<IBudgetItemsRepository, BudgetItemsRepository>();
+			services.AddTransient<IBaseService<BudgetItems>, BudgetItemsService>();
+			//ServicesProvision
+			services.AddTransient<IServicesProvisionService, ServicesProvisionService>();
+			services.AddTransient<IGenericRepository<ServicesProvision>, ServicesProvisionRepository>();
+			services.AddTransient<IServicesProvisionRepository, ServicesProvisionRepository>();
+			services.AddTransient<IBaseService<ServicesProvision>, ServicesProvisionService>();
+			//ServicesProvisionItems
+			services.AddTransient<IServicesProvisionItemsService, ServicesProvisionItemsService>();
+			services.AddTransient<IGenericRepository<ServicesProvisionItems>, ServicesProvisionItemsRepository>();
+			services.AddTransient<IServicesProvisionItemsRepository, ServicesProvisionItemsRepository>();
+			services.AddTransient<IBaseService<ServicesProvisionItems>, ServicesProvisionItemsService>();
 
-            //BudgetPerformed
-            services.AddTransient<IBudgetPerformedService, BudgetPerformedService>();
-            services.AddTransient<IGenericRepository<BudgetPerformed>, BudgetPerformedRepository>();
-            services.AddTransient<IBudgetPerformedRepository, BudgetPerformedRepository>();
-            services.AddTransient<IBaseService<BudgetPerformed>, BudgetPerformedService>();
-            
-            //Salesman
-            services.AddTransient<ISalesmanService, SalesmanService>();
-            services.AddTransient<IGenericRepository<Salesman>, SalesmanRepository>();
-            services.AddTransient<ISalesmanRepository, SalesmanRepository>();
-            services.AddTransient<IBaseService<Salesman>, SalesmanService>();
-            //Sale
-            services.AddTransient<ISaleService, SaleService>();
-            services.AddTransient<IGenericRepository<Sale>, SaleRepository>();
-            services.AddTransient<ISaleRepository, SaleRepository>();
-            services.AddTransient<IBaseService<Sale>, SaleService>();
-            //SaleItems
-            services.AddTransient<ISaleItemsService, SaleItemsService>();
-            services.AddTransient<IGenericRepository<SaleItems>, SaleItemsRepository>();
-            services.AddTransient<ISaleItemsRepository, SaleItemsRepository>();
-            services.AddTransient<IBaseService<SaleItems>, SaleItemsService>();
-            //Commission
-            services.AddTransient<ICommissionService, CommissionService>();
-            services.AddTransient<IGenericRepository<Commission>, CommissionRepository>();
-            services.AddTransient<ICommissionRepository, CommissionRepository>();
-            services.AddTransient<IBaseService<Commission>, CommissionService>();
-            //CostCenter
-            services.AddTransient<ICostCenterService, CostCenterService>();
-            services.AddTransient<IGenericRepository<CostCenter>, CostCenterRepository>();
-            services.AddTransient<ICostCenterRepository, CostCenterRepository>();
-            services.AddTransient<IBaseService<CostCenter>, CostCenterService>();
-            //Financial
-            services.AddTransient<IFinancialService, FinancialService>();
-            services.AddTransient<IGenericRepository<Financial>, FinancialRepository>();
-            services.AddTransient<IFinancialRepository, FinancialRepository>();
-            services.AddTransient<IBaseService<Financial>, FinancialService>();
-            //Prospects
-            services.AddTransient<IProspectsService, ProspectsService>();
-            services.AddTransient<IGenericRepository<Prospects>, ProspectsRepository>();
-            services.AddTransient<IProspectsRepository, ProspectsRepository>();
-            services.AddTransient<IBaseService<Prospects>, ProspectsService>();
-            // PhasesProspects
-            services.AddTransient<IPhasesProspectsService, PhasesProspectsService>();
-            services.AddTransient<IGenericRepository<PhasesProspects>, PhasesProspectsRepository>();
-            services.AddTransient<IPhasesProspectsRepository, PhasesProspectsRepository>();
-            services.AddTransient<IBaseService<PhasesProspects>, PhasesProspectsService>();
-            //Product
-            services.AddTransient<IProductService, ProductService>();
-            services.AddTransient<IGenericRepository<Product>, ProductRepository>();
-            services.AddTransient<IProductRepository, ProductRepository>();
-            services.AddTransient<IBaseService<Product>, ProductService>();
-            //SharedCommission
-            services.AddTransient<ISharedCommissionService, SharedCommissionService>();
-            services.AddTransient<IGenericRepository<SharedCommission>, SharedCommissionRepository>();
-            services.AddTransient<ISharedCommissionRepository, SharedCommissionRepository>();
-            services.AddTransient<IBaseService<SharedCommission>, SharedCommissionService>();
-            //Closures
-            services.AddTransient<IClosuresService, ClosuresService>();
-            services.AddTransient<IGenericRepository<Closures>, ClosuresRepository>();
-            services.AddTransient<IClosuresRepository, ClosuresRepository>();
-            services.AddTransient<IBaseService<Closures>, ClosuresService>();
-            //ClosureDetail
-            services.AddTransient<IClosuresDetailService, ClosuresDetailService>();
-            services.AddTransient<IGenericRepository<ClosuresDetail>, ClosuresDetailRepository>();
-            services.AddTransient<IClosuresDetailRepository, ClosuresDetailRepository>();
-            services.AddTransient<IBaseService<ClosuresDetail>, ClosuresDetailService>();
-            #endregion
-            services.AddHttpContextAccessor();
-            services.AddScoped<IEmailService, EmailService>();
-            services.Configure<EmailSettings>(Configuration.GetSection("EmailSettings"));
-            //Stock
-            services.AddTransient<IStockService, StockService>();
-            services.AddTransient<IGenericRepository<Stock>, StockRepository>();
-            services.AddTransient<IStockRepository, StockRepository>();
-            services.AddTransient<IBaseService<Stock>, StockService>();
-            //Dashboard
-            services.AddTransient<IDashboardService, DashboardService>();
-            //providertenantid
-            services.AddScoped<ITenantProvider, HeaderTenantProvider>();
-            //Box
-            services.AddTransient<IBoxService, BoxService>();
-            services.AddTransient<IGenericRepository<Box>, BoxRepository>();
-            services.AddTransient<IBoxRepository, BoxRepository>();
-            services.AddTransient<IBaseService<Box>, BoxService>();
-            //FinancialResource
-            //services.AddTransient<IFinancialResourceService, FinancialResourceService>();
-            services.AddTransient<IGenericRepository<FinancialResources>, FinancialResourceRepository>();
-            services.AddTransient<IFinancialResourceRepository, FinancialResourceRepository>();
-            //services.AddTransient<IBaseService<FinancialResource>, FinancialResourceService>();
-            //PaymentMethod
-            //services.AddTransient<IPaymentMethodService, PaymentMethodService>();
-            services.AddTransient<IGenericRepository<PaymentMethod>, PaymentMethodRepository>();
-            services.AddTransient<IPaymentMethodRepository, PaymentMethodRepository>();
-            //services.AddTransient<IBaseService<PaymentMethod>, PaymentMethodService>();
+			//BudgetPerformed
+			services.AddTransient<IBudgetPerformedService, BudgetPerformedService>();
+			services.AddTransient<IGenericRepository<BudgetPerformed>, BudgetPerformedRepository>();
+			services.AddTransient<IBudgetPerformedRepository, BudgetPerformedRepository>();
+			services.AddTransient<IBaseService<BudgetPerformed>, BudgetPerformedService>();
 
-            //Permission
-            services.AddTransient<IPermissionService, PermissionService>();
-            services.AddTransient<IGenericRepository<Permission>, PermissionRepository>();
-            services.AddTransient<IPermissionRepository, PermissionRepository>();
-            services.AddTransient<IBaseService<Permission>, PermissionService>();
+			//Salesman
+			services.AddTransient<ISalesmanService, SalesmanService>();
+			services.AddTransient<IGenericRepository<Salesman>, SalesmanRepository>();
+			services.AddTransient<ISalesmanRepository, SalesmanRepository>();
+			services.AddTransient<IBaseService<Salesman>, SalesmanService>();
+			//Sale
+			services.AddTransient<ISaleService, SaleService>();
+			services.AddTransient<IGenericRepository<Sale>, SaleRepository>();
+			services.AddTransient<ISaleRepository, SaleRepository>();
+			services.AddTransient<IBaseService<Sale>, SaleService>();
+			//SaleItems
+			services.AddTransient<ISaleItemsService, SaleItemsService>();
+			services.AddTransient<IGenericRepository<SaleItems>, SaleItemsRepository>();
+			services.AddTransient<ISaleItemsRepository, SaleItemsRepository>();
+			services.AddTransient<IBaseService<SaleItems>, SaleItemsService>();
+			//Commission
+			services.AddTransient<ICommissionService, CommissionService>();
+			services.AddTransient<IGenericRepository<Commission>, CommissionRepository>();
+			services.AddTransient<ICommissionRepository, CommissionRepository>();
+			services.AddTransient<IBaseService<Commission>, CommissionService>();
+			//CostCenter
+			services.AddTransient<ICostCenterService, CostCenterService>();
+			services.AddTransient<IGenericRepository<CostCenter>, CostCenterRepository>();
+			services.AddTransient<ICostCenterRepository, CostCenterRepository>();
+			services.AddTransient<IBaseService<CostCenter>, CostCenterService>();
+			//Financial
+			services.AddTransient<IFinancialService, FinancialService>();
+			services.AddTransient<IGenericRepository<Financial>, FinancialRepository>();
+			services.AddTransient<IFinancialRepository, FinancialRepository>();
+			services.AddTransient<IBaseService<Financial>, FinancialService>();
+			//Prospects
+			services.AddTransient<IProspectsService, ProspectsService>();
+			services.AddTransient<IGenericRepository<Prospects>, ProspectsRepository>();
+			services.AddTransient<IProspectsRepository, ProspectsRepository>();
+			services.AddTransient<IBaseService<Prospects>, ProspectsService>();
+			// PhasesProspects
+			services.AddTransient<IPhasesProspectsService, PhasesProspectsService>();
+			services.AddTransient<IGenericRepository<PhasesProspects>, PhasesProspectsRepository>();
+			services.AddTransient<IPhasesProspectsRepository, PhasesProspectsRepository>();
+			services.AddTransient<IBaseService<PhasesProspects>, PhasesProspectsService>();
+			//Product
+			services.AddTransient<IProductService, ProductService>();
+			services.AddTransient<IGenericRepository<Product>, ProductRepository>();
+			services.AddTransient<IProductRepository, ProductRepository>();
+			services.AddTransient<IBaseService<Product>, ProductService>();
+			//SharedCommission
+			services.AddTransient<ISharedCommissionService, SharedCommissionService>();
+			services.AddTransient<IGenericRepository<SharedCommission>, SharedCommissionRepository>();
+			services.AddTransient<ISharedCommissionRepository, SharedCommissionRepository>();
+			services.AddTransient<IBaseService<SharedCommission>, SharedCommissionService>();
+			//Closures
+			services.AddTransient<IClosuresService, ClosuresService>();
+			services.AddTransient<IGenericRepository<Closures>, ClosuresRepository>();
+			services.AddTransient<IClosuresRepository, ClosuresRepository>();
+			services.AddTransient<IBaseService<Closures>, ClosuresService>();
+			//ClosureDetail
+			services.AddTransient<IClosuresDetailService, ClosuresDetailService>();
+			services.AddTransient<IGenericRepository<ClosuresDetail>, ClosuresDetailRepository>();
+			services.AddTransient<IClosuresDetailRepository, ClosuresDetailRepository>();
+			services.AddTransient<IBaseService<ClosuresDetail>, ClosuresDetailService>();
+			#endregion
+			services.AddHttpContextAccessor();
+			services.AddScoped<IEmailService, EmailService>();
+			services.Configure<EmailSettings>(Configuration.GetSection("EmailSettings"));
+			//Stock
+			services.AddTransient<IStockService, StockService>();
+			services.AddTransient<IGenericRepository<Stock>, StockRepository>();
+			services.AddTransient<IStockRepository, StockRepository>();
+			services.AddTransient<IBaseService<Stock>, StockService>();
+			//Dashboard
+			services.AddTransient<IDashboardService, DashboardService>();
+			//providertenantid
+			services.AddScoped<ITenantProvider, HeaderTenantProvider>();
+			//Box
+			services.AddTransient<IBoxService, BoxService>();
+			services.AddTransient<IGenericRepository<Box>, BoxRepository>();
+			services.AddTransient<IBoxRepository, BoxRepository>();
+			services.AddTransient<IBaseService<Box>, BoxService>();
+			//FinancialResource
+			//services.AddTransient<IFinancialResourceService, FinancialResourceService>();
+			services.AddTransient<IGenericRepository<FinancialResources>, FinancialResourceRepository>();
+			services.AddTransient<IFinancialResourceRepository, FinancialResourceRepository>();
+			//services.AddTransient<IBaseService<FinancialResource>, FinancialResourceService>();
+			//PaymentMethod
+			//services.AddTransient<IPaymentMethodService, PaymentMethodService>();
+			services.AddTransient<IGenericRepository<PaymentMethod>, PaymentMethodRepository>();
+			services.AddTransient<IPaymentMethodRepository, PaymentMethodRepository>();
+			//services.AddTransient<IBaseService<PaymentMethod>, PaymentMethodService>();
 
-            //UserPermission
-            //services.AddTransient<IUserPermissionService, UserPermissionService>();
-            services.AddTransient<IGenericRepository<UserPermission>, UserPermissionRepository>();
-            services.AddTransient<IUserPermissionRepository, UserPermissionRepository>();
-            //services.AddTransient<IBaseService<UserPermission>, UserPermissionService>();
-            //BankAccount
-            services.AddTransient<IBankAccountService, BankAccountService>();
-            services.AddTransient<IGenericRepository<BankAccount>, BankAccountRepository>();
-            services.AddTransient<IBankAccountRepository, BankAccountRepository>();
-            services.AddTransient<IBaseService<BankAccount>, BankAccountService>();
-            //NaturezaOperacao
-            services.AddTransient<INaturezaOperacaoService, NaturezaOperacaoService>();
-            services.AddTransient<IGenericRepository<NaturezaOperacao>, NaturezaOperacaoRepository>();
-            services.AddTransient<INaturezaOperacaoRepository, NaturezaOperacaoRepository>();
-            services.AddTransient<IBaseService<NaturezaOperacao>, NaturezaOperacaoService>();
-            //FiscalConfiguration
-            services.AddTransient<IFiscalConfigurationService, FiscalConfigurationService>();
-            services.AddTransient<IGenericRepository<FiscalConfiguration>, FiscalConfigurationRepository>();
-            services.AddTransient<IFiscalConfigurationRepository, FiscalConfigurationRepository>();
-            services.AddTransient<IBaseService<FiscalConfiguration>, FiscalConfigurationService>();
-            //NFe
-            services.AddTransient<INFeService, NFeService>();
-            services.AddTransient<IGenericRepository<NFeEmission>, NFeRepository>();
-            services.AddTransient<INFeRepository, NFeRepository>();
-            services.AddTransient<IBaseService<NFeEmission>, NFeService>();
-            //services.AddCors(options =>
-            //{
-            //    options.AddPolicy("EnableCORS", builder =>
-            //    {
-            //        builder.AllowAnyOrigin().AllowAnyHeader().WithOrigins(
-            //          new[] {"http://localhost:3000", "http://localhost:3001",
-            //"http://appservicebox.link","https://appservicebox.link",
-            //"https://tractuscommissions.com.br",
-            //              "http://localhost:9002",
-            //              "https://studio-to69.onrender.com"}
-            //          ).AllowAnyMethod().Build();
-            //    });
-            //});
-            services.AddCors(options =>
-            {
-                options.AddPolicy("AllowSpecificOrigin",
-                    builder =>
-                    {
-                        builder.WithOrigins(
-                                "http://localhost:3000",
-                                "http://localhost:9002",
-                                "https://localhost:44365",
-                                "https://studio-to69.onrender.com"// Adicione também o próprio backend
-                            )
-                            .AllowAnyHeader()
-                            .AllowAnyMethod()
-                            .AllowCredentials(); // Importante para cookies/auth
-                    });
-            });
+			//Permission
+			services.AddTransient<IPermissionService, PermissionService>();
+			services.AddTransient<IGenericRepository<Permission>, PermissionRepository>();
+			services.AddTransient<IPermissionRepository, PermissionRepository>();
+			services.AddTransient<IBaseService<Permission>, PermissionService>();
 
-            var key = Encoding.ASCII.GetBytes(Settings.Secret);
-            services.AddAuthentication(x =>
-            {
-                x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(x =>
-            {
-                x.RequireHttpsMetadata = false;
-                x.SaveToken = true;
-                x.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = false,
-                    ValidateAudience = false
-                };
-            });
+			//UserPermission
+			//services.AddTransient<IUserPermissionService, UserPermissionService>();
+			services.AddTransient<IGenericRepository<UserPermission>, UserPermissionRepository>();
+			services.AddTransient<IUserPermissionRepository, UserPermissionRepository>();
+			//services.AddTransient<IBaseService<UserPermission>, UserPermissionService>();
+			//BankAccount
+			services.AddTransient<IBankAccountService, BankAccountService>();
+			services.AddTransient<IGenericRepository<BankAccount>, BankAccountRepository>();
+			services.AddTransient<IBankAccountRepository, BankAccountRepository>();
+			services.AddTransient<IBaseService<BankAccount>, BankAccountService>();
+			//NaturezaOperacao
+			services.AddTransient<INaturezaOperacaoService, NaturezaOperacaoService>();
+			services.AddTransient<IGenericRepository<NaturezaOperacao>, NaturezaOperacaoRepository>();
+			services.AddTransient<INaturezaOperacaoRepository, NaturezaOperacaoRepository>();
+			services.AddTransient<IBaseService<NaturezaOperacao>, NaturezaOperacaoService>();
+			//FiscalConfiguration
+			services.AddTransient<IFiscalConfigurationService, FiscalConfigurationService>();
+			services.AddTransient<IGenericRepository<FiscalConfiguration>, FiscalConfigurationRepository>();
+			services.AddTransient<IFiscalConfigurationRepository, FiscalConfigurationRepository>();
+			services.AddTransient<IBaseService<FiscalConfiguration>, FiscalConfigurationService>();
+			//NFe
+			services.AddTransient<INFeService, NFeService>();
+			services.AddTransient<IGenericRepository<NFeEmission>, NFeRepository>();
+			services.AddTransient<INFeRepository, NFeRepository>();
+			services.AddTransient<IBaseService<NFeEmission>, NFeService>();
+			//services.AddCors(options =>
+			//{
+			//    options.AddPolicy("EnableCORS", builder =>
+			//    {
+			//        builder.AllowAnyOrigin().AllowAnyHeader().WithOrigins(
+			//          new[] {"http://localhost:3000", "http://localhost:3001",
+			//"http://appservicebox.link","https://appservicebox.link",
+			//"https://tractuscommissions.com.br",
+			//              "http://localhost:9002",
+			//              "https://studio-to69.onrender.com"}
+			//          ).AllowAnyMethod().Build();
+			//    });
+			//});
+			services.AddCors(options =>
+			{
+				options.AddPolicy("AllowSpecificOrigin",
+									builder =>
+									{
+								builder.WithOrigins(
+															"http://localhost:3000",
+															"http://localhost:9002",
+															"https://localhost:44365",
+															"https://studio-to69.onrender.com"// Adicione também o próprio backend
+													)
+													.AllowAnyHeader()
+													.AllowAnyMethod()
+													.AllowCredentials(); // Importante para cookies/auth
+							});
+			});
 
-            // CONFIGURAÇÃO DO SWAGGER CORRIGIDA
-            services.AddEndpointsApiExplorer();
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo
-                {
-                    Version = "v1",
-                    Title = "Sales flow",
-                    Description = "API para gestão comercial",
-                    TermsOfService = new Uri("https://example.com/terms"),
-                    Contact = new OpenApiContact
-                    {
-                        Name = "Suporte",
-                        Url = new Uri("https://example.com/contact")
-                    },
-                    License = new OpenApiLicense
-                    {
-                        Name = "Licença",
-                        Url = new Uri("https://example.com/license")
-                    }
-                });
+			var key = Encoding.ASCII.GetBytes(Settings.Secret);
+			services.AddAuthentication(x =>
+			{
+				x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+				x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+			})
+			.AddJwtBearer(x =>
+			{
+				x.RequireHttpsMetadata = false;
+				x.SaveToken = true;
+				x.TokenValidationParameters = new TokenValidationParameters
+				{
+					ValidateIssuerSigningKey = true,
+					IssuerSigningKey = new SymmetricSecurityKey(key),
+					ValidateIssuer = false,
+					ValidateAudience = false
+				};
+			});
 
-                // Adicionar suporte para JWT no Swagger
-                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-                {
-                    Name = "Authorization",
-                    Type = SecuritySchemeType.ApiKey,
-                    Scheme = "Bearer",
-                    BearerFormat = "JWT",
-                    In = ParameterLocation.Header,
-                    Description = "JWT Authorization header using the Bearer scheme."
-                });
+			// CONFIGURAÇÃO DO SWAGGER CORRIGIDA
+			services.AddEndpointsApiExplorer();
+			services.AddSwaggerGen(c =>
+			{
+				c.SwaggerDoc("v1", new OpenApiInfo
+				{
+					Version = "v1",
+					Title = "Sales flow",
+					Description = "API para gestão comercial",
+					TermsOfService = new Uri("https://example.com/terms"),
+					Contact = new OpenApiContact
+					{
+						Name = "Suporte",
+						Url = new Uri("https://example.com/contact")
+					},
+					License = new OpenApiLicense
+					{
+						Name = "Licença",
+						Url = new Uri("https://example.com/license")
+					}
+				});
 
-                c.AddSecurityRequirement(new OpenApiSecurityRequirement
-        {
-          {
-            new OpenApiSecurityScheme
-            {
-              Reference = new OpenApiReference
-              {
-                Type = ReferenceType.SecurityScheme,
-                Id = "Bearer"
-              }
-            },
-            new string[] {}
-          }
-        });
-            });
-            ConfigurePermissionMappings();
-        }
+				// Adicionar suporte para JWT no Swagger
+				c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+				{
+					Name = "Authorization",
+					Type = SecuritySchemeType.ApiKey,
+					Scheme = "Bearer",
+					BearerFormat = "JWT",
+					In = ParameterLocation.Header,
+					Description = "JWT Authorization header using the Bearer scheme."
+				});
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {
-            var cultureInfo = new CultureInfo("pt-BR");
-            CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
-            CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+				c.AddSecurityRequirement(new OpenApiSecurityRequirement
+	{
+					{
+						new OpenApiSecurityScheme
+						{
+							Reference = new OpenApiReference
+							{
+								Type = ReferenceType.SecurityScheme,
+								Id = "Bearer"
+							}
+						},
+						new string[] {}
+					}
+	});
+			});
+			ConfigurePermissionMappings();
+		}
 
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
+		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+		{
+			var cultureInfo = new CultureInfo("pt-BR");
+			CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+			CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
-            // Configuração do Swagger
-            app.UseSwagger();
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "ProfControl API v1");
-                c.RoutePrefix = "swagger"; // Isso faz com que acesse em /swagger
-                c.DocumentTitle = "ProfControl API Documentation";
-            });
-            app.UseCors("AllowSpecificOrigin");
-            app.UseMiddleware<ExceptionMiddleware>();
-           
-            app.UseHttpsRedirection();
-            app.UseRouting();
-            app.UseAuthentication();
-            app.UseAuthorization();
-            app.UseMiddleware<ConventionPermissionMiddleware>();
-           
-            app.UseResponseCompression();
-            app.UseStaticFiles();
+			if (env.IsDevelopment())
+			{
+				app.UseDeveloperExceptionPage();
+			}
 
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-                // Opcional: redirecionar rota raiz para o Swagger
-                endpoints.MapGet("/", context =>
-                {
-                    context.Response.Redirect("/swagger");
-                    return Task.CompletedTask;
-                }
-                );
-            });
+			// Configuração do Swagger
+			app.UseSwagger();
+			app.UseSwaggerUI(c =>
+			{
+				c.SwaggerEndpoint("/swagger/v1/swagger.json", "ProfControl API v1");
+				c.RoutePrefix = "swagger"; // Isso faz com que acesse em /swagger
+				c.DocumentTitle = "ProfControl API Documentation";
+			});
+			app.UseCors("AllowSpecificOrigin");
+			app.UseMiddleware<ExceptionMiddleware>();
 
-            UpdateDatabase(app);
+			app.UseHttpsRedirection();
+			app.UseRouting();
+			app.UseAuthentication();
+			app.UseAuthorization();
+			app.UseMiddleware<ConventionPermissionMiddleware>();
 
-        }
-        private static void ConfigurePermissionMappings()
-        {
-            // === CONTROLLERS DE CADASTRO ===
-            ConventionPermissionMiddleware.RegisterControllerPermission("Client", "CADASTRO_CLIENTE");
-            ConventionPermissionMiddleware.RegisterControllerPermission("Product", "CADASTRO_PRODUTO");
-            ConventionPermissionMiddleware.RegisterControllerPermission("Company", "CADASTRO_EMPRESA");
-            ConventionPermissionMiddleware.RegisterControllerPermission("PaymentMethod", "FORMA_PAGAMENTO");
+			app.UseResponseCompression();
+			app.UseStaticFiles();
 
-            // === CONTROLLERS DE USUÁRIOS ===
-            ConventionPermissionMiddleware.RegisterControllerPermission("User", "USUARIO");
-            ConventionPermissionMiddleware.RegisterControllerPermission("UserPermissions", "USUARIO_PERMISSION");
-            ConventionPermissionMiddleware.RegisterControllerPermission("Permission", "USUARIO_PERMISSION");
+			app.UseEndpoints(endpoints =>
+			{
+				endpoints.MapControllers();
+				// Opcional: redirecionar rota raiz para o Swagger
+				endpoints.MapGet("/", context =>
+							{
+						context.Response.Redirect("/swagger");
+						return Task.CompletedTask;
+					}
+							);
+			});
 
-            // === CONTROLLERS OPERACIONAIS ===
-            ConventionPermissionMiddleware.RegisterControllerPermission("Sale", "VENDA");
-            ConventionPermissionMiddleware.RegisterControllerPermission("Financial", "FINANCEIRO");
-            ConventionPermissionMiddleware.RegisterControllerPermission("Stock", "ESTOQUE");
-            ConventionPermissionMiddleware.RegisterControllerPermission("Box", "CAIXA");
-            ConventionPermissionMiddleware.RegisterControllerPermission("Budget", "ORCAMENTO");
-            ConventionPermissionMiddleware.RegisterControllerPermission("Commission", "COMISSAO");
-            ConventionPermissionMiddleware.RegisterControllerPermission("Dashboard", "DASHBOARD");
-            ConventionPermissionMiddleware.RegisterControllerPermission("Closures", "FECHAMENTO");
-            ConventionPermissionMiddleware.RegisterControllerPermission("ServicesProvision", "SERVICO");
-            ConventionPermissionMiddleware.RegisterControllerPermission("Prospects", "PROSPECCAO");
-            ConventionPermissionMiddleware.RegisterControllerPermission("Salesman", "VENDEDOR");
+			UpdateDatabase(app);
 
-            // === CONTROLLERS PÚBLICOS ===
-            ConventionPermissionMiddleware.RegisterPublicController("SearchZipCode");
-            ConventionPermissionMiddleware.RegisterPublicController("Email");
-            ConventionPermissionMiddleware.RegisterPublicController("Home");
+		}
+		private static void ConfigurePermissionMappings()
+		{
+			// === CONTROLLERS DE CADASTRO ===
+			ConventionPermissionMiddleware.RegisterControllerPermission("Client", "CADASTRO_CLIENTE");
+			ConventionPermissionMiddleware.RegisterControllerPermission("Product", "CADASTRO_PRODUTO");
+			ConventionPermissionMiddleware.RegisterControllerPermission("Company", "CADASTRO_EMPRESA");
+			ConventionPermissionMiddleware.RegisterControllerPermission("PaymentMethod", "FORMA_PAGAMENTO");
 
-            // === AÇÕES PÚBLICAS (endpoints sem autenticação) ===
-            ConventionPermissionMiddleware.RegisterPublicAction("verify-email");
-            ConventionPermissionMiddleware.RegisterPublicAction("forgot-password");
-            ConventionPermissionMiddleware.RegisterPublicAction("reset-password");
-            ConventionPermissionMiddleware.RegisterPublicAction("authenticate");
+			// === CONTROLLERS DE USUÁRIOS ===
+			ConventionPermissionMiddleware.RegisterControllerPermission("User", "USUARIO");
+			ConventionPermissionMiddleware.RegisterControllerPermission("UserPermissions", "USUARIO_PERMISSION");
+			ConventionPermissionMiddleware.RegisterControllerPermission("Permission", "USUARIO_PERMISSION");
 
-            Console.WriteLine("✅ Permission mappings configured successfully!");
-        }
-        private static void UpdateDatabase(IApplicationBuilder app)
-        {
-            using (var serviceScope = app.ApplicationServices
-                .GetRequiredService<IServiceScopeFactory>()
-                .CreateScope())
-            {
-                using (var context = serviceScope.ServiceProvider.GetService<ContextBase>())
-                {
-                    context.Database.Migrate();
-                }
-            }
-        }
-    }
+			// === CONTROLLERS OPERACIONAIS ===
+			ConventionPermissionMiddleware.RegisterControllerPermission("Sale", "VENDA");
+			ConventionPermissionMiddleware.RegisterControllerPermission("Financial", "FINANCEIRO");
+			ConventionPermissionMiddleware.RegisterControllerPermission("Stock", "ESTOQUE");
+			ConventionPermissionMiddleware.RegisterControllerPermission("Box", "CAIXA");
+			ConventionPermissionMiddleware.RegisterControllerPermission("Budget", "ORCAMENTO");
+			ConventionPermissionMiddleware.RegisterControllerPermission("Commission", "COMISSAO");
+			ConventionPermissionMiddleware.RegisterControllerPermission("Dashboard", "DASHBOARD");
+			ConventionPermissionMiddleware.RegisterControllerPermission("Closures", "FECHAMENTO");
+			ConventionPermissionMiddleware.RegisterControllerPermission("ServicesProvision", "SERVICO");
+			ConventionPermissionMiddleware.RegisterControllerPermission("Prospects", "PROSPECCAO");
+			ConventionPermissionMiddleware.RegisterControllerPermission("Salesman", "VENDEDOR");
+
+			// === CONTROLLERS PÚBLICOS ===
+			ConventionPermissionMiddleware.RegisterPublicController("SearchZipCode");
+			ConventionPermissionMiddleware.RegisterPublicController("Email");
+			ConventionPermissionMiddleware.RegisterPublicController("Home");
+
+			// === AÇÕES PÚBLICAS (endpoints sem autenticação) ===
+			ConventionPermissionMiddleware.RegisterPublicAction("verify-email");
+			ConventionPermissionMiddleware.RegisterPublicAction("forgot-password");
+			ConventionPermissionMiddleware.RegisterPublicAction("reset-password");
+			ConventionPermissionMiddleware.RegisterPublicAction("authenticate");
+
+			Console.WriteLine("✅ Permission mappings configured successfully!");
+		}
+		private static void UpdateDatabase(IApplicationBuilder app)
+		{
+			using (var serviceScope = app.ApplicationServices
+					.GetRequiredService<IServiceScopeFactory>()
+					.CreateScope())
+			{
+				using (var context = serviceScope.ServiceProvider.GetService<ContextBase>())
+				{
+					context.Database.Migrate();
+				}
+			}
+		}
+	}
 }

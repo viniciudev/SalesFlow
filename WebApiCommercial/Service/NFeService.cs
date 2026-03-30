@@ -28,7 +28,7 @@ using NFe.Classes.Informacoes.Total;
 using NFe.Classes.Informacoes.Transporte;
 using NFe.Classes.Protocolo;
 using NFe.Classes.Servicos.Tipos;
-using NFe.Danfe.Nativo.NFCe;
+using NFe.Danfe.QuestPdf.ImpressaoNfce;
 using NFe.Servicos;
 using NFe.Servicos.Retorno;
 using NFe.Utils;
@@ -36,14 +36,12 @@ using NFe.Utils.Email;
 using NFe.Utils.Evento;
 using NFe.Utils.InformacoesSuplementares;
 using NFe.Utils.NFe;
-using Org.BouncyCastle.Tls;
 using Repository;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Runtime.ConstrainedExecution;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -59,7 +57,7 @@ namespace Service
 		private readonly INaturezaOperacaoRepository _naturezaOperacaoRepository;
 		private readonly IWebHostEnvironment _environment;
 		private NFe.Classes.NFe _nfe;
-		private   ConfiguracaoApp _configuracaoApp;
+		private ConfiguracaoApp _configuracaoApp;
 		private FiscalConfiguration _currentFiscalConfiguration;
 		private NaturezaOperacao _currentNaturezaOperacao;
 		private Sale _currentSale;
@@ -428,7 +426,7 @@ namespace Service
 				//var numero = Funcoes.InpuBox(this, "Criar e Enviar NFe", "Número da Nota:");
 				//if (string.IsNullOrEmpty(numero)) throw new Exception("O Número deve ser informado!");
 				//byte[] certbyte = await ObterCertificado(fiscalConfiguration.CertificadoDigital.Arquivo);
-				
+
 
 				_currentFiscalConfiguration = fiscalConfiguration;
 				_currentNaturezaOperacao = naturezaOperacao;
@@ -541,7 +539,7 @@ namespace Service
 		//	try
 		//	{
 
-		
+
 		//	// Extrai apenas o nome do arquivo do caminho salvo no banco
 		//	// Exemplo: "/certs/399ff91c-fe15-43f3-b1cf-0d773e9f49cd.pfx" -> "399ff91c-fe15-43f3-b1cf-0d773e9f49cd.pfx"
 		//	string nomeArquivo = Path.GetFileName(caminhoRelativo.TrimStart('/'));
@@ -554,14 +552,14 @@ namespace Service
 		//		// NO RENDER: usa o caminho ABSOLUTO do Disk mount
 		//		caminhoCompleto = Path.Combine("/app/wwwroot/certs", nomeArquivo);
 		//		Console.WriteLine($"Caminho completo: {caminhoCompleto}");
-			
+
 		//	}
 		//	else
 		//	{
 		//		// LOCAL: usa WebRootPath
 		//		caminhoCompleto = Path.Combine(_environment.WebRootPath, "certs", nomeArquivo);
 		//	}
-			
+
 
 		//		if (!System.IO.File.Exists(caminhoCompleto))
 		//	{
@@ -636,8 +634,8 @@ namespace Service
 						tpAmb = fiscalConfiguration.Ambiente == AmbienteEnum.Homologacao ?
 														TipoAmbiente.Homologacao : TipoAmbiente.Producao,
 						tpEmis = TipoEmissao.teNormal,
-						ValidarCertificadoDoServidor=false,
-						Certificado= Certificado
+						ValidarCertificadoDoServidor = false,
+						Certificado = Certificado
 					},
 					Emitente = new emit
 					{
@@ -1599,7 +1597,7 @@ namespace Service
 
 			ide.idDest = DestinoOperacao.doInterna;
 			ide.dhEmi = DateTime.Now;
-			Console.WriteLine($"DataEmissão>>>>>>>>>>{ DateTime.Now}");
+			Console.WriteLine($"DataEmissão>>>>>>>>>>{DateTime.Now}");
 			Console.WriteLine($"DataEmissãoUTC>>>>>>>>>>{DateTime.UtcNow}");
 			//Mude aqui para enviar a nfe vinculada ao EPEC, V3.10
 			if (ide.mod == ModeloDocumento.NFe)
@@ -1837,7 +1835,8 @@ namespace Service
 		{
 			NFeEmission nFeEmission = await repository.GetByIdAsync(id);
 			//new nfeProc().CarregarDeXmlString(nFeEmission.XmlCompleto);//Funcoes.BuscarArquivoXml();
-		
+			try
+			{
 				nfeProc proc = null;
 				NFe.Classes.NFe nfe = null;
 				string arquivo = string.Empty;
@@ -1856,13 +1855,18 @@ namespace Service
 				FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(nFeEmission.CompanyId);
 				//if (fiscalConfiguration == null)
 				//    return new ResponseGeneric { Success = false, Message = "Não encontrado as configurações para emissão de nota!" };
+				//var proc = new nfeProc().CarregarDeArquivoXml(Caminho_do_arquivo_XML);
 
-				DanfeNativoNfce impr = new DanfeNativoNfce(arquivo,
-						VersaoQrCode.QrCodeVersao3,
-					 null,
-						fiscalConfiguration.Csc.Identificador,//_configuracoes.ConfiguracaoCsc.CIdToken,
-						fiscalConfiguration.Csc.Valor,//",//_configuracoes.ConfiguracaoCsc.Csc,
-						0 /*troco*//*, "Arial Black"*/);
+				var danfeDocument = new DanfeNfceDocument(arquivo, null/*logoBytes*/);
+				danfeDocument.TamanhoImpressao(NFe.Danfe.QuestPdf.ImpressaoNfce.TamanhoImpressao.Impressao80);
+			
+				var pdfBytes = danfeDocument.GerarPdfBytes();
+				//DanfeNativoNfce impr = new DanfeNativoNfce(arquivo,
+				//		VersaoQrCode.QrCodeVersao3,
+				//	 null,
+				//		fiscalConfiguration.Csc.Identificador,//_configuracoes.ConfiguracaoCsc.CIdToken,
+				//		fiscalConfiguration.Csc.Valor,//",//_configuracoes.ConfiguracaoCsc.Csc,
+				//		0 /*troco*//*, "Arial Black"*/);
 
 				//SaveFileDialog fileDialog = new SaveFileDialog();
 
@@ -1871,14 +1875,19 @@ namespace Service
 				//if (string.IsNullOrEmpty(fileDialog.FileName))
 				//    throw new ArgumentException("Não foi selecionado nem uma pasta");
 
-				return impr.PdfBytes();
+				return pdfBytes;
 
 				//impr.Imprimir(salvarArquivoPdfEm: fileDialog.FileName.Replace(".pdf", "") + ".pdf");
 				//var bytes = impr.PdfBytes();
 				//var base64 = Convert.ToBase64String(bytes);
-			
-		
+			}
+			catch (Exception ex)
+			{
+				return [];
+			}
 		}
+		// Método de extensão para IDocument
+
 		public async Task<byte[]> ObterXml(int id)
 		{
 			NFeEmission nfe = await repository.GetByIdAsync(id);
