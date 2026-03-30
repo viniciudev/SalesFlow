@@ -15,5 +15,6 @@ namespace Model.DTO
         public string Reference { get; set; }
         public decimal CostPrice { get; set; }
         public string ?Observation { get; set; }
+        public string Ncm { get; set; }
     }
 }

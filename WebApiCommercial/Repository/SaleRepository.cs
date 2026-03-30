@@ -24,6 +24,7 @@ namespace Repository
                                .Include(x => x.SaleItems)
                                .Include(x => x.Client)
                                .Include(x => x.Financials)
+                               .Include(x=>x.NFeEmissions)
                                where sale.IdCompany == filters.IdCompany
                                && (filters.IdClient == 0 || sale.IdClient == filters.IdClient)
                                && (filters.IdSeller == 0 || sale.IdSeller == filters.IdSeller)
@@ -70,6 +71,7 @@ namespace Repository
                                        BankAccountId=x.BankAccountId,
                                        BankAccountName=x.BankAccount.BankName
                                    }).ToList(),
+                                   NFeEmissions=sale.NFeEmissions.Select(x=>new NFeEmission {Id= x.Id,StatusNfe=x.StatusNfe }).ToList()
                                })
                                .AsNoTracking()
                                .GetPagedAsync<Sale>(filters.PageNumber, filters.PageSize);
@@ -297,16 +299,39 @@ namespace Repository
                 IsIncrease = percentage >= 0
             };
         }
+        public async Task<Sale> GetSaleByCompany(int idSale, int idCompany)
+        {
+            var data = await (from sale in base._dbContext.Set<Sale>().
+                              Include(x => x.SaleItems).ThenInclude(x => x.Product)
+                              .Include(x => x.Client)
+                              .Include(x=>x.Financials).ThenInclude(x=>x.PaymentMethod)
+                              where sale.Id == idSale
+                              && sale.IdCompany == idCompany
+                              select sale).AsNoTracking()
+                              .FirstOrDefaultAsync();
+
+            return data;
+        }
+        public async Task<NFeEmission> GetByCompany(int companyId)
+        {
+            return await _dbContext.Set<NFeEmission>()
+                .Where(x =>  x.CompanyId == companyId)
+                .AsNoTracking()
+                .OrderByDescending(x => x.Id)
+                .FirstOrDefaultAsync();
+        }
     }
 
     public interface ISaleRepository : IGenericRepository<Sale>
     {
         Task<PagedResult<Sale>> GetAllPaged(Filters filters);
         Task<Sale> GetByIdSale(int id);
+        Task<Sale> GetSaleByCompany(int idSale,int idCompany);
         Task<SaleInfoResponse> GetByMonthAllSales(Filters filters);
         Task<SalesCommissionsInfo> GetByWeekAllSales(Filters filters);
         Task<List<SalesmanInfo>> GetSalesmanByWeek(int idCompany);
         Task<MonthlySalesComparisonResult> GetMonthlySalesWithComparisonByIdCompany(int id);
+        Task<NFeEmission> GetByCompany(int companyId);
     }
 }
 

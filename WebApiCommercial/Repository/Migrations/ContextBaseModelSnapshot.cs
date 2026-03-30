@@ -101,28 +101,44 @@ namespace Repository.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Address")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
 
                     b.Property<string>("Bairro")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<DateTime>("BirthDate")
+                    b.Property<DateTime?>("BirthDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CellPhone")
-                        .HasMaxLength(15)
-                        .HasColumnType("character varying(15)");
+                        .HasColumnType("text");
 
-                    b.Property<string>("Complement")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
+                    b.Property<string>("CodMunicipioIbge")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
+
+                    b.Property<string>("CodPais")
+                        .HasMaxLength(4)
+                        .HasColumnType("character varying(4)");
+
+                    b.Property<string>("Complemento")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("ConsumidorFinal")
+                        .IsRequired()
+                        .HasMaxLength(1)
+                        .HasColumnType("character varying(1)");
 
                     b.Property<DateTime>("CreatDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Document")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Email")
@@ -132,9 +148,28 @@ namespace Repository.Migrations
                     b.Property<int>("IdCompany")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Ie")
+                        .HasMaxLength(14)
+                        .HasColumnType("character varying(14)");
+
+                    b.Property<string>("IndicadorIE")
+                        .IsRequired()
+                        .HasMaxLength(1)
+                        .HasColumnType("character varying(1)");
+
+                    b.Property<string>("InscricaoMunicipal")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Municipio")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
                     b.Property<string>("Name")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
 
                     b.Property<string>("NameCity")
                         .HasColumnType("text");
@@ -142,11 +177,32 @@ namespace Repository.Migrations
                     b.Property<string>("NameState")
                         .HasColumnType("text");
 
+                    b.Property<string>("Numero")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Pais")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<string>("TipoPessoa")
+                        .IsRequired()
+                        .HasMaxLength(1)
+                        .HasColumnType("character varying(1)");
+
+                    b.Property<string>("Uf")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
                     b.Property<string>("ZipCode")
-                        .HasColumnType("text");
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
 
                     b.HasKey("Id");
 
@@ -916,6 +972,159 @@ namespace Repository.Migrations
                     b.ToTable("tb_file", (string)null);
                 });
 
+            modelBuilder.Entity("Model.Registrations.FiscalConfiguration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Ambiente")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("AutorizacaoASO")
+                        .HasColumnType("boolean")
+                        .HasColumnName("AutorizacaoASO");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId")
+                        .IsUnique();
+
+                    b.ToTable("tb_fiscalConfiguration", (string)null);
+                });
+
+            modelBuilder.Entity("Model.Registrations.NFeEmission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ChaveAcesso")
+                        .HasColumnType("text");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("MotivoCancelamento")
+                        .HasColumnType("text");
+
+                    b.Property<int>("NaturezaOperacaoId")
+                        .HasColumnType("integer");
+
+                    b.Property<long?>("Numero")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Protocolo")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RequestPayloadJson")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ResponseJson")
+                        .HasColumnType("text");
+
+                    b.Property<int>("SaleId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("Sent")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Serie")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("StatusNfe")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TipoDocumento")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TryCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("XmlCompleto")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("NaturezaOperacaoId");
+
+                    b.HasIndex("SaleId");
+
+                    b.ToTable("tb_nfeEmission", (string)null);
+                });
+
+            modelBuilder.Entity("Model.Registrations.NaturezaOperacao", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Cfop")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("ConsumidorFinal")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("Finalidade")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("MovimentaEstoque")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("TipoDocumento")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("Cfop", "TipoDocumento")
+                        .IsUnique();
+
+                    b.ToTable("tb_naturezaOperacao", (string)null);
+                });
+
             modelBuilder.Entity("Model.Registrations.PaymentMethod", b =>
                 {
                     b.Property<int>("Id")
@@ -1193,6 +1402,62 @@ namespace Repository.Migrations
                             Category = "Financeiro",
                             Code = 99,
                             Name = "Deletar Financeiro"
+                        },
+                        new
+                        {
+                            Id = 89,
+                            Category = "Cadastros",
+                            Code = 89,
+                            Name = "Visualizar Configurações de Nota Fiscal"
+                        },
+                        new
+                        {
+                            Id = 90,
+                            Category = "Cadastros",
+                            Code = 90,
+                            Name = "Criar Configurações de Nota Fiscal"
+                        },
+                        new
+                        {
+                            Id = 91,
+                            Category = "Cadastros",
+                            Code = 91,
+                            Name = "Editar Configurações de Nota Fiscal"
+                        },
+                        new
+                        {
+                            Id = 92,
+                            Category = "Cadastros",
+                            Code = 92,
+                            Name = "Cancelar Configurações de Nota Fiscal"
+                        },
+                        new
+                        {
+                            Id = 95,
+                            Category = "Notas",
+                            Code = 95,
+                            Name = "Visualizar Notas Fiscais"
+                        },
+                        new
+                        {
+                            Id = 96,
+                            Category = "Notas",
+                            Code = 96,
+                            Name = "Criar Notas Fiscais"
+                        },
+                        new
+                        {
+                            Id = 97,
+                            Category = "Notas",
+                            Code = 97,
+                            Name = "Cancelar Notas Fiscais"
+                        },
+                        new
+                        {
+                            Id = 98,
+                            Category = "Notas",
+                            Code = 98,
+                            Name = "Editar Notas Fiscais"
                         });
                 });
 
@@ -1244,6 +1509,9 @@ namespace Repository.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Ncm")
                         .HasColumnType("text");
 
                     b.Property<string>("Observation")
@@ -1815,6 +2083,425 @@ namespace Repository.Migrations
                     b.Navigation("DescriptionFiles");
                 });
 
+            modelBuilder.Entity("Model.Registrations.FiscalConfiguration", b =>
+                {
+                    b.HasOne("Model.Registrations.Company", "Company")
+                        .WithOne("FiscalConfiguration")
+                        .HasForeignKey("Model.Registrations.FiscalConfiguration", "CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.OwnsOne("Model.Registrations.CertificadoDigital", "CertificadoDigital", b1 =>
+                        {
+                            b1.Property<int>("FiscalConfigurationId")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("Arquivo")
+                                .HasMaxLength(2000)
+                                .HasColumnType("character varying(2000)")
+                                .HasColumnName("Certificado_Arquivo");
+
+                            b1.Property<string>("Senha")
+                                .HasMaxLength(200)
+                                .HasColumnType("character varying(200)")
+                                .HasColumnName("Certificado_Senha");
+
+                            b1.HasKey("FiscalConfigurationId");
+
+                            b1.ToTable("tb_fiscalConfiguration");
+
+                            b1.WithOwner()
+                                .HasForeignKey("FiscalConfigurationId");
+                        });
+
+                    b.OwnsOne("Model.Registrations.Csc", "Csc", b1 =>
+                        {
+                            b1.Property<int>("FiscalConfigurationId")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("Identificador")
+                                .HasMaxLength(200)
+                                .HasColumnType("character varying(200)")
+                                .HasColumnName("Csc_Identificador");
+
+                            b1.Property<string>("Valor")
+                                .HasMaxLength(500)
+                                .HasColumnType("character varying(500)")
+                                .HasColumnName("Csc_Valor");
+
+                            b1.HasKey("FiscalConfigurationId");
+
+                            b1.ToTable("tb_fiscalConfiguration");
+
+                            b1.WithOwner()
+                                .HasForeignKey("FiscalConfigurationId");
+                        });
+
+                    b.OwnsOne("Model.Registrations.Emitente", "Emitente", b1 =>
+                        {
+                            b1.Property<int>("FiscalConfigurationId")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("Cnpj")
+                                .HasMaxLength(20)
+                                .HasColumnType("character varying(20)")
+                                .HasColumnName("Emitente_Cnpj");
+
+                            b1.Property<string>("Cpf")
+                                .HasMaxLength(20)
+                                .HasColumnType("character varying(20)")
+                                .HasColumnName("Emitente_Cpf");
+
+                            b1.Property<string>("Fantasia")
+                                .HasMaxLength(250)
+                                .HasColumnType("character varying(250)")
+                                .HasColumnName("Emitente_Fantasia");
+
+                            b1.Property<string>("InscricaoEstadual")
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)")
+                                .HasColumnName("Emitente_InscricaoEstadual");
+
+                            b1.Property<string>("RazaoSocial")
+                                .HasMaxLength(250)
+                                .HasColumnType("character varying(250)")
+                                .HasColumnName("Emitente_RazaoSocial");
+
+                            b1.HasKey("FiscalConfigurationId");
+
+                            b1.ToTable("tb_fiscalConfiguration");
+
+                            b1.WithOwner()
+                                .HasForeignKey("FiscalConfigurationId");
+
+                            b1.OwnsOne("Model.Registrations.Contato", "EmitenteContato", b2 =>
+                                {
+                                    b2.Property<int>("EmitenteFiscalConfigurationId")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<string>("Telefone")
+                                        .HasMaxLength(50)
+                                        .HasColumnType("character varying(50)")
+                                        .HasColumnName("Emitente_Telefone");
+
+                                    b2.HasKey("EmitenteFiscalConfigurationId");
+
+                                    b2.ToTable("tb_fiscalConfiguration");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("EmitenteFiscalConfigurationId");
+                                });
+
+                            b1.OwnsOne("Model.Registrations.Endereco", "EmitenteEndereco", b2 =>
+                                {
+                                    b2.Property<int>("EmitenteFiscalConfigurationId")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<string>("Bairro")
+                                        .HasMaxLength(100)
+                                        .HasColumnType("character varying(100)")
+                                        .HasColumnName("Emitente_Bairro");
+
+                                    b2.Property<string>("Cep")
+                                        .HasMaxLength(20)
+                                        .HasColumnType("character varying(20)")
+                                        .HasColumnName("Emitente_Cep");
+
+                                    b2.Property<string>("Cidade")
+                                        .HasMaxLength(150)
+                                        .HasColumnType("character varying(150)")
+                                        .HasColumnName("Emitente_Cidade");
+
+                                    b2.Property<string>("CodigoCidade")
+                                        .HasMaxLength(50)
+                                        .HasColumnType("character varying(50)")
+                                        .HasColumnName("Emitente_CodigoCidade");
+
+                                    b2.Property<string>("Complemento")
+                                        .HasMaxLength(200)
+                                        .HasColumnType("character varying(200)")
+                                        .HasColumnName("Emitente_Complemento");
+
+                                    b2.Property<string>("Logradouro")
+                                        .HasMaxLength(250)
+                                        .HasColumnType("character varying(250)")
+                                        .HasColumnName("Emitente_Logradouro");
+
+                                    b2.Property<string>("Numero")
+                                        .HasMaxLength(50)
+                                        .HasColumnType("character varying(50)")
+                                        .HasColumnName("Emitente_Numero");
+
+                                    b2.Property<string>("Uf")
+                                        .HasMaxLength(10)
+                                        .HasColumnType("character varying(10)")
+                                        .HasColumnName("Emitente_Uf");
+
+                                    b2.HasKey("EmitenteFiscalConfigurationId");
+
+                                    b2.ToTable("tb_fiscalConfiguration");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("EmitenteFiscalConfigurationId");
+                                });
+
+                            b1.OwnsOne("Model.Registrations.RegimeTributario", "RegimeTributario", b2 =>
+                                {
+                                    b2.Property<int>("EmitenteFiscalConfigurationId")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<string>("Crt")
+                                        .HasMaxLength(10)
+                                        .HasColumnType("character varying(10)")
+                                        .HasColumnName("Emitente_Crt");
+
+                                    b2.HasKey("EmitenteFiscalConfigurationId");
+
+                                    b2.ToTable("tb_fiscalConfiguration");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("EmitenteFiscalConfigurationId");
+                                });
+
+                            b1.Navigation("EmitenteContato")
+                                .IsRequired();
+
+                            b1.Navigation("EmitenteEndereco")
+                                .IsRequired();
+
+                            b1.Navigation("RegimeTributario")
+                                .IsRequired();
+                        });
+
+                    b.OwnsOne("Model.Registrations.NumeracaoDocumentos", "NumeracaoDocumentos", b1 =>
+                        {
+                            b1.Property<int>("FiscalConfigurationId")
+                                .HasColumnType("integer");
+
+                            b1.HasKey("FiscalConfigurationId");
+
+                            b1.ToTable("tb_fiscalConfiguration");
+
+                            b1.WithOwner()
+                                .HasForeignKey("FiscalConfigurationId");
+
+                            b1.OwnsOne("Model.Registrations.NumeracaoItem", "Nfce", b2 =>
+                                {
+                                    b2.Property<int>("NumeracaoDocumentosFiscalConfigurationId")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<long>("NumeroInicial")
+                                        .HasColumnType("bigint")
+                                        .HasColumnName("Nfce_NumeroInicial");
+
+                                    b2.Property<string>("Serie")
+                                        .HasMaxLength(50)
+                                        .HasColumnType("character varying(50)")
+                                        .HasColumnName("Nfce_Serie");
+
+                                    b2.HasKey("NumeracaoDocumentosFiscalConfigurationId");
+
+                                    b2.ToTable("tb_fiscalConfiguration");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("NumeracaoDocumentosFiscalConfigurationId");
+                                });
+
+                            b1.OwnsOne("Model.Registrations.NumeracaoItem", "Nfe", b2 =>
+                                {
+                                    b2.Property<int>("NumeracaoDocumentosFiscalConfigurationId")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<long>("NumeroInicial")
+                                        .HasColumnType("bigint")
+                                        .HasColumnName("Nfe_NumeroInicial");
+
+                                    b2.Property<string>("Serie")
+                                        .HasMaxLength(50)
+                                        .HasColumnType("character varying(50)")
+                                        .HasColumnName("Nfe_Serie");
+
+                                    b2.HasKey("NumeracaoDocumentosFiscalConfigurationId");
+
+                                    b2.ToTable("tb_fiscalConfiguration");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("NumeracaoDocumentosFiscalConfigurationId");
+                                });
+
+                            b1.Navigation("Nfce")
+                                .IsRequired();
+
+                            b1.Navigation("Nfe")
+                                .IsRequired();
+                        });
+
+                    b.Navigation("CertificadoDigital")
+                        .IsRequired();
+
+                    b.Navigation("Company");
+
+                    b.Navigation("Csc")
+                        .IsRequired();
+
+                    b.Navigation("Emitente")
+                        .IsRequired();
+
+                    b.Navigation("NumeracaoDocumentos")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Model.Registrations.NFeEmission", b =>
+                {
+                    b.HasOne("Model.Registrations.Company", "Company")
+                        .WithMany("NFeEmissions")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Model.Registrations.NaturezaOperacao", "NaturezaOperacao")
+                        .WithMany("NFeEmissions")
+                        .HasForeignKey("NaturezaOperacaoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Model.Moves.Sale", "Sale")
+                        .WithMany("NFeEmissions")
+                        .HasForeignKey("SaleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+
+                    b.Navigation("NaturezaOperacao");
+
+                    b.Navigation("Sale");
+                });
+
+            modelBuilder.Entity("Model.Registrations.NaturezaOperacao", b =>
+                {
+                    b.HasOne("Model.Registrations.Company", "Company")
+                        .WithMany("NaturezaOperacoes")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.OwnsOne("Model.Registrations.ConfiguracaoTributaria", "ConfiguracaoTributaria", b1 =>
+                        {
+                            b1.Property<int>("NaturezaOperacaoId")
+                                .HasColumnType("integer");
+
+                            b1.Property<decimal>("AliquotaCBS")
+                                .HasColumnType("decimal(18,4)")
+                                .HasColumnName("AliquotaCBS");
+
+                            b1.Property<decimal>("AliquotaCOFINS")
+                                .HasColumnType("decimal(18,4)")
+                                .HasColumnName("AliquotaCOFINS");
+
+                            b1.Property<decimal>("AliquotaIBS")
+                                .HasColumnType("decimal(18,4)")
+                                .HasColumnName("AliquotaIBS");
+
+                            b1.Property<decimal>("AliquotaICMS")
+                                .HasColumnType("decimal(18,4)")
+                                .HasColumnName("AliquotaICMS");
+
+                            b1.Property<decimal>("AliquotaIPI")
+                                .HasColumnType("decimal(18,4)")
+                                .HasColumnName("AliquotaIPI");
+
+                            b1.Property<decimal>("AliquotaIS")
+                                .HasColumnType("decimal(18,4)")
+                                .HasColumnName("AliquotaIS");
+
+                            b1.Property<decimal>("AliquotaISSQN")
+                                .HasColumnType("decimal(18,4)")
+                                .HasColumnName("AliquotaISSQN");
+
+                            b1.Property<decimal>("AliquotaPIS")
+                                .HasColumnType("decimal(18,4)")
+                                .HasColumnName("AliquotaPIS");
+
+                            b1.Property<bool>("AplicarCBS")
+                                .HasColumnType("boolean")
+                                .HasColumnName("AplicarCBS");
+
+                            b1.Property<bool>("AplicarCOFINS")
+                                .HasColumnType("boolean")
+                                .HasColumnName("AplicarCOFINS");
+
+                            b1.Property<bool>("AplicarIBS")
+                                .HasColumnType("boolean")
+                                .HasColumnName("AplicarIBS");
+
+                            b1.Property<bool>("AplicarICMS")
+                                .HasColumnType("boolean")
+                                .HasColumnName("AplicarICMS");
+
+                            b1.Property<bool>("AplicarIPI")
+                                .HasColumnType("boolean")
+                                .HasColumnName("AplicarIPI");
+
+                            b1.Property<bool>("AplicarIS")
+                                .HasColumnType("boolean")
+                                .HasColumnName("AplicarIS");
+
+                            b1.Property<bool>("AplicarISSQN")
+                                .HasColumnType("boolean")
+                                .HasColumnName("AplicarISSQN");
+
+                            b1.Property<bool>("AplicarPIS")
+                                .HasColumnType("boolean")
+                                .HasColumnName("AplicarPIS");
+
+                            b1.Property<string>("CstCBS")
+                                .HasMaxLength(50)
+                                .HasColumnType("character varying(50)")
+                                .HasColumnName("CstCBS");
+
+                            b1.Property<string>("CstCOFINS")
+                                .HasMaxLength(50)
+                                .HasColumnType("character varying(50)")
+                                .HasColumnName("CstCOFINS");
+
+                            b1.Property<string>("CstIBS")
+                                .HasMaxLength(50)
+                                .HasColumnType("character varying(50)")
+                                .HasColumnName("CstIBS");
+
+                            b1.Property<string>("CstICMS")
+                                .HasMaxLength(50)
+                                .HasColumnType("character varying(50)")
+                                .HasColumnName("CstICMS");
+
+                            b1.Property<string>("CstIPI")
+                                .HasMaxLength(50)
+                                .HasColumnType("character varying(50)")
+                                .HasColumnName("CstIPI");
+
+                            b1.Property<string>("CstPIS")
+                                .HasMaxLength(50)
+                                .HasColumnType("character varying(50)")
+                                .HasColumnName("CstPIS");
+
+                            b1.Property<bool>("ReduzirBaseICMS")
+                                .HasColumnType("boolean")
+                                .HasColumnName("ReduzirBaseICMS");
+
+                            b1.HasKey("NaturezaOperacaoId");
+
+                            b1.ToTable("tb_naturezaOperacao");
+
+                            b1.WithOwner()
+                                .HasForeignKey("NaturezaOperacaoId");
+                        });
+
+                    b.Navigation("Company");
+
+                    b.Navigation("ConfiguracaoTributaria");
+                });
+
             modelBuilder.Entity("Model.Registrations.PaymentMethod", b =>
                 {
                     b.HasOne("Model.Registrations.Company", "Company")
@@ -1946,6 +2633,8 @@ namespace Repository.Migrations
                 {
                     b.Navigation("Financials");
 
+                    b.Navigation("NFeEmissions");
+
                     b.Navigation("SaleItems");
                 });
 
@@ -1976,6 +2665,12 @@ namespace Repository.Migrations
                     b.Navigation("DescriptionFiles");
 
                     b.Navigation("Financials");
+
+                    b.Navigation("FiscalConfiguration");
+
+                    b.Navigation("NFeEmissions");
+
+                    b.Navigation("NaturezaOperacoes");
 
                     b.Navigation("PaymentMethods");
 
@@ -2010,6 +2705,11 @@ namespace Repository.Migrations
             modelBuilder.Entity("Model.Registrations.DescriptionFiles", b =>
                 {
                     b.Navigation("Files");
+                });
+
+            modelBuilder.Entity("Model.Registrations.NaturezaOperacao", b =>
+                {
+                    b.Navigation("NFeEmissions");
                 });
 
             modelBuilder.Entity("Model.Registrations.PaymentMethod", b =>

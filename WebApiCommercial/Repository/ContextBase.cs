@@ -97,6 +97,9 @@ namespace Repository
             ConfiguraPermission(modelBuilder);
             ConfiguraUserPermission(modelBuilder);
             ConfiguraBankAccount(modelBuilder);
+            ConfiguraNaturezaOperacao(modelBuilder);
+            ConfiguraFiscalConfiguration(modelBuilder);
+            ConfiguraNFeEmission(modelBuilder);
             var cascadeFKs = modelBuilder.Model.GetEntityTypes()
      .SelectMany(t => t.GetForeignKeys())
      .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
@@ -260,12 +263,8 @@ namespace Repository
                 client.ToTable("tb_client");
                 client.HasKey(c => c.Id);
                 client.Property(c => c.Id).ValueGeneratedOnAdd();
-                client.Property(c => c.Name).HasMaxLength(150);
                 client.Property(c => c.Email).HasMaxLength(100);
-                client.Property(c => c.CellPhone).HasMaxLength(15);
-                client.Property(c => c.Address).HasMaxLength(150);
                 client.Property(c => c.Bairro).HasMaxLength(100);
-                client.Property(c => c.Complement).HasMaxLength(150);
             });
             builder.Entity<Client>()
       .HasOne(dc => dc.Company)
@@ -645,6 +644,184 @@ namespace Repository
            .HasOne(dc => dc.Salesman)
            .WithMany(c => c.Closures)
            .HasForeignKey(dc => dc.IdSalesman);
+        }
+
+        private void ConfiguraNaturezaOperacao(ModelBuilder builder)
+        {
+            builder.Entity<NaturezaOperacao>(entity =>
+            {
+                entity.ToTable("tb_naturezaOperacao");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                entity.Property(e => e.Descricao).HasMaxLength(150).IsRequired();
+                entity.Property(e => e.Cfop).HasMaxLength(10).IsRequired();
+
+                // Enums como string
+                entity.Property(e => e.TipoDocumento).HasConversion<string>().HasMaxLength(50).IsRequired();
+                entity.Property(e => e.Finalidade).HasConversion<string>().HasMaxLength(50).IsRequired();
+
+                entity.Property(e => e.ConsumidorFinal).IsRequired();
+                entity.Property(e => e.MovimentaEstoque).IsRequired();
+                entity.Property(e => e.Ativo).IsRequired();
+
+                // Owned type configuracaoTributaria (colunas na mesma tabela)
+                entity.OwnsOne(e => e.ConfiguracaoTributaria, tb =>
+                {
+                    tb.Property(p => p.AplicarICMS).HasColumnName("AplicarICMS");
+                    tb.Property(p => p.CstICMS).HasColumnName("CstICMS").HasMaxLength(50);
+                    tb.Property(p => p.AliquotaICMS).HasColumnName("AliquotaICMS").HasColumnType("decimal(18,4)");
+                    tb.Property(p => p.ReduzirBaseICMS).HasColumnName("ReduzirBaseICMS");
+
+                    tb.Property(p => p.AplicarIPI).HasColumnName("AplicarIPI");
+                    tb.Property(p => p.CstIPI).HasColumnName("CstIPI").HasMaxLength(50);
+                    tb.Property(p => p.AliquotaIPI).HasColumnName("AliquotaIPI").HasColumnType("decimal(18,4)");
+
+                    tb.Property(p => p.AplicarPIS).HasColumnName("AplicarPIS");
+                    tb.Property(p => p.CstPIS).HasColumnName("CstPIS").HasMaxLength(50);
+                    tb.Property(p => p.AliquotaPIS).HasColumnName("AliquotaPIS").HasColumnType("decimal(18,4)");
+
+                    tb.Property(p => p.AplicarCOFINS).HasColumnName("AplicarCOFINS");
+                    tb.Property(p => p.CstCOFINS).HasColumnName("CstCOFINS").HasMaxLength(50);
+                    tb.Property(p => p.AliquotaCOFINS).HasColumnName("AliquotaCOFINS").HasColumnType("decimal(18,4)");
+
+                    tb.Property(p => p.AplicarISSQN).HasColumnName("AplicarISSQN");
+                    tb.Property(p => p.AliquotaISSQN).HasColumnName("AliquotaISSQN").HasColumnType("decimal(18,4)");
+
+                    tb.Property(p => p.AplicarIBS).HasColumnName("AplicarIBS");
+                    tb.Property(p => p.CstIBS).HasColumnName("CstIBS").HasMaxLength(50);
+                    tb.Property(p => p.AliquotaIBS).HasColumnName("AliquotaIBS").HasColumnType("decimal(18,4)");
+
+                    tb.Property(p => p.AplicarCBS).HasColumnName("AplicarCBS");
+                    tb.Property(p => p.CstCBS).HasColumnName("CstCBS").HasMaxLength(50);
+                    tb.Property(p => p.AliquotaCBS).HasColumnName("AliquotaCBS").HasColumnType("decimal(18,4)");
+
+                    tb.Property(p => p.AplicarIS).HasColumnName("AplicarIS");
+                    tb.Property(p => p.AliquotaIS).HasColumnName("AliquotaIS").HasColumnType("decimal(18,4)");
+                });
+
+                entity.HasIndex(e => new { e.Cfop, e.TipoDocumento }).IsUnique();
+            });
+            builder.Entity<NaturezaOperacao>()
+               .HasOne(dc => dc.Company)
+               .WithMany(c => c.NaturezaOperacoes)
+               .HasForeignKey(dc => dc.CompanyId);
+        }
+     
+        private void ConfiguraFiscalConfiguration(ModelBuilder builder)
+        {
+            builder.Entity<Model.Registrations.FiscalConfiguration>(entity =>
+            {
+                entity.ToTable("tb_fiscalConfiguration");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                // Ambiente como string
+                entity.Property(e => e.Ambiente).HasConversion<string>().HasMaxLength(50);
+
+                // NumeracaoDocumentos (owned)
+                entity.OwnsOne(e => e.NumeracaoDocumentos, nb =>
+                {
+                    nb.OwnsOne(n => n.Nfe, nfe =>
+                    {
+                        nfe.Property(p => p.Serie).HasColumnName("Nfe_Serie").HasMaxLength(50);
+                        nfe.Property(p => p.NumeroInicial).HasColumnName("Nfe_NumeroInicial");
+                    });
+
+                    nb.OwnsOne(n => n.Nfce, nfce =>
+                    {
+                        nfce.Property(p => p.Serie).HasColumnName("Nfce_Serie").HasMaxLength(50);
+                        nfce.Property(p => p.NumeroInicial).HasColumnName("Nfce_NumeroInicial");
+                    });
+                });
+
+                // CertificadoDigital (owned)
+                entity.OwnsOne(e => e.CertificadoDigital, cb =>
+                {
+                    cb.Property(p => p.Arquivo).HasColumnName("Certificado_Arquivo").HasMaxLength(2000);
+                    cb.Property(p => p.Senha).HasColumnName("Certificado_Senha").HasMaxLength(200);
+                });
+
+                // CSC (owned)
+                entity.OwnsOne(e => e.Csc, c =>
+                {
+                    c.Property(p => p.Identificador).HasColumnName("Csc_Identificador").HasMaxLength(200);
+                    c.Property(p => p.Valor).HasColumnName("Csc_Valor").HasMaxLength(500);
+                });
+
+                // Emitente (owned)
+                entity.OwnsOne(e => e.Emitente, em =>
+                {
+                    em.Property(p => p.Cnpj).HasColumnName("Emitente_Cnpj").HasMaxLength(20);
+                    em.Property(p => p.Cpf).HasColumnName("Emitente_Cpf").HasMaxLength(20);
+                    em.Property(p => p.InscricaoEstadual).HasColumnName("Emitente_InscricaoEstadual").HasMaxLength(100);
+                    em.Property(p => p.RazaoSocial).HasColumnName("Emitente_RazaoSocial").HasMaxLength(250);
+                    em.Property(p => p.Fantasia).HasColumnName("Emitente_Fantasia").HasMaxLength(250);
+
+                    em.OwnsOne(p => p.EmitenteContato, ct =>
+                    {
+                        ct.Property(c => c.Telefone).HasColumnName("Emitente_Telefone").HasMaxLength(50);
+                    });
+
+                    em.OwnsOne(p => p.EmitenteEndereco, ed =>
+                    {
+                        ed.Property(ea => ea.Cep).HasColumnName("Emitente_Cep").HasMaxLength(20);
+                        ed.Property(ea => ea.Logradouro).HasColumnName("Emitente_Logradouro").HasMaxLength(250);
+                        ed.Property(ea => ea.Numero).HasColumnName("Emitente_Numero").HasMaxLength(50);
+                        ed.Property(ea => ea.Complemento).HasColumnName("Emitente_Complemento").HasMaxLength(200);
+                        ed.Property(ea => ea.Bairro).HasColumnName("Emitente_Bairro").HasMaxLength(100);
+                        ed.Property(ea => ea.CodigoCidade).HasColumnName("Emitente_CodigoCidade").HasMaxLength(50);
+                        ed.Property(ea => ea.Cidade).HasColumnName("Emitente_Cidade").HasMaxLength(150);
+                        ed.Property(ea => ea.Uf).HasColumnName("Emitente_Uf").HasMaxLength(10);
+                    });
+
+                    em.OwnsOne(p => p.RegimeTributario, rt =>
+                    {
+                        rt.Property(r => r.Crt).HasColumnName("Emitente_Crt").HasMaxLength(10);
+                    });
+                });
+
+                entity.Property(e => e.AutorizacaoASO).HasColumnName("AutorizacaoASO");
+            });
+            builder.Entity<FiscalConfiguration>()
+             .HasOne(dc => dc.Company)
+             .WithOne(c => c.FiscalConfiguration)
+             .HasForeignKey<FiscalConfiguration>(dc => dc.CompanyId);
+        }
+        private void ConfiguraNFeEmission(ModelBuilder builder)
+        {
+            builder.Entity<NFeEmission>(entity =>
+            {
+                entity.ToTable("tb_nfeEmission");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                entity.Property(e => e.Serie).HasMaxLength(50);
+                entity.Property(e => e.Numero);
+
+                entity.Property(e => e.RequestPayloadJson).HasColumnType("text");
+                entity.Property(e => e.ResponseJson).HasColumnType("text");
+                entity.Property(e => e.ErrorMessage).HasMaxLength(1000);
+
+                entity.Property(e => e.CreatedAt);
+                entity.Property(e => e.UpdatedAt);
+
+                entity.HasOne(e=>e.Company)
+                    .WithMany(e => e.NFeEmissions)
+                    .HasForeignKey(e => e.CompanyId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e=>e.NaturezaOperacao)
+                    .WithMany(e=>e.NFeEmissions)
+                    .HasForeignKey(e => e.NaturezaOperacaoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e=>e.Sale)
+                    .WithMany(e => e.NFeEmissions)
+                    .HasForeignKey(e => e.SaleId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
         }
     }
 }

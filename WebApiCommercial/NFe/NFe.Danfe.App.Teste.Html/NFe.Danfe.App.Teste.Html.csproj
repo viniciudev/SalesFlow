@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Zeus.Net.NFe.NFCe" Version="2024.1.15.1723" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NFe.Danfe.Html\NFe.Danfe.Html.csproj" />
+  </ItemGroup>
+
+</Project>

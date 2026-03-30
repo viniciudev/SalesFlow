@@ -79,7 +79,8 @@ namespace Service
                 Code=model.Code,
                 Reference=model.Reference,
                 CostPrice=model.CostPrice,
-                Observation=model.Observation
+                Observation=model.Observation,
+                Ncm=model.Ncm
             };
             if (product.Id > 0)
                 await base.Alter(product);

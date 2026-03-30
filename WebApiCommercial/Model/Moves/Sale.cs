@@ -24,5 +24,6 @@ namespace Model.Moves
         [NotMapped]
         public decimal ValueSale { get; set; }
         public ICollection<Financial> Financials { get; set; }
+        public ICollection<NFeEmission> NFeEmissions { get; set; } = new List<NFeEmission>();
     }
 }

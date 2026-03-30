@@ -221,7 +221,7 @@ namespace Model
                 // Contas Bancárias
                 new Permission
                 {
-                    Id = (int)PermissionEnum.CONTA_BANCARIA_CREATE, 
+                    Id = (int)PermissionEnum.CONTA_BANCARIA_CREATE,
                     Code = PermissionEnum.CONTA_BANCARIA_CREATE,
                     Name = "Criar conta bancária",
                     Category = "Cadastros"
@@ -261,8 +261,65 @@ namespace Model
                       Code = PermissionEnum.FINANCEIRO_DELETE,
                       Name = "Deletar Financeiro",
                       Category="Financeiro"
-                  }
+                  },
                  
+                  new Permission
+                  {
+                      Id = (int)PermissionEnum.CONF_NOTA_FISCAL_VIEW,
+                    Code = PermissionEnum.CONF_NOTA_FISCAL_VIEW,
+                    Name = "Visualizar Configurações de Nota Fiscal",
+                    Category = "Cadastros"
+                  }
+                  ,                  new Permission
+                  {
+                        Id = (int)PermissionEnum.CONF_NOTA_FISCAL_CREATE,
+                        Code = PermissionEnum.CONF_NOTA_FISCAL_CREATE,
+                        Name = "Criar Configurações de Nota Fiscal",
+                        Category = "Cadastros"
+                  },
+                  new Permission
+                  {
+                        Id = (int)PermissionEnum.CONF_NOTA_FISCAL_EDIT,
+                        Code = PermissionEnum.CONF_NOTA_FISCAL_EDIT,
+                        Name = "Editar Configurações de Nota Fiscal",
+                        Category = "Cadastros"
+                  },
+                    new Permission
+                    {
+                            Id = (int)PermissionEnum.CONF_NOTA_FISCAL_DELETE,
+                            Code = PermissionEnum.CONF_NOTA_FISCAL_DELETE,
+                            Name = "Cancelar Configurações de Nota Fiscal",
+                            Category = "Cadastros"
+                    }
+                    ,new Permission
+                    {
+                            Id = (int)PermissionEnum.NOTA_FISCAL_VIEW,
+                            Code = PermissionEnum.NOTA_FISCAL_VIEW,
+                            Name = "Visualizar Notas Fiscais",
+                            Category = "Notas"
+                    },
+                    new Permission
+                    {
+                            Id = (int)PermissionEnum.NOTA_FISCAL_CREATE,
+                            Code = PermissionEnum.NOTA_FISCAL_CREATE,
+                            Name = "Criar Notas Fiscais",
+                            Category = "Notas"
+                    },
+                    new Permission
+                    {
+                            Id = (int)PermissionEnum.NOTA_FISCAL_CANCEL,
+                            Code = PermissionEnum.NOTA_FISCAL_CANCEL,
+                            Name = "Cancelar Notas Fiscais",
+                            Category = "Notas"
+                    },
+                    new Permission
+                    {
+                            Id = (int)PermissionEnum.NOTA_FISCAL_EDIT,
+                            Code = PermissionEnum.NOTA_FISCAL_EDIT,
+                            Name = "Editar Notas Fiscais",
+                            Category = "Notas"
+                    }
+
             };
         }
     }
