@@ -83,66 +83,97 @@ namespace Repository
                 throw;
             }
         }
-        public async Task<PagedResult<FinancialResponse>> GetPaged(Filters filters)
-        {
-            try
-            {
-                var data = await (from fin in _dbContext.Set<Financial>()
-                          .Include(x => x.Sale).ThenInclude(x => x.Client)
-                          .Include(x => x.Product)
-                          .Include(x => x.ServiceProvided)
-                          .Include(x => x.Client)
-                          .Include(x=>x.PaymentMethod)
+		public async Task<PagedResult<FinancialResponse>> GetPaged(Filters filters)
+		{
+			try
+			{
+				var query = from fin in _dbContext.Set<Financial>()
+							.Include(x => x.Sale).ThenInclude(x => x.Client)
+							.Include(x => x.Product)
+							.Include(x => x.ServiceProvided)
+							.Include(x => x.Client)
+							.Include(x => x.PaymentMethod)
+							.Include(x => x.BankAccount) // Adicionado para filtro de conta bancária
 
-                                  where
-                                  fin.IdCompany == filters.IdCompany
-                                  && (string.IsNullOrEmpty(filters.TextOption) || fin.Description.Contains(filters.TextOption)
-                                  || fin.Client.Name.Contains(filters.TextOption))
-                                  && (filters.FinancialStatus == null || fin.FinancialStatus == filters.FinancialStatus)
-                                  &&(fin.FinancialType==filters.FinancialType)
-                                  orderby fin.DueDate 
-                                  select new FinancialResponse
-                                  {
-                                      Id = fin.Id,
-                                      CreationDate = fin.CreationDate,
-                                      Value = fin.Value,
-                                      DueDate = fin.DueDate,
-                                      Origin = fin.Origin,
-                                      FinancialStatus = fin.FinancialStatus,
-                                      PaymentMethodName = fin.PaymentMethod.Name,
-                                      PaymentMethodId=fin.PaymentMethod.Id,
-                                      BankAccountId=fin.BankAccountId,
-                                      Description = fin.Description,
-                                      FinancialType = fin.FinancialType,
-                                      IdCompany = fin.IdCompany,
-                                      ClientName = fin.Client.Name,
-                                      ClientId = fin.Client.Id,
-                                      FinancialResourcesResponseList = _dbContext.Set<FinancialResources>()
-                            .Where(fr => fr.IdNewFinancial == fin.Id)
-                            .Join(_dbContext.Set<Financial>(),
-                                  fr => fr.IdRefOrigin,
-                                  f => f.Id,
-                                  (fr, f) => new { fr, f })
-                            .Select(x => new FinancialResourcesResponse
-                            {
-                                Id = x.f.Id,
-                                Description = x.f.Description,
-                                Value = x.f.Value
-                            })
-                            .ToList()
+										where fin.IdCompany == filters.IdCompany
 
-                                  }).AsNoTracking()
-                                  .WithCaseInsensitive()
-                           .GetPagedAsync<FinancialResponse>(filters.PageNumber, filters.PageSize);
+										// Filtro de texto (descrição ou nome do cliente)
+										&& (string.IsNullOrEmpty(filters.TextOption)
+												|| fin.Description.Contains(filters.TextOption)
+												|| fin.Client.Name.Contains(filters.TextOption))
 
-                return data;
-            }
-            catch (System.Exception ex)
-            {
-                throw;
-            }
-        }
-        public async Task<CommissionInfoResponse> GetByMonthAllCommission(Filters filters)
+										// Filtro de status
+										&& (filters.FinancialStatus == null
+												|| fin.FinancialStatus == filters.FinancialStatus)
+
+										// Filtro de tipo (receita/despesa)
+										&& (fin.FinancialType == filters.FinancialType)
+
+										// NOVO: Filtro de período - Data de vencimento
+										&& (string.IsNullOrEmpty(filters.StartDate)
+												|| fin.DueDate >= DateTime.Parse(filters.StartDate))
+										&& (string.IsNullOrEmpty(filters.EndDate)
+												|| fin.DueDate <= DateTime.Parse(filters.EndDate).AddDays(1).AddSeconds(-1))
+
+										// NOVO: Filtro de cliente
+										&& (filters.ClientId == null
+												|| fin.IdClient == filters.ClientId)
+
+										// NOVO: Filtro de forma de pagamento
+										&& (filters.PaymentMethodId == null
+												|| fin.PaymentMethodId == filters.PaymentMethodId)
+
+										// NOVO: Filtro de conta bancária
+										&& (filters.BankAccountId == null
+												|| fin.BankAccountId == filters.BankAccountId)
+
+										orderby fin.DueDate
+
+										select new FinancialResponse
+										{
+											Id = fin.Id,
+											CreationDate = fin.CreationDate,
+											Value = fin.Value,
+											DueDate = fin.DueDate,
+											Origin = fin.Origin,
+											FinancialStatus = fin.FinancialStatus,
+											PaymentMethodName = fin.PaymentMethod != null ? fin.PaymentMethod.Name : null,
+											PaymentMethodId = fin.PaymentMethodId,
+											BankAccountId = fin.BankAccountId,
+											//BankAccountName = fin.BankAccount != null ? fin.BankAccount.Name : null, // Adicionado
+											Description = fin.Description,
+											FinancialType = fin.FinancialType,
+											IdCompany = fin.IdCompany,
+											ClientName = fin.Client != null ? fin.Client.Name : null,
+											ClientId = fin.IdClient,
+											FinancialResourcesResponseList = _dbContext.Set<FinancialResources>()
+														.Where(fr => fr.IdNewFinancial == fin.Id)
+														.Join(_dbContext.Set<Financial>(),
+																	fr => fr.IdRefOrigin,
+																	f => f.Id,
+																	(fr, f) => new { fr, f })
+														.Select(x => new FinancialResourcesResponse
+														{
+															Id = x.f.Id,
+															Description = x.f.Description,
+															Value = x.f.Value
+														})
+														.ToList()
+										};
+
+				var data = await query.AsNoTracking()
+															 .WithCaseInsensitive()
+															 .GetPagedAsync<FinancialResponse>(filters.PageNumber, filters.PageSize);
+
+				return data;
+			}
+			catch (System.Exception ex)
+			{
+				// Log do erro aqui
+				throw;
+			}
+		}
+		public async Task<CommissionInfoResponse> GetByMonthAllCommission(Filters filters)
         {
             try
             {
