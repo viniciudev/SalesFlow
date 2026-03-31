@@ -97,7 +97,7 @@ namespace Service
         {
             return await (repository as IFinancialRepository).GetByIdSaleAsync(id);
         }
-        public async Task<PagedResult<FinancialResponse>> GetPaged(Filters filters)
+        public async Task<PagedResultWithTotals> GetPaged(Filters filters)
         {
             return await (repository as IFinancialRepository).GetPaged(filters);
         }
@@ -190,7 +190,7 @@ namespace Service
         Task AlterFinancial(Financial financial);
         Task<List<Financial>> GetByIdSaleAsync(int id);
         Task<bool> CreateFinancial(FinancialRequest financial);
-        Task<PagedResult<FinancialResponse>> GetPaged(Filters filters);
+        Task<PagedResultWithTotals> GetPaged(Filters filters);
         Task AlterFinancialStatus(Financial financial);
         Task<PagedResult<Financial>> GetPagedByIdClient(Filters filters);
         Task CreateRenegotiationAsync(RenegotiationRequestDto request);
