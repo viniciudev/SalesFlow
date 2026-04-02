@@ -110,7 +110,36 @@ namespace Repository
             base.OnModelCreating(modelBuilder);
         }
 
-        private void ConfiguraBankAccount(ModelBuilder modelBuilder)
+		private void ConfiguraFinancialPaymentMethod(ModelBuilder modelBuilder)
+		{
+			modelBuilder.Entity<FinancialPaymentMethod>(entity =>
+			{
+				entity.ToTable("tb_financialPaymentMethod");
+				entity.HasKey(e => e.Id);
+				entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+				entity.Property(e => e.Amount)
+						.HasColumnType("decimal(18,2)");
+
+				// Configurar relacionamento com Financial
+				entity.HasOne(e => e.Financial)
+						.WithMany(f => f.FinancialPaymentMethods)
+						.HasForeignKey(e => e.FinancialId)
+						.OnDelete(DeleteBehavior.Restrict);
+
+				// Configurar relacionamento com PaymentMethod
+				entity.HasOne(e => e.PaymentMethod)
+						.WithMany(p => p.FinancialPaymentMethods)
+						.HasForeignKey(e => e.PaymentMethodId)
+						.OnDelete(DeleteBehavior.Restrict);
+
+				// Índice composto para evitar duplicidade
+				entity.HasIndex(e => new { e.FinancialId, e.PaymentMethodId })
+						.IsUnique();
+			});
+		}
+
+		private void ConfiguraBankAccount(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<BankAccount>(d =>
             {
@@ -139,9 +168,9 @@ namespace Repository
             .WithMany(c => c.UserPermissions)
             .HasForeignKey(dc => dc.UserId);
             modelBuilder.Entity<UserPermission>()
-.HasOne(dc => dc.Permission)
-.WithMany(c => c.UserPermissions)
-.HasForeignKey(dc => dc.PermissionId);
+            .HasOne(dc => dc.Permission)
+            .WithMany(c => c.UserPermissions)
+            .HasForeignKey(dc => dc.PermissionId);
 
 
         }
@@ -548,10 +577,7 @@ namespace Repository
         .HasOne(dc => dc.Client)
         .WithMany(c => c.Financials)
         .HasForeignKey(dc => dc.IdClient);
-            builder.Entity<Financial>()
-         .HasOne(dc => dc.PaymentMethod)
-         .WithMany(c => c.Financials)
-         .HasForeignKey(dc => dc.PaymentMethodId);
+           
             builder.Entity<Financial>()
          .HasOne(dc => dc.BankAccount)
          .WithMany(c => c.Financials)

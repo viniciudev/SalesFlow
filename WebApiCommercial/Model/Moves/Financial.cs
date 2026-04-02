@@ -19,9 +19,8 @@ namespace Model.Moves
         public FinancialStatus FinancialStatus { get; set; }
         public DateTime DueDate { get; set; }
         public decimal Value { get; set; }
-        public PaymentMethod PaymentMethod { get; set; }
-        public int? PaymentMethodId { get; set; }
-        public int? IdSalesman { get; set; }
+		public virtual ICollection<FinancialPaymentMethod> FinancialPaymentMethods { get; set; } = new List<FinancialPaymentMethod>();
+		public int? IdSalesman { get; set; }
         public Salesman Salesman { get; set; }
         public int? IdProduct { get; set; }
         public Product Product { get; set; }

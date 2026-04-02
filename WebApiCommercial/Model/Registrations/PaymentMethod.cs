@@ -11,6 +11,6 @@ namespace Model.Registrations
         public string Name { get; set; }
         public int IdCompany { get; set; }
         public Company Company { get; set; }
-        public ICollection<Financial> Financials { get; set; } = new List<Financial>();
-    }
+		public virtual ICollection<FinancialPaymentMethod> FinancialPaymentMethods { get; set; } = new List<FinancialPaymentMethod>();
+	}
 }
