@@ -1,4 +1,5 @@
-﻿using Model;
+﻿
+using Model;
 using Model.DTO;
 using Model.Moves;
 using Repository;
@@ -115,9 +116,8 @@ namespace Service
         private async Task GenerateFinancial(ICollection<Financial> financials,int IdSale,int IdCompany, int ?IdClient=null)
         {
             var listCostCenter=await _costCenterRepository.GetByIdCompany(IdCompany);
-            foreach (var item in financials)
-            {
-                item.Id = 0;
+           Financial item = new Financial();
+			item.Id = 0;
                 item.FinancialStatus = FinancialStatus.paid;
                 item.FinancialType = FinancialType.recipe;
                 item.Origin = OriginFinancial.financial;
@@ -125,23 +125,29 @@ namespace Service
                 item.CreationDate = DateTime.Now;
                 item.DueDate = DateTime.Now;
                 item.IdCompany = IdCompany;
-                item.PaymentMethodId = item.PaymentMethodId;
+               
                 item.Description = $"Venda no dia:{DateTime.Now}";
                 item.IdCostCenter= listCostCenter.FirstOrDefault()?.Id;
                 item.IdClient= IdClient;
                 item.Value = item.Value;
                 item.BankAccountId = item.BankAccountId;
-                try
-                {
-                    await _financialService.Create(item);
-                }
-                catch (Exception ex)
-                {
-
-                    throw;
-                }
                 
-            }
+					List<FinancialPaymentMethod> financialPaymentMethod = new();
+					foreach (var m in financials)
+					{
+						financialPaymentMethod.Add(new FinancialPaymentMethod
+						{
+							PaymentMethodId = m.Id,
+							FinancialId = item.Id,
+							//Amount = item.Amount,
+							//      Installments = item.Installments
+						});
+					}
+					item.FinancialPaymentMethods = financialPaymentMethod;
+					await _financialService.Create(item);
+                
+                
+            
         }
         public async Task<int> PutWithItems(Sale sale)
         {

@@ -6,6 +6,7 @@ using Model.DTO;
 using Model.DTO.NFe;
 using Model.Enums;
 using Model.Moves;
+using Model.NFe;
 using Model.Registrations;
 using Newtonsoft.Json;
 using NFe.App;
@@ -762,6 +763,92 @@ namespace Service
 
 		//    return p4;
 		//}
+		//protected virtual List<pag> GetPagamento(ICMSTot icmsTot, VersaoServico versao)
+		//{
+		//	if (_currentSale.Financials == null || !_currentSale.Financials.Any())
+		//		return null;
+
+		//	var pagamentos = _currentSale.Financials
+		//			.Where(f => f.FinancialType == FinancialType.recipe &&
+		//								 f.FinancialStatus != FinancialStatus.Canceled)
+		//			.ToList();
+
+		//	if (!pagamentos.Any())
+		//		return null;
+
+		//	decimal totalPagamentos = pagamentos.Sum(f => f.Value);
+		//	decimal totalNF = icmsTot.vNF;
+
+		//	// Validação: o total dos pagamentos deve ser igual ao total da NF
+		//	if (Math.Abs(totalPagamentos - totalNF) > 0.01m)
+		//	{
+		//		// Log de aviso ou ajuste automático
+		//		// Pode-se ajustar o último pagamento para igualar
+		//		var ultimoPagamento = pagamentos.Last();
+		//		ultimoPagamento.Value = totalNF - (totalPagamentos - ultimoPagamento.Value);
+		//	}
+
+		//	// Versão 3.10 ou inferior
+		//	if (versao != VersaoServico.Versao400)
+		//	{
+		//		return pagamentos.Select(f => new pag
+		//		{
+		//			tPag = ConverterPorNome(f.PaymentMethod.Name),
+		//			vPag = Math.Round(f.Value, 2),
+
+		//			//		 xPag = (ConverterParaFormaPagamento(f.PaymentMethod) == FormaPagamento.fpOutro)
+		//			//? f.PaymentMethod?.Name ?? "Outros"
+		//			//: null
+		//		}).ToList();
+		//	}
+		//	foreach (var item in pagamentos)
+		//	{
+		//		foreach (var item1 in item.FinancialPaymentMethods)
+		//		{
+		//			var nomepagamento = item1.PaymentMethod.Name;
+		//		}
+		//	}
+
+		//	// Versão 4.00
+		//	// Versão 4.00
+		//	var pagamentosV4 = new pag
+		//	{
+		//		detPag = pagamentos.Select(f =>
+		//		{
+		//			var formaPagamento = ConverterPorNome(f.PaymentMethod.Name);
+		//			var detPagObj = new detPag
+		//			{
+		//				tPag = formaPagamento,
+		//				vPag = Math.Round(f.Value, 2)
+		//			};
+
+		//			// SÓ adicionar dados do cartão se for cartão de crédito OU cartão de débito
+		//			if (formaPagamento == FormaPagamento.fpCartaoCredito ||
+		//					formaPagamento == FormaPagamento.fpCartaoDebito)
+		//			{
+		//				detPagObj.card = new card
+		//				{
+		//					tpIntegra = TipoIntegracaoPagamento.TipNaoIntegrado,
+		//					cAut = "NAOINTEGRADO",
+		//					CNPJ = "00000000000000",
+		//					tBand = BandeiraCartao.bcOutros
+		//				};
+		//			}
+
+		//			// Adicionar descrição se for "Outros" (99)
+		//			if (formaPagamento == FormaPagamento.fpOutro)
+		//			{
+		//				detPagObj.xPag = f.PaymentMethod?.Name ?? "Outros";
+		//			}
+
+		//			// Para PIX, não precisa de dados adicionais
+		//			// Para Dinheiro, Cheque, etc., também não precisa
+
+		//			return detPagObj;
+		//		}).ToList()
+		//	};
+		//	return new List<pag> { pagamentosV4 };
+		//}
 		protected virtual List<pag> GetPagamento(ICMSTot icmsTot, VersaoServico versao)
 		{
 			if (_currentSale.Financials == null || !_currentSale.Financials.Any())
@@ -775,46 +862,72 @@ namespace Service
 			if (!pagamentos.Any())
 				return null;
 
-			decimal totalPagamentos = pagamentos.Sum(f => f.Value);
+			// Extrair todos os detalhes de pagamento com seus valores individuais
+			var detalhesPagamento = new List<PagamentoDetalhe>();
+
+			foreach (var financial in pagamentos)
+			{
+				if (financial.FinancialPaymentMethods != null && financial.FinancialPaymentMethods.Any())
+				{
+					foreach (var paymentMethod in financial.FinancialPaymentMethods)
+					{
+						detalhesPagamento.Add(new PagamentoDetalhe
+						{
+							PaymentMethod = paymentMethod.PaymentMethod,
+							Value = paymentMethod.Id, // Assumindo que existe um campo Value
+							FinancialId = financial.Id // Para referência se precisar
+						});
+					}
+				}
+				else
+				{
+					// Fallback para o caso de não ter FinancialPaymentMethods
+					//detalhesPagamento.Add(new PagamentoDetalhe
+					//{
+					//	PaymentMethod = financial.FinancialPaymentMethods.,
+					//	Value = financial.Value,
+					//	FinancialId = financial.Id
+					//});
+				}
+			}
+
+			if (!detalhesPagamento.Any())
+				return null;
+
+			decimal totalPagamentos = detalhesPagamento.Sum(d => d.Value);
 			decimal totalNF = icmsTot.vNF;
 
 			// Validação: o total dos pagamentos deve ser igual ao total da NF
 			if (Math.Abs(totalPagamentos - totalNF) > 0.01m)
 			{
-				// Log de aviso ou ajuste automático
-				// Pode-se ajustar o último pagamento para igualar
-				var ultimoPagamento = pagamentos.Last();
+				// Ajusta o último pagamento para igualar
+				var ultimoPagamento = detalhesPagamento.Last();
 				ultimoPagamento.Value = totalNF - (totalPagamentos - ultimoPagamento.Value);
 			}
 
 			// Versão 3.10 ou inferior
 			if (versao != VersaoServico.Versao400)
 			{
-				return pagamentos.Select(f => new pag
+				return detalhesPagamento.Select(d => new pag
 				{
-					tPag = ConverterPorNome(f.PaymentMethod.Name),
-					vPag = Math.Round(f.Value, 2),
-
-					//		 xPag = (ConverterParaFormaPagamento(f.PaymentMethod) == FormaPagamento.fpOutro)
-					//? f.PaymentMethod?.Name ?? "Outros"
-					//: null
+					tPag = ConverterPorNome(d.PaymentMethod.Name),
+					vPag = Math.Round(d.Value, 2),
 				}).ToList();
 			}
 
 			// Versão 4.00
-			// Versão 4.00
 			var pagamentosV4 = new pag
 			{
-				detPag = pagamentos.Select(f =>
+				detPag = detalhesPagamento.Select(d =>
 				{
-					var formaPagamento = ConverterPorNome(f.PaymentMethod.Name);
+					var formaPagamento = ConverterPorNome(d.PaymentMethod.Name);
 					var detPagObj = new detPag
 					{
 						tPag = formaPagamento,
-						vPag = Math.Round(f.Value, 2)
+						vPag = Math.Round(d.Value, 2)
 					};
 
-					// SÓ adicionar dados do cartão se for cartão de crédito OU cartão de débito
+					// Adicionar dados do cartão se for cartão de crédito OU cartão de débito
 					if (formaPagamento == FormaPagamento.fpCartaoCredito ||
 							formaPagamento == FormaPagamento.fpCartaoDebito)
 					{
@@ -830,15 +943,13 @@ namespace Service
 					// Adicionar descrição se for "Outros" (99)
 					if (formaPagamento == FormaPagamento.fpOutro)
 					{
-						detPagObj.xPag = f.PaymentMethod?.Name ?? "Outros";
+						detPagObj.xPag = d.PaymentMethod?.Name ?? "Outros";
 					}
-
-					// Para PIX, não precisa de dados adicionais
-					// Para Dinheiro, Cheque, etc., também não precisa
 
 					return detPagObj;
 				}).ToList()
 			};
+
 			return new List<pag> { pagamentosV4 };
 		}
 		private BandeiraCartao? ConverterParaBandeiraCartao(string cardBrand)

@@ -59,7 +59,7 @@ namespace Service
             financialData.Description = financial.Description;
             financialData.DueDate = financial.DueDate;
             financialData.FinancialStatus = financial.FinancialStatus;
-            financialData.PaymentMethodId = financial.PaymentMethodId;
+            financialData.FinancialPaymentMethods = financial.FinancialPaymentMethods;
             financialData.BankAccountId= financial.BankAccountId;
             await base.Alter(financialData);
         }
@@ -68,12 +68,13 @@ namespace Service
             try
             {
             var listCostCenter = await _costCenterRepository.GetByIdCompany(financial.IdCompany);
+
             Financial fin = new Financial
             {
                 BankAccountId = financial.BankAccountId,
                 FinancialStatus = financial.FinancialStatus,
                 FinancialType = financial.FinancialType,
-                PaymentMethodId = financial.PaymentMethodId==0?null: financial.PaymentMethodId,
+                
                 CreationDate = financial.CreationDate,
                 DueDate = financial.DueDate,
                 Description = financial.Description,
@@ -83,7 +84,20 @@ namespace Service
                 Value=financial.Value,
                 IdClient=financial.ClientId
             };
-            await base.Save(fin);
+        List<FinancialPaymentMethod> financialPaymentMethod = new();
+				foreach (var item in financial.PaymentMethods)
+				{
+					financialPaymentMethod.Add(new FinancialPaymentMethod
+          {
+            PaymentMethodId = item.PaymentMethodId,
+            FinancialId = fin.Id,
+						Amount = item.Value,
+      //      Installments = item.Installments
+          });
+				}
+        fin.FinancialPaymentMethods = financialPaymentMethod;
+				await base.Save(fin);
+
                 return true;
             }
             catch (System.Exception ex)
@@ -138,7 +152,7 @@ namespace Service
                 financial.FinancialStatus =i==0? FinancialStatus.paid:FinancialStatus.pending;
                     financial.FinancialType = FinancialType.recipe;
                 financial.Origin = OriginFinancial.renegotiation;
-                    financial.PaymentMethodId = request.PaymentMethodId;
+                  
                 financial.CreationDate = DateTime.Now;
                 financial.DueDate = i==0?request.NewDueDate:request.NewDueDate.AddMonths(i);
                 financial.IdCompany = request.IdCompany;
@@ -147,8 +161,19 @@ namespace Service
                 financial.IdClient = request.ClientId;
              
                 financial.Value = (request.NewValue / request.NumberOfInstallments);
-               
-                await base.Create(financial);
+					List<FinancialPaymentMethod> financialPaymentMethod = new();
+					foreach (var item in request.PaymentMethods)
+					{
+						financialPaymentMethod.Add(new FinancialPaymentMethod
+						{
+							PaymentMethodId = item.Id,
+							FinancialId = financial.Id,
+							//Amount = item.Amount,
+							//      Installments = item.Installments
+						});
+					}
+					financial.FinancialPaymentMethods = financialPaymentMethod;
+					await base.Create(financial);
 
                     foreach (var id in request.OriginalInstallments)
                     {

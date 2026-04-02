@@ -61,8 +61,8 @@ namespace Repository
                                        DueDate = x.DueDate,
                                        Origin = x.Origin,
                                        FinancialStatus = x.FinancialStatus,
-                                       PaymentMethodName = x.PaymentMethod.Name,
-                                       PaymentMethodId = x.PaymentMethod.Id,
+                                       PaymentMethodName = x.FinancialPaymentMethods.Select(x => x.PaymentMethod.Name).ToList(),
+                                       FinancialPaymentMethods = x.FinancialPaymentMethods,
                                        Description = x.Description,
                                        FinancialType = x.FinancialType,
                                        IdCompany = x.IdCompany,
@@ -304,8 +304,8 @@ namespace Repository
             var data = await (from sale in base._dbContext.Set<Sale>().
                               Include(x => x.SaleItems).ThenInclude(x => x.Product)
                               .Include(x => x.Client)
-                              .Include(x=>x.Financials).ThenInclude(x=>x.PaymentMethod)
-                              where sale.Id == idSale
+                              .Include(x=>x.Financials).ThenInclude(x=>x.FinancialPaymentMethods).ThenInclude(x=>x.PaymentMethod)
+															where sale.Id == idSale
                               && sale.IdCompany == idCompany
                               select sale).AsNoTracking()
                               .FirstOrDefaultAsync();

@@ -93,7 +93,8 @@ namespace Repository
 												.Include(x => x.Product)
 												.Include(x => x.ServiceProvided)
 												.Include(x => x.Client)
-												.Include(x => x.PaymentMethod)
+												.Include(x => x.FinancialPaymentMethods)
+												.ThenInclude(x => x.PaymentMethod)
 												.Include(x => x.BankAccount)
 
 												where fin.IdCompany == filters.IdCompany
@@ -122,7 +123,8 @@ namespace Repository
 
 												// Filtro de forma de pagamento
 												&& (filters.PaymentMethodId == null
-																|| fin.PaymentMethodId == filters.PaymentMethodId)
+																|| fin.FinancialPaymentMethods
+															 .Any(x=>x.PaymentMethod.Id==filters.PaymentMethodId))
 
 												// Filtro de conta bancária
 												&& (filters.BankAccountId == null
@@ -174,8 +176,8 @@ namespace Repository
 													 DueDate = fin.DueDate,
 													 Origin = fin.Origin,
 													 FinancialStatus = fin.FinancialStatus,
-													 PaymentMethodName = fin.PaymentMethod != null ? fin.PaymentMethod.Name : null,
-													 PaymentMethodId = fin.PaymentMethodId,
+													 PaymentMethodName = fin.FinancialPaymentMethods.Select(x=> x.PaymentMethod.Name).ToList(),
+													 PaymentMethodId = fin.FinancialPaymentMethods.Select(x => x.PaymentMethod.Id).ToList(),
 													 BankAccountId = fin.BankAccountId,
 													 Description = fin.Description,
 													 FinancialType = fin.FinancialType,
@@ -258,7 +260,7 @@ namespace Repository
 			try
 			{
 				var data = await (from fin in _dbContext.Set<Financial>()
-														 .Include(x => x.PaymentMethod)
+														 .Include(x => x.FinancialPaymentMethods).ThenInclude(x => x.PaymentMethod)
 													where (fin.IdCompany == filters.IdCompany)
 													&& (fin.IdClient == filters.IdClient)
 												 && (fin.FinancialStatus == FinancialStatus.pending)
@@ -270,7 +272,7 @@ namespace Repository
 														DueDate = fin.DueDate,
 														Description = fin.Description,
 														FinancialType = fin.FinancialType,
-														PaymentMethodName = fin.PaymentMethod.Name,
+														PaymentMethodName = fin.FinancialPaymentMethods.Select(x => x.PaymentMethod.Name).ToList(),
 														CreationDate = fin.CreationDate,
 														FinancialStatus = fin.FinancialStatus,
 

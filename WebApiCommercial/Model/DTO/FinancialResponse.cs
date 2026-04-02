@@ -14,8 +14,8 @@ namespace Model.DTO
         public DateTime CreationDate { get; set; }
         public DateTime DueDate { get; set; }
         public string Description { get; set; }
-        public string? PaymentMethodName { get; set; }
-        public int? PaymentMethodId { get; set; }
+        public List<string>? PaymentMethodName { get; set; }
+        public List<int>? PaymentMethodId { get; set; }
         public int IdCompany { get; set; }
         public string ?ClientName { get; set; }
         public int? ClientId { get; set; }

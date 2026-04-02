@@ -20,7 +20,7 @@ namespace Model.Moves
 			/// Se não preenchido, considera-se o valor total do Financial
 			/// </summary>
 			[Column(TypeName = "decimal(18,2)")]
-			public decimal? Amount { get; set; }
+			public decimal Amount { get; set; }
 
 			/// <summary>
 			/// Parcelas (se for cartão de crédito, por exemplo)
