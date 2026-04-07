@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Model;
 using Model.DTO;
+using Model.DTO.Financial;
 using Model.Moves;
 using System;
 using System.Collections.Generic;
@@ -176,8 +177,11 @@ namespace Repository
 													 DueDate = fin.DueDate,
 													 Origin = fin.Origin,
 													 FinancialStatus = fin.FinancialStatus,
-													 PaymentMethodName = fin.FinancialPaymentMethods.Select(x=> x.PaymentMethod.Name).ToList(),
-													 PaymentMethodId = fin.FinancialPaymentMethods.Select(x => x.PaymentMethod.Id).ToList(),
+													 PaymentMethods= fin.FinancialPaymentMethods.Select(x =>
+													 new PaymentsDto { PaymentMethodId=x.PaymentMethodId, 
+														 PaymentMethodName=x.PaymentMethod.Name,
+													 Value=x.Amount
+													 }).ToList(),
 													 BankAccountId = fin.BankAccountId,
 													 Description = fin.Description,
 													 FinancialType = fin.FinancialType,
@@ -287,6 +291,15 @@ namespace Repository
 			}
 
 		}
+		public async Task<Financial> GetById(int id)
+		{
+			var data = await _dbContext.Set<Financial>()
+				.Include(x => x.FinancialPaymentMethods)
+					.Where(x => x.Id == id)
+					.AsNoTracking()
+					.FirstOrDefaultAsync();
+			return data;
+		}
 	}
 	public interface IFinancialRepository : IGenericRepository<Financial>
 	{
@@ -297,7 +310,7 @@ namespace Repository
 		Task<List<Financial>> GetByIdSaleAsync(int id);
 		Task<PagedResultWithTotals> GetPaged(Filters filters);
 		Task<PagedResult<Financial>> GetPagedByIdClient(Filters filters);
-
+		Task<Financial> GetById(int id);
 	}
 	public class PagedResultWithTotals
 	{

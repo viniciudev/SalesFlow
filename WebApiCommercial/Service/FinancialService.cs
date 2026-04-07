@@ -1,7 +1,6 @@
 ﻿using Model;
 using Model.DTO;
 using Model.Moves;
-using Model.Registrations;
 using Repository;
 using System;
 using System.Collections.Generic;
@@ -11,156 +10,164 @@ using YourNamespace.DTOs;
 
 namespace Service
 {
-    public class FinancialService : BaseService<Financial>, IFinancialService
-    {
-        private readonly ICostCenterRepository _costCenterRepository;
-       private readonly IFinancialResourceRepository  _financialResourceRepository;
-        public FinancialService(IGenericRepository<Financial> repository,
-            ICostCenterRepository costCenterRepository,
-            IFinancialResourceRepository financialResourceRepository) : base(repository)
-        {
-            _costCenterRepository = costCenterRepository;
-            _financialResourceRepository = financialResourceRepository;
-        }
-        public async Task<List<Financial>> SearchBySaleItemsId(int id, TypeItem typeItem, int idItem)
-        {
-            return await (repository as IFinancialRepository).SearchBySaleItemsId(id, typeItem, idItem);
-        }
-        public async Task<PagedResult<CommissionFinancialResponse>> GetPagedByFilter(Filters filters)
-        {
-            return await (repository as IFinancialRepository).GetPagedByFilter(filters);
-        }
-        public async Task<CommissionInfoResponse> GetByMonthAllCommission(Filters filters)
-        {
-            return await (repository as IFinancialRepository).GetByMonthAllCommission(filters);
-        }
-        public async Task DeleteFinancial(int id)
-        {
-            try
-            {
-                await base.DeleteAsync(id);
-            }
-            catch (System.Exception ex)
-            {
+	public class FinancialService : BaseService<Financial>, IFinancialService
+	{
+		private readonly ICostCenterRepository _costCenterRepository;
+		private readonly IFinancialResourceRepository _financialResourceRepository;
+		//private readonly IfinancialPa
+		public FinancialService(IGenericRepository<Financial> repository,
+				ICostCenterRepository costCenterRepository,
+				IFinancialResourceRepository financialResourceRepository) : base(repository)
+		{
+			_costCenterRepository = costCenterRepository;
+			_financialResourceRepository = financialResourceRepository;
+		}
+		public async Task<List<Financial>> SearchBySaleItemsId(int id, TypeItem typeItem, int idItem)
+		{
+			return await (repository as IFinancialRepository).SearchBySaleItemsId(id, typeItem, idItem);
+		}
+		public async Task<PagedResult<CommissionFinancialResponse>> GetPagedByFilter(Filters filters)
+		{
+			return await (repository as IFinancialRepository).GetPagedByFilter(filters);
+		}
+		public async Task<CommissionInfoResponse> GetByMonthAllCommission(Filters filters)
+		{
+			return await (repository as IFinancialRepository).GetByMonthAllCommission(filters);
+		}
+		public async Task DeleteFinancial(int id)
+		{
+			try
+			{
+				await base.DeleteAsync(id);
+			}
+			catch (System.Exception ex)
+			{
 
-                throw;
-            }
+				throw;
+			}
 
-        }
-        public async Task<List<Financial>> GetByIdCompany(Filters filters)
-        {
-            return await (repository as IFinancialRepository).GetByIdCompany(filters);
-        }
-        public async Task AlterFinancial(Financial financial)
-        {
-            Financial financialData = await base.GetByIdAsync(financial.Id);
-            financialData.Value = financial.Value;
-            financialData.FinancialType = financial.FinancialType;
-            financialData.Description = financial.Description;
-            financialData.DueDate = financial.DueDate;
-            financialData.FinancialStatus = financial.FinancialStatus;
-            financialData.FinancialPaymentMethods = financial.FinancialPaymentMethods;
-            financialData.BankAccountId= financial.BankAccountId;
-            await base.Alter(financialData);
-        }
-        public async Task<bool> CreateFinancial(FinancialRequest financial)
-        {
-            try
-            {
-            var listCostCenter = await _costCenterRepository.GetByIdCompany(financial.IdCompany);
+		}
+		public async Task<List<Financial>> GetByIdCompany(Filters filters)
+		{
+			return await (repository as IFinancialRepository).GetByIdCompany(filters);
+		}
+		public async Task AlterFinancial(Financial financial)
+		{
+			Financial financialData = await (repository as IFinancialRepository).GetById(financial.Id);
+			if (financialData != null)
+			{
+				if (financialData.FinancialPaymentMethods != null)
+				{
 
-            Financial fin = new Financial
-            {
-                BankAccountId = financial.BankAccountId,
-                FinancialStatus = financial.FinancialStatus,
-                FinancialType = financial.FinancialType,
-                
-                CreationDate = financial.CreationDate,
-                DueDate = financial.DueDate,
-                Description = financial.Description,
-                Origin = financial.Origin,
-                IdCompany=(int)financial.IdCompany,
-                IdCostCenter = listCostCenter.FirstOrDefault()?.Id,
-                Value=financial.Value,
-                IdClient=financial.ClientId
-            };
-        List<FinancialPaymentMethod> financialPaymentMethod = new();
+				}
+				financialData.Value = financial.Value;
+				financialData.FinancialType = financial.FinancialType;
+				financialData.Description = financial.Description;
+				financialData.DueDate = financial.DueDate;
+				financialData.FinancialStatus = financial.FinancialStatus;
+				financialData.FinancialPaymentMethods = financial.FinancialPaymentMethods;
+				financialData.BankAccountId = financial.BankAccountId;
+				await base.Alter(financialData);
+			}
+		}
+		public async Task<bool> CreateFinancial(FinancialRequest financial)
+		{
+			try
+			{
+				var listCostCenter = await _costCenterRepository.GetByIdCompany(financial.IdCompany);
+
+				Financial fin = new Financial
+				{
+					BankAccountId = financial.BankAccountId,
+					FinancialStatus = financial.FinancialStatus,
+					FinancialType = financial.FinancialType,
+
+					CreationDate = financial.CreationDate,
+					DueDate = financial.DueDate,
+					Description = financial.Description,
+					Origin = financial.Origin,
+					IdCompany = (int)financial.IdCompany,
+					IdCostCenter = listCostCenter.FirstOrDefault()?.Id,
+					Value = financial.Value,
+					IdClient = financial.ClientId
+				};
+				List<FinancialPaymentMethod> financialPaymentMethod = new();
 				foreach (var item in financial.PaymentMethods)
 				{
 					financialPaymentMethod.Add(new FinancialPaymentMethod
-          {
-            PaymentMethodId = item.PaymentMethodId,
-            FinancialId = fin.Id,
+					{
+						PaymentMethodId = item.PaymentMethodId,
+						FinancialId = fin.Id,
 						Amount = item.Value,
-      //      Installments = item.Installments
-          });
+						//      Installments = item.Installments
+					});
 				}
-        fin.FinancialPaymentMethods = financialPaymentMethod;
+				fin.FinancialPaymentMethods = financialPaymentMethod;
 				await base.Save(fin);
 
-                return true;
-            }
-            catch (System.Exception ex)
-            {
+				return true;
+			}
+			catch (System.Exception ex)
+			{
 
-               return false;
-            }
+				return false;
+			}
 
-        }
-        public async Task<List<Financial>> GetByIdSaleAsync(int id)
-        {
-            return await (repository as IFinancialRepository).GetByIdSaleAsync(id);
-        }
-        public async Task<PagedResultWithTotals> GetPaged(Filters filters)
-        {
-            return await (repository as IFinancialRepository).GetPaged(filters);
-        }
-        public async Task<PagedResult<Financial>> GetPagedByIdClient(Filters filters)
-        {
-            return await (repository as IFinancialRepository).GetPagedByIdClient(filters);
-        }
-        public async Task AlterFinancialStatus(Financial financial)
-        {
-            try
-            {
-                Financial financialData = await base.GetByIdAsync(financial.Id);
-                financialData.FinancialStatus = financial.FinancialStatus;
-                await base.Alter(financialData);
-            }
-            catch (System.Exception ex)
-            {
+		}
+		public async Task<List<Financial>> GetByIdSaleAsync(int id)
+		{
+			return await (repository as IFinancialRepository).GetByIdSaleAsync(id);
+		}
+		public async Task<PagedResultWithTotals> GetPaged(Filters filters)
+		{
+			return await (repository as IFinancialRepository).GetPaged(filters);
+		}
+		public async Task<PagedResult<Financial>> GetPagedByIdClient(Filters filters)
+		{
+			return await (repository as IFinancialRepository).GetPagedByIdClient(filters);
+		}
+		public async Task AlterFinancialStatus(Financial financial)
+		{
+			try
+			{
+				Financial financialData = await base.GetByIdAsync(financial.Id);
+				financialData.FinancialStatus = financial.FinancialStatus;
+				await base.Alter(financialData);
+			}
+			catch (System.Exception ex)
+			{
 
-                throw;
-            }
-        }
-        public async Task CreateRenegotiationAsync(RenegotiationRequestDto request)
-        {
-            await GenerateFinancial(request);
-        }
-        private async Task GenerateFinancial(RenegotiationRequestDto request)
-        {
-            try
-            {
+				throw;
+			}
+		}
+		public async Task CreateRenegotiationAsync(RenegotiationRequestDto request)
+		{
+			await GenerateFinancial(request);
+		}
+		private async Task GenerateFinancial(RenegotiationRequestDto request)
+		{
+			try
+			{
 
-         
-            //cria nova parcela
-            var listCostCenter = await _costCenterRepository.GetByIdCompany(request.IdCompany);
-            for (int i = 0; i < request.NumberOfInstallments; i++)
-            {
-                Financial financial = new Financial();
-                financial.Id = 0;
-                financial.FinancialStatus =i==0? FinancialStatus.paid:FinancialStatus.pending;
-                    financial.FinancialType = FinancialType.recipe;
-                financial.Origin = OriginFinancial.renegotiation;
-                  
-                financial.CreationDate = DateTime.Now;
-                financial.DueDate = i==0?request.NewDueDate:request.NewDueDate.AddMonths(i);
-                financial.IdCompany = request.IdCompany;
-                financial.Description = request.Description;
-                financial.IdCostCenter = listCostCenter.FirstOrDefault()?.Id;
-                financial.IdClient = request.ClientId;
-             
-                financial.Value = (request.NewValue / request.NumberOfInstallments);
+
+				//cria nova parcela
+				var listCostCenter = await _costCenterRepository.GetByIdCompany(request.IdCompany);
+				for (int i = 0; i < request.NumberOfInstallments; i++)
+				{
+					Financial financial = new Financial();
+					financial.Id = 0;
+					financial.FinancialStatus = i == 0 ? FinancialStatus.paid : FinancialStatus.pending;
+					financial.FinancialType = FinancialType.recipe;
+					financial.Origin = OriginFinancial.renegotiation;
+
+					financial.CreationDate = DateTime.Now;
+					financial.DueDate = i == 0 ? request.NewDueDate : request.NewDueDate.AddMonths(i);
+					financial.IdCompany = request.IdCompany;
+					financial.Description = request.Description;
+					financial.IdCostCenter = listCostCenter.FirstOrDefault()?.Id;
+					financial.IdClient = request.ClientId;
+
+					financial.Value = (request.NewValue / request.NumberOfInstallments);
 					List<FinancialPaymentMethod> financialPaymentMethod = new();
 					foreach (var item in request.PaymentMethods)
 					{
@@ -175,49 +182,49 @@ namespace Service
 					financial.FinancialPaymentMethods = financialPaymentMethod;
 					await base.Create(financial);
 
-                    foreach (var id in request.OriginalInstallments)
-                    {
-                       await _financialResourceRepository.CreateAsync(
-                        new FinancialResources
-                        {
-                            IdRefOrigin = id,
-                            IdNewFinancial = financial.Id
-                        });
-                    }
-                    }
+					foreach (var id in request.OriginalInstallments)
+					{
+						await _financialResourceRepository.CreateAsync(
+						 new FinancialResources
+						 {
+							 IdRefOrigin = id,
+							 IdNewFinancial = financial.Id
+						 });
+					}
+				}
 
-            //muda o status pra renegociado
-            foreach (var id in request.OriginalInstallments)
-            {
-                await AlterFinancialStatus(new Financial
-                {
-                    Id = id,
-                    FinancialStatus = FinancialStatus.renegotiated,
-                });
-            }
+				//muda o status pra renegociado
+				foreach (var id in request.OriginalInstallments)
+				{
+					await AlterFinancialStatus(new Financial
+					{
+						Id = id,
+						FinancialStatus = FinancialStatus.renegotiated,
+					});
+				}
 
 
-            }
-            catch (Exception ex)
-            {
+			}
+			catch (Exception ex)
+			{
 
-                throw;
-            }
-        }
-    }
-    public interface IFinancialService : IBaseService<Financial>
-    {
-        Task<List<Financial>> SearchBySaleItemsId(int id, TypeItem typeItem, int idItem);
-        Task<PagedResult<CommissionFinancialResponse>> GetPagedByFilter(Filters filters);
-        Task DeleteFinancial(int id);
-        Task<CommissionInfoResponse> GetByMonthAllCommission(Filters filters);
-        Task<List<Financial>> GetByIdCompany(Filters filters);
-        Task AlterFinancial(Financial financial);
-        Task<List<Financial>> GetByIdSaleAsync(int id);
-        Task<bool> CreateFinancial(FinancialRequest financial);
-        Task<PagedResultWithTotals> GetPaged(Filters filters);
-        Task AlterFinancialStatus(Financial financial);
-        Task<PagedResult<Financial>> GetPagedByIdClient(Filters filters);
-        Task CreateRenegotiationAsync(RenegotiationRequestDto request);
-    }
+				throw;
+			}
+		}
+	}
+	public interface IFinancialService : IBaseService<Financial>
+	{
+		Task<List<Financial>> SearchBySaleItemsId(int id, TypeItem typeItem, int idItem);
+		Task<PagedResult<CommissionFinancialResponse>> GetPagedByFilter(Filters filters);
+		Task DeleteFinancial(int id);
+		Task<CommissionInfoResponse> GetByMonthAllCommission(Filters filters);
+		Task<List<Financial>> GetByIdCompany(Filters filters);
+		Task AlterFinancial(Financial financial);
+		Task<List<Financial>> GetByIdSaleAsync(int id);
+		Task<bool> CreateFinancial(FinancialRequest financial);
+		Task<PagedResultWithTotals> GetPaged(Filters filters);
+		Task AlterFinancialStatus(Financial financial);
+		Task<PagedResult<Financial>> GetPagedByIdClient(Filters filters);
+		Task CreateRenegotiationAsync(RenegotiationRequestDto request);
+	}
 }

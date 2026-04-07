@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Model.DTO.Financial;
+using Model.Registrations;
+using System;
 using System.Collections.Generic;
 
 namespace Model.DTO
@@ -21,7 +23,8 @@ namespace Model.DTO
         public int? ClientId { get; set; }
         public  ICollection<FinancialResourcesResponse> FinancialResourcesResponseList { get; set; }
         public int? BankAccountId { get; set; }
-    }
+		public List<PaymentsDto> PaymentMethods { get; set; }=new List<PaymentsDto>();
+	}
     public class FinancialResourcesResponse {
         public int Id { get; set; }
         public string Description { get; set; }

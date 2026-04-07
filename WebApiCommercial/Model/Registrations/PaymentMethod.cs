@@ -6,8 +6,7 @@ using System.Collections.Generic;
 
 namespace Model.Registrations
 {
-    public class 
-    PaymentMethod : BaseEntity
+    public class PaymentMethod : BaseEntity
     {
         public string Name { get; set; }
         public int IdCompany { get; set; }
