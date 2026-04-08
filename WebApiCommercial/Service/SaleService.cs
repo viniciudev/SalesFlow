@@ -10,271 +10,279 @@ using System.Threading.Tasks;
 
 namespace Service
 {
-    public class SaleService : BaseService<Sale>, ISaleService
-    {
-        private readonly ISaleItemsService saleItemsService;
-        private readonly ICommissionService commissionService;
-        private readonly IStockService _stockService;
-        private readonly ICostCenterRepository _costCenterRepository;
-        private readonly IFinancialService _financialService;
+	public class SaleService : BaseService<Sale>, ISaleService
+	{
+		private readonly ISaleItemsService saleItemsService;
+		private readonly ICommissionService commissionService;
+		private readonly IStockService _stockService;
+		private readonly ICostCenterRepository _costCenterRepository;
+		private readonly IFinancialService _financialService;
+		private readonly IFinancialPaymentMethodRepository _financialPaymentMethodRepository;
 
-        public SaleService(IGenericRepository<Sale> repository,
-          ISaleItemsService saleItemsService,
-          ICommissionService commissionService,
-          IStockService stockService,
-          ICostCenterRepository costCenterRepository,
-          IFinancialService financialService) : base(repository)
-        {
-            this.saleItemsService = saleItemsService;
-            this.commissionService = commissionService;
-            _stockService = stockService;
-            _costCenterRepository = costCenterRepository;
-            _financialService = financialService;
-        }
+		public SaleService(IGenericRepository<Sale> repository,
+			ISaleItemsService saleItemsService,
+			ICommissionService commissionService,
+			IStockService stockService,
+			ICostCenterRepository costCenterRepository,
+			IFinancialService financialService,
+			IFinancialPaymentMethodRepository financialPaymentMethodRepository) : base(repository)
+		{
+			this.saleItemsService = saleItemsService;
+			this.commissionService = commissionService;
+			_stockService = stockService;
+			_costCenterRepository = costCenterRepository;
+			_financialPaymentMethodRepository = financialPaymentMethodRepository;
+			_financialService = financialService;
+		}
 
-        public async Task<PagedResult<Sale>> GetAllPaged(Filters filters)
-        {
-            return await (repository as ISaleRepository).GetAllPaged(filters);
-        }
-        public async Task<int> SaveWithItems(Sale sale)
-        {
-            using (var transaction = await repository.CreateTransactionAsync())
-            {
-                try
-                {
-                    Sale s = new Sale
-                    {
-                        IdClient = sale.IdClient,
-                        IdCompany = sale.IdCompany,
-                        IdSeller = sale.IdSeller == 0 ? null : sale.IdSeller,
-                        ReleaseDate = sale.ReleaseDate,
-                        SaleDate = sale.SaleDate,
-                        Total = sale.Total
-                    };
-                    await base.Save(s);
-
-                    SaleItems data = new SaleItems();
-                    SharedCommission sharedCommission = new SharedCommission();
-                    foreach (var item in sale.SaleItems)
-                    {
-                        item.IdSale = s.Id;
-                        data = new SaleItems
-                        {
-                            IdSale = item.IdSale,
-                            IdProduct = item.IdProduct == 0 ? null : item.IdProduct,
-                            IdService = item.IdService == 0 ? null : item.IdService,
-                            Value = item.Value,
-                            Amount = item.Amount,
-                            InclusionDate = item.InclusionDate,
-                            TypeItem = item.TypeItem,
-                            EnableRecurrence = item.EnableRecurrence,
-                            RecurringAmount = item.RecurringAmount,
-                        };
-                        await saleItemsService.Save(data);
-
-                        await _stockService.Create(new Stock
-                        {
-                            IdCompany = sale.IdCompany,
-                            Quantity = item.Amount,
-                            Date = sale.SaleDate,
-                            IdProduct = (int)item.IdProduct,
-                            Reason = $"Venda: dia {sale.SaleDate}",
-                            Type = StockType.exit,
-                            ReferenceId=data.Id
-                        });
-
-                        if (item.SharedCommissions != null && item.SharedCommissions.Count > 0)
-                            sharedCommission = new SharedCommission
-                            {
-                                Id = item.SharedCommissions.First().Id,
-                                CommissionDay = item.SharedCommissions.First().CommissionDay,
-                                IdCostCenter = item.SharedCommissions.First().IdCostCenter,
-                                IdSaleItems = item.Id,
-                                Percentage = item.SharedCommissions.First().Percentage,
-                                EnableSharedCommission = item.SharedCommissions.First().EnableSharedCommission,
-                                IdSalesman = item.SharedCommissions.First().IdSalesman,
-                                NameSeller = item.SharedCommissions.First().NameSeller,
-                                RecurringAmount = item.SharedCommissions.First().RecurringAmount,
-                                TypeDay = item.SharedCommissions.First().TypeDay,
-                            };
-                    }
-                    if (sale.IdSeller != null)
-                        await commissionService.GenerateCommission(data, sharedCommission, (int)sale.IdSeller, sale.IdCompany);
-                    await GenerateFinancial(sale.Financials, s.Id, sale.IdCompany,sale.IdClient);
-
-                    transaction.Commit();
-                    return s.Id;
-                }
-                catch (Exception ex)
-                {
-                    transaction.Rollback();
-                    throw;
-                }
-            }
-
-        }
-        private async Task GenerateFinancial(ICollection<Financial> financials,int IdSale,int IdCompany, int ?IdClient=null)
-        {
-            var listCostCenter=await _costCenterRepository.GetByIdCompany(IdCompany);
-           Financial item = new Financial();
-			item.Id = 0;
-                item.FinancialStatus = FinancialStatus.paid;
-                item.FinancialType = FinancialType.recipe;
-                item.Origin = OriginFinancial.financial;
-                item.IdSale = IdSale;
-                item.CreationDate = DateTime.Now;
-                item.DueDate = DateTime.Now;
-                item.IdCompany = IdCompany;
-               
-                item.Description = $"Venda no dia:{DateTime.Now}";
-                item.IdCostCenter= listCostCenter.FirstOrDefault()?.Id;
-                item.IdClient= IdClient;
-                item.Value = item.Value;
-                item.BankAccountId = item.BankAccountId;
-                
-					List<FinancialPaymentMethod> financialPaymentMethod = new();
-					foreach (var m in financials)
+		public async Task<PagedResult<Sale>> GetAllPaged(Filters filters)
+		{
+			return await (repository as ISaleRepository).GetAllPaged(filters);
+		}
+		public async Task<int> SaveWithItems(SaleDto sale)
+		{
+			using (var transaction = await repository.CreateTransactionAsync())
+			{
+				try
+				{
+					Sale s = new Sale
 					{
-						financialPaymentMethod.Add(new FinancialPaymentMethod
+						IdClient = sale.IdClient,
+						IdCompany = sale.IdCompany,
+						IdSeller = sale.IdSeller == 0 ? null : sale.IdSeller,
+						ReleaseDate = sale.ReleaseDate,
+						SaleDate = sale.SaleDate,
+						Total = sale.Total
+					};
+					await base.Save(s);
+
+					SaleItems data = new SaleItems();
+					SharedCommission sharedCommission = new SharedCommission();
+					foreach (var item in sale.SaleItems)
+					{
+						item.IdSale = s.Id;
+						data = new SaleItems
 						{
-							PaymentMethodId = m.Id,
-							FinancialId = item.Id,
-							//Amount = item.Amount,
-							//      Installments = item.Installments
+							IdSale = item.IdSale,
+							IdProduct = item.IdProduct == 0 ? null : item.IdProduct,
+							IdService = item.IdService == 0 ? null : item.IdService,
+							Value = item.Value,
+							Amount = item.Amount,
+							InclusionDate = item.InclusionDate,
+							TypeItem = item.TypeItem,
+							EnableRecurrence = item.EnableRecurrence,
+							RecurringAmount = item.RecurringAmount,
+						};
+						await saleItemsService.Save(data);
+
+						await _stockService.Create(new Stock
+						{
+							IdCompany = sale.IdCompany,
+							Quantity = item.Amount,
+							Date = sale.SaleDate,
+							IdProduct = (int)item.IdProduct,
+							Reason = $"Venda: dia {sale.SaleDate}",
+							Type = StockType.exit,
+							ReferenceId = data.Id
 						});
+
+						if (item.SharedCommissions != null && item.SharedCommissions.Count > 0)
+							sharedCommission = new SharedCommission
+							{
+								Id = item.SharedCommissions.First().Id,
+								CommissionDay = item.SharedCommissions.First().CommissionDay,
+								IdCostCenter = item.SharedCommissions.First().IdCostCenter,
+								IdSaleItems = item.Id,
+								Percentage = item.SharedCommissions.First().Percentage,
+								EnableSharedCommission = item.SharedCommissions.First().EnableSharedCommission,
+								IdSalesman = item.SharedCommissions.First().IdSalesman,
+								NameSeller = item.SharedCommissions.First().NameSeller,
+								RecurringAmount = item.SharedCommissions.First().RecurringAmount,
+								TypeDay = item.SharedCommissions.First().TypeDay,
+							};
 					}
-					item.FinancialPaymentMethods = financialPaymentMethod;
-					await _financialService.Create(item);
-                
-                
-            
-        }
-        public async Task<int> PutWithItems(Sale sale)
-        {
-            using (var transaction = await repository.CreateTransactionAsync())
-            {
-                try
-                {
-                    Sale s = new Sale
-                    {
-                        Id = sale.Id,
-                        IdClient = sale.IdClient,
-                        IdCompany = sale.IdCompany,
-                        IdSeller = sale.IdSeller == 0 ? null : sale.IdSeller,
-                        ReleaseDate = sale.ReleaseDate,
-                        SaleDate = sale.SaleDate,
-                        Total = sale.Total
-                    };
-                    await base.Alter(s);
+					if (sale.IdSeller != null)
+						await commissionService.GenerateCommission(data, sharedCommission, (int)sale.IdSeller, sale.IdCompany);
+					await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany, sale.IdClient, sale.BankAccountId);
 
-                    SaleItems data = new SaleItems();
-                    SharedCommission sharedCommission = new SharedCommission();
-                    List<SaleItems> prods = await saleItemsService.GetByIdSaleAsync(s.Id);
-                    foreach (var item in prods)
-                    {
-                        //deletar itens pra incluir tudo depois
-                        if(item.Id>0)
-                        await saleItemsService.DeleteAsync(item.Id);
-                        //voltar estoque
-                        Stock stock = await _stockService.GetByReferenceIdAsync(item.Id);
-                        //deletar para inserir com os novos itens
-                        if (stock != null)
-                        {
-                            await _stockService.DeleteAsync(stock.Id);
-                        }
-                     
-                    }
-                    //deletar financeiros
-                     var fin = await _financialService.GetByIdSaleAsync(sale.Id);
-                    foreach (var item in fin)
-                    {
-                        await _financialService.DeleteAsync(item.Id);
-                    }
-                    //gerar novos financeiros
-                    await GenerateFinancial(sale.Financials, s.Id, sale.IdCompany,sale.IdClient);
-                    foreach (var item in sale.SaleItems)
-                    {
-                        item.IdSale = s.Id;
-                        data = new SaleItems
-                        {
-                            IdSale = item.IdSale,
-                            IdProduct = item.IdProduct == 0 ? null : item.IdProduct,
-                            IdService = item.IdService == 0 ? null : item.IdService,
-                            Value = item.Value,
-                            Amount = item.Amount,
-                            InclusionDate = item.InclusionDate,
-                            TypeItem = item.TypeItem,
-                            EnableRecurrence = item.EnableRecurrence,
-                            RecurringAmount = item.RecurringAmount,
-                        };
-                        await saleItemsService.Save(data);
+					transaction.Commit();
+					return s.Id;
+				}
+				catch (Exception ex)
+				{
+					transaction.Rollback();
+					throw;
+				}
+			}
 
-                        await _stockService.Create(new Stock
-                        {
-                            IdCompany = sale.IdCompany,
-                            Quantity = item.Amount,
-                            Date = sale.SaleDate,
-                            IdProduct = (int)item.IdProduct,
-                            Reason = $"Venda: dia {sale.SaleDate}",
-                            Type = StockType.exit,
-                            ReferenceId = data.Id,
-                        });
+		}
+		private async Task GenerateFinancial(ICollection<FormPaymentSale> formPaymentSales, int IdSale, int IdCompany, 
+			int? IdClient = null, int? BankAccountId=null)
+		{
+			if (formPaymentSales!=null&& formPaymentSales.Count() > 0)
+			{
+				var listCostCenter = await _costCenterRepository.GetByIdCompany(IdCompany);
+				Financial item = new Financial();
+				item.Id = 0;
+				item.FinancialStatus = FinancialStatus.paid;
+				item.FinancialType = FinancialType.recipe;
+				item.Origin = OriginFinancial.financial;
+				item.IdSale = IdSale;
+				item.CreationDate = DateTime.Now;
+				item.DueDate = DateTime.Now;
+				item.IdCompany = IdCompany;
 
-                        if (item.SharedCommissions != null && item.SharedCommissions.Count > 0)
-                            sharedCommission = new SharedCommission
-                            {
-                                Id = item.SharedCommissions.First().Id,
-                                CommissionDay = item.SharedCommissions.First().CommissionDay,
-                                IdCostCenter = item.SharedCommissions.First().IdCostCenter,
-                                IdSaleItems = item.Id,
-                                Percentage = item.SharedCommissions.First().Percentage,
-                                EnableSharedCommission = item.SharedCommissions.First().EnableSharedCommission,
-                                IdSalesman = item.SharedCommissions.First().IdSalesman,
-                                NameSeller = item.SharedCommissions.First().NameSeller,
-                                RecurringAmount = item.SharedCommissions.First().RecurringAmount,
-                                TypeDay = item.SharedCommissions.First().TypeDay,
-                            };
-                    }
-                    if (sale.IdSeller != null)
-                        await commissionService.GenerateCommission(data, sharedCommission, (int)sale.IdSeller, sale.IdCompany);
-                    transaction.Commit();
-                    return s.Id;
-                }
-                catch (Exception ex)
-                {
-                    transaction.Rollback();
-                    throw;
-                }
-            }
+				item.Description = $"Venda no dia:{DateTime.Now}";
+				item.IdCostCenter = listCostCenter.FirstOrDefault()?.Id;
+				item.IdClient = IdClient;
+				item.Value = formPaymentSales.Sum(x=>x.Value);
+				item.BankAccountId = BankAccountId;
 
-        }
-        public async Task<Sale> GetByIdSale(int id)
-        {
-            return await (repository as ISaleRepository).GetByIdSale(id);
-        }
-        public async Task<SaleInfoResponse> GetByMonthAllSales(Filters filters)
-        {
-            return await (repository as ISaleRepository).GetByMonthAllSales(filters);
-        }
-        public async Task<SalesCommissionsInfo> GetByWeekAllSales(Filters filters)
-        {
-            return await (repository as ISaleRepository).GetByWeekAllSales(filters);
-        }
-        public async Task<List<SalesmanInfo>> GetSalesmanByWeek(int idCompany)
-        {
-            return await (repository as ISaleRepository).GetSalesmanByWeek(idCompany);
-        }
+				List<FinancialPaymentMethod> financialPaymentMethod = new();
+				foreach (var m in formPaymentSales)
+				{
+					financialPaymentMethod.Add(new FinancialPaymentMethod
+					{
+						PaymentMethodId = m.PaymentMethodId,
+						FinancialId = item.Id,
+						Amount = m.Value,
+						//      Installments = item.Installments
+					});
+				}
+				item.FinancialPaymentMethods = financialPaymentMethod;
+				await _financialService.Create(item);
+			}
+		}
+		public async Task<int> PutWithItems(SaleDto sale)
+		{
+			using (var transaction = await repository.CreateTransactionAsync())
+			{
+				try
+				{
+					Sale s = new Sale
+					{
+						Id = sale.Id,
+						IdClient = sale.IdClient,
+						IdCompany = sale.IdCompany,
+						IdSeller = sale.IdSeller == 0 ? null : sale.IdSeller,
+						ReleaseDate = sale.ReleaseDate,
+						SaleDate = sale.SaleDate,
+						Total = sale.Total
+					};
+					await base.Alter(s);
 
-    }
-    public interface ISaleService : IBaseService<Sale>
-    {
-        Task<PagedResult<Sale>> GetAllPaged(Filters filter);
-        Task<int> SaveWithItems(Sale sale);
-        Task<Sale> GetByIdSale(int id);
-        Task<SaleInfoResponse> GetByMonthAllSales(Filters filters);
-        Task<SalesCommissionsInfo> GetByWeekAllSales(Filters filters);
-        Task<List<SalesmanInfo>> GetSalesmanByWeek(int idCompany);
+					SaleItems data = new SaleItems();
+					SharedCommission sharedCommission = new SharedCommission();
+					List<SaleItems> prods = await saleItemsService.GetByIdSaleAsync(s.Id);
+					foreach (var item in prods)
+					{
+						//deletar itens pra incluir tudo depois
+						if (item.Id > 0)
+							await saleItemsService.DeleteAsync(item.Id);
+						//voltar estoque
+						Stock stock = await _stockService.GetByReferenceIdAsync(item.Id);
+						//deletar para inserir com os novos itens
+						if (stock != null)
+						{
+							await _stockService.DeleteAsync(stock.Id);
+						}
 
-        Task<int> PutWithItems(Sale sale);
-    }
+					}
+					//deletar financeiros
+					var fin = await _financialService.GetByIdSaleAsync(sale.Id);
+					foreach (var item in fin)
+					{
+						foreach (var forms in item.FinancialPaymentMethods)
+						{
+							await _financialPaymentMethodRepository.DeleteAsync(forms.Id);
+						}
+						await _financialService.DeleteAsync(item.Id);
+					}
+					//gerar novos financeiros
+					await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany, sale.IdClient,sale.BankAccountId);
+					foreach (var item in sale.SaleItems)
+					{
+						item.IdSale = s.Id;
+						data = new SaleItems
+						{
+							IdSale = item.IdSale,
+							IdProduct = item.IdProduct == 0 ? null : item.IdProduct,
+							IdService = item.IdService == 0 ? null : item.IdService,
+							Value = item.Value,
+							Amount = item.Amount,
+							InclusionDate = item.InclusionDate,
+							TypeItem = item.TypeItem,
+							EnableRecurrence = item.EnableRecurrence,
+							RecurringAmount = item.RecurringAmount,
+						};
+						await saleItemsService.Save(data);
+
+						await _stockService.Create(new Stock
+						{
+							IdCompany = sale.IdCompany,
+							Quantity = item.Amount,
+							Date = sale.SaleDate,
+							IdProduct = (int)item.IdProduct,
+							Reason = $"Venda: dia {sale.SaleDate}",
+							Type = StockType.exit,
+							ReferenceId = data.Id,
+						});
+
+						if (item.SharedCommissions != null && item.SharedCommissions.Count > 0)
+							sharedCommission = new SharedCommission
+							{
+								Id = item.SharedCommissions.First().Id,
+								CommissionDay = item.SharedCommissions.First().CommissionDay,
+								IdCostCenter = item.SharedCommissions.First().IdCostCenter,
+								IdSaleItems = item.Id,
+								Percentage = item.SharedCommissions.First().Percentage,
+								EnableSharedCommission = item.SharedCommissions.First().EnableSharedCommission,
+								IdSalesman = item.SharedCommissions.First().IdSalesman,
+								NameSeller = item.SharedCommissions.First().NameSeller,
+								RecurringAmount = item.SharedCommissions.First().RecurringAmount,
+								TypeDay = item.SharedCommissions.First().TypeDay,
+							};
+					}
+					if (sale.IdSeller != null)
+						await commissionService.GenerateCommission(data, sharedCommission, (int)sale.IdSeller, sale.IdCompany);
+					transaction.Commit();
+					return s.Id;
+				}
+				catch (Exception ex)
+				{
+					transaction.Rollback();
+					throw;
+				}
+			}
+
+		}
+		public async Task<Sale> GetByIdSale(int id)
+		{
+			return await (repository as ISaleRepository).GetByIdSale(id);
+		}
+		public async Task<SaleInfoResponse> GetByMonthAllSales(Filters filters)
+		{
+			return await (repository as ISaleRepository).GetByMonthAllSales(filters);
+		}
+		public async Task<SalesCommissionsInfo> GetByWeekAllSales(Filters filters)
+		{
+			return await (repository as ISaleRepository).GetByWeekAllSales(filters);
+		}
+		public async Task<List<SalesmanInfo>> GetSalesmanByWeek(int idCompany)
+		{
+			return await (repository as ISaleRepository).GetSalesmanByWeek(idCompany);
+		}
+
+	}
+	public interface ISaleService : IBaseService<Sale>
+	{
+		Task<PagedResult<Sale>> GetAllPaged(Filters filter);
+		Task<int> SaveWithItems(SaleDto sale);
+		Task<Sale> GetByIdSale(int id);
+		Task<SaleInfoResponse> GetByMonthAllSales(Filters filters);
+		Task<SalesCommissionsInfo> GetByWeekAllSales(Filters filters);
+		Task<List<SalesmanInfo>> GetSalesmanByWeek(int idCompany);
+
+		Task<int> PutWithItems(SaleDto sale);
+	}
 }

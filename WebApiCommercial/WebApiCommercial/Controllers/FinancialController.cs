@@ -92,7 +92,7 @@ namespace WebApiCommercial.Controllers
 
         // PUT api/<FinancialController>/5
         [HttpPut]
-        public async Task<ActionResult<dynamic>> Put([FromBody] Financial financial
+        public async Task<ActionResult<dynamic>> Put([FromBody] FinancialRequest financial
           , [FromHeader] int tenantid)
         {
             await financialService.AlterFinancial(financial);

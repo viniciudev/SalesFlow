@@ -275,6 +275,10 @@ namespace WebAppCommercial
 			services.AddTransient<IGenericRepository<NFeEmission>, NFeRepository>();
 			services.AddTransient<INFeRepository, NFeRepository>();
 			services.AddTransient<IBaseService<NFeEmission>, NFeService>();
+			//FinancialPaymentMethod
+			services.AddTransient<IGenericRepository<FinancialPaymentMethod>, FinancialPaymentMethodRepository>();
+			services.AddTransient<IFinancialPaymentMethodRepository, FinancialPaymentMethodRepository>();
+		
 			//services.AddCors(options =>
 			//{
 			//    options.AddPolicy("EnableCORS", builder =>

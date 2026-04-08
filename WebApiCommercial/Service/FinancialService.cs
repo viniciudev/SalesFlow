@@ -14,13 +14,15 @@ namespace Service
 	{
 		private readonly ICostCenterRepository _costCenterRepository;
 		private readonly IFinancialResourceRepository _financialResourceRepository;
-		//private readonly IfinancialPa
+		private readonly IFinancialPaymentMethodRepository _financialPaymentMethodRepository;
 		public FinancialService(IGenericRepository<Financial> repository,
 				ICostCenterRepository costCenterRepository,
-				IFinancialResourceRepository financialResourceRepository) : base(repository)
+				IFinancialResourceRepository financialResourceRepository,
+				IFinancialPaymentMethodRepository financialPaymentMethodRepository) : base(repository)
 		{
 			_costCenterRepository = costCenterRepository;
 			_financialResourceRepository = financialResourceRepository;
+			_financialPaymentMethodRepository = financialPaymentMethodRepository;
 		}
 		public async Task<List<Financial>> SearchBySaleItemsId(int id, TypeItem typeItem, int idItem)
 		{
@@ -51,21 +53,36 @@ namespace Service
 		{
 			return await (repository as IFinancialRepository).GetByIdCompany(filters);
 		}
-		public async Task AlterFinancial(Financial financial)
+		public async Task AlterFinancial(FinancialRequest financial)
 		{
 			Financial financialData = await (repository as IFinancialRepository).GetById(financial.Id);
 			if (financialData != null)
 			{
 				if (financialData.FinancialPaymentMethods != null)
 				{
+					foreach (var item in financialData.FinancialPaymentMethods)
+					{
+						await _financialPaymentMethodRepository.DeleteAsync(item.Id);
+					}
 
 				}
+				List<FinancialPaymentMethod> financialPaymentMethod = new();
+				foreach (var item in financial.PaymentMethods)
+				{
+					financialPaymentMethod.Add(new FinancialPaymentMethod
+					{
+						PaymentMethodId = item.PaymentMethodId,
+						FinancialId = financialData.Id,
+						Amount = item.Value,
+						//      Installments = item.Installments
+					});
+				};
+				financialData.FinancialPaymentMethods = financialPaymentMethod;
 				financialData.Value = financial.Value;
 				financialData.FinancialType = financial.FinancialType;
 				financialData.Description = financial.Description;
 				financialData.DueDate = financial.DueDate;
 				financialData.FinancialStatus = financial.FinancialStatus;
-				financialData.FinancialPaymentMethods = financial.FinancialPaymentMethods;
 				financialData.BankAccountId = financial.BankAccountId;
 				await base.Alter(financialData);
 			}
@@ -219,7 +236,7 @@ namespace Service
 		Task DeleteFinancial(int id);
 		Task<CommissionInfoResponse> GetByMonthAllCommission(Filters filters);
 		Task<List<Financial>> GetByIdCompany(Filters filters);
-		Task AlterFinancial(Financial financial);
+		Task AlterFinancial(FinancialRequest financial);
 		Task<List<Financial>> GetByIdSaleAsync(int id);
 		Task<bool> CreateFinancial(FinancialRequest financial);
 		Task<PagedResultWithTotals> GetPaged(Filters filters);

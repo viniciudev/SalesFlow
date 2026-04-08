@@ -59,7 +59,7 @@ namespace WebApiCommercial.Controllers
         }
         // POST api/<SaleController>
         [HttpPost("PostWithItems")]
-        public async Task<ActionResult<int>> PostWithItems([FromBody] Sale sale,
+        public async Task<ActionResult<int>> PostWithItems([FromBody] SaleDto sale,
           [FromHeader] int tenantid)
         {
             sale.IdCompany = tenantid;
@@ -77,7 +77,7 @@ namespace WebApiCommercial.Controllers
         }
         //[RequirePermission(PermissionEnum.VENDA_ALTER)]
         [HttpPut("PutWithItems")]
-        public async Task<ActionResult<dynamic>> PutWithItems([FromBody] Sale sale,
+        public async Task<ActionResult<dynamic>> PutWithItems([FromBody] SaleDto sale,
           [FromHeader] int tenantid)
         {
             sale.IdCompany = tenantid;

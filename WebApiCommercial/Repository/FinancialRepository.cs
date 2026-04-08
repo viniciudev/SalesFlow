@@ -253,6 +253,7 @@ namespace Repository
 		public async Task<List<Financial>> GetByIdSaleAsync(int id)
 		{
 			var data = await _dbContext.Set<Financial>()
+				.Include(x => x.FinancialPaymentMethods)
 					.Where(x => x.IdSale == id)
 					.AsNoTracking()
 					.ToListAsync();
