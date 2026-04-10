@@ -62,7 +62,13 @@ namespace Repository
                                        Origin = x.Origin,
                                        FinancialStatus = x.FinancialStatus,
                                        PaymentMethodName = x.FinancialPaymentMethods.Select(x => x.PaymentMethod.Name).ToList(),
-                                       FinancialPaymentMethods = x.FinancialPaymentMethods,
+                                       FinancialPaymentMethods = x.FinancialPaymentMethods.Select(x=>new FinancialPaymentMethod
+                                       {
+                                         Amount=x.Amount,
+                                         FinancialId=x.FinancialId,
+                                         Id=x.Id,
+
+                                       }),
                                        Description = x.Description,
                                        FinancialType = x.FinancialType,
                                        IdCompany = x.IdCompany,
