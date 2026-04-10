@@ -30,7 +30,9 @@ namespace Model.Moves
 			// Propriedades de navegação
 			public virtual Financial Financial { get; set; }
 			public virtual PaymentMethod PaymentMethod { get; set; }
-		}
+		[NotMapped]
+		public string PaymentMethoName { get; set; }
+	}
 	
 
 }
