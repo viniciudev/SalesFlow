@@ -33,13 +33,14 @@ namespace Repository
         //        .FirstOrDefaultAsync(x => x.Id == id);
         //}
 
-        public async Task<bool> ExistsCfopAsync(string cfop, TipoDocumentoEnum tipoDocumento, int id)
+        public async Task<bool> ExistsCfopAsync(string cfop, TipoDocumentoEnum tipoDocumento, int id,int idComapny)
         {
             if (id == 0)
             {
                 return await _dbContext.Set<NaturezaOperacao>()
                                     .AsNoTracking()
                                     .Where(x => x.Cfop == cfop
+                                    && x.CompanyId==idComapny
                                     && x.TipoDocumento == tipoDocumento)
                                     .AnyAsync();
             }
@@ -49,7 +50,8 @@ namespace Repository
                     .AsNoTracking()
                     .Where(x => x.Cfop == cfop
                     && x.TipoDocumento == tipoDocumento
-                    && x.Id != id).AnyAsync();
+										 && x.CompanyId == idComapny
+										&& x.Id != id).AnyAsync();
             }
         }
 
@@ -64,6 +66,6 @@ namespace Repository
         //Task<NaturezaOperacao?> GetByIdAsync(Guid id);
         Task<List<NaturezaOperacao>> GetAllAsync(int tenantid);
 
-        Task<bool> ExistsCfopAsync(string cfop, TipoDocumentoEnum tipoDocumento, int id);
+        Task<bool> ExistsCfopAsync(string cfop, TipoDocumentoEnum tipoDocumento, int id,int idComapny);
     }
 }

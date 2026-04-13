@@ -19,7 +19,7 @@ namespace Service
 
         public async Task<int> CreateAsync(NaturezaOperacaoCreateRequest request)
         {
-            await ValidateBusinessRulesAsync(request.Cfop, request.TipoDocumento);
+            await ValidateBusinessRulesAsync(request.Cfop, request.TipoDocumento,request.CompanyId);
 
             var entity = new NaturezaOperacao
             {
@@ -76,7 +76,7 @@ namespace Service
             if (existing == null)
                 throw new DomainException("Natureza de operação não encontrada.");
 
-            if (await (repository as INaturezaOperacaoRepository).ExistsCfopAsync(request.Cfop, request.TipoDocumento,id))
+            if (await (repository as INaturezaOperacaoRepository).ExistsCfopAsync(request.Cfop, request.TipoDocumento,id, existing.CompanyId))
                 throw new DomainException("Já existe uma natureza de operação com o mesmo CFOP e Tipo de Documento.");
 
             existing.Descricao = request.Descricao;
@@ -143,10 +143,10 @@ namespace Service
             };
         }
 
-        private async Task ValidateBusinessRulesAsync(string cfop, TipoDocumentoEnum tipoDocumento)
+        private async Task ValidateBusinessRulesAsync(string cfop, TipoDocumentoEnum tipoDocumento, int companyId)
         {
             // Unicidade CFOP + TipoDocumento
-            if (await (repository as INaturezaOperacaoRepository).ExistsCfopAsync(cfop, tipoDocumento,0))
+            if (await (repository as INaturezaOperacaoRepository).ExistsCfopAsync(cfop, tipoDocumento,0, companyId))
                 throw new DomainException("Já existe uma natureza de operação com o mesmo CFOP e Tipo de Documento.");
         }
 
