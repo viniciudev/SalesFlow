@@ -31,7 +31,7 @@ namespace Model.Moves
 			public virtual Financial Financial { get; set; }
 			public virtual PaymentMethod PaymentMethod { get; set; }
 		[NotMapped]
-		public string PaymentMethoName { get; set; }
+		public string PaymentMethodName { get; set; }
 	}
 	
 

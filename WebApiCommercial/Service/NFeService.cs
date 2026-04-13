@@ -1847,7 +1847,8 @@ namespace Service
 		{
 			var endereco = new enderDest();
 			var cliente = _currentSale?.Client;
-
+			try
+			{
 			if (cliente != null)
 			{
 				endereco.xLgr = cliente.Address;
@@ -1886,6 +1887,21 @@ namespace Service
 			}
 
 			return endereco;
+			}
+			catch (Exception)
+			{
+
+				endereco.xLgr = "ENDERECO NAO INFORMADO";
+				endereco.nro = "S/N";
+				endereco.xBairro = "NAO INFORMADO";
+				endereco.cMun = 9999999;
+				endereco.xMun = "NAO INFORMADO";
+				endereco.UF = "SP";
+				endereco.CEP = "00000000";
+				endereco.cPais = 1058;
+				endereco.xPais = "Brasil";
+				return endereco;
+			}
 		}
 		protected virtual transp GetTransporte()
 		{

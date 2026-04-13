@@ -68,7 +68,7 @@ namespace Repository
                                          FinancialId=x.FinancialId,
                                          Id=x.Id,
                                          PaymentMethodId=x.PaymentMethodId,
-																				 PaymentMethoName=x.PaymentMethod.Name
+																				 PaymentMethodName=x.PaymentMethod.Name
 																			 }).ToList(),
                                        Description = x.Description,
                                        FinancialType = x.FinancialType,
