@@ -100,7 +100,8 @@ namespace Repository
             ConfiguraNaturezaOperacao(modelBuilder);
             ConfiguraFiscalConfiguration(modelBuilder);
             ConfiguraNFeEmission(modelBuilder);
-            var cascadeFKs = modelBuilder.Model.GetEntityTypes()
+      ConfiguraFinancialPaymentMethod(modelBuilder);
+						var cascadeFKs = modelBuilder.Model.GetEntityTypes()
      .SelectMany(t => t.GetForeignKeys())
      .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
             foreach (var fk in cascadeFKs)
@@ -727,7 +728,7 @@ namespace Repository
                     tb.Property(p => p.AliquotaIS).HasColumnName("AliquotaIS").HasColumnType("decimal(18,4)");
                 });
 
-                entity.HasIndex(e => new { e.Cfop, e.TipoDocumento }).IsUnique();
+                //entity.HasIndex(e => new { e.Cfop, e.TipoDocumento }).IsUnique();
             });
             builder.Entity<NaturezaOperacao>()
                .HasOne(dc => dc.Company)
