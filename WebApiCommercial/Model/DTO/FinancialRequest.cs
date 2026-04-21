@@ -22,5 +22,9 @@ namespace Model.DTO
 		public virtual ICollection<PaymentsDto> PaymentMethods { get; set; } = new List<PaymentsDto>();
 
 		public int? BankAccountId { get; set; }
-    }
+		public string SettlementDate { get; set; }
+		public decimal InterestValue { get; set; }
+		public decimal FineValue { get; set; }
+		public decimal SettledValue { get; set; }
+	}
 }

@@ -200,7 +200,11 @@ namespace Repository
 																	 Description = x.f.Description,
 																	 Value = x.f.Value
 																 })
-																 .ToList()
+																 .ToList(),
+													 SettlementDate =  fin.SettlementDate,
+													 FineValue=fin.FineValue,
+													 SettledValue=fin.SettledValue,
+													 InterestValue=fin.InterestValue
 												 };
 
 				var pagedResult = await pagedQuery.AsNoTracking()

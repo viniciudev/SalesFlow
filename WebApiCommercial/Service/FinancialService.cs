@@ -76,7 +76,8 @@ namespace Service
 						Amount = item.Value,
 						//      Installments = item.Installments
 					});
-				};
+				}
+				;
 				financialData.FinancialPaymentMethods = financialPaymentMethod;
 				financialData.Value = financial.Value;
 				financialData.FinancialType = financial.FinancialType;
@@ -84,6 +85,10 @@ namespace Service
 				financialData.DueDate = financial.DueDate;
 				financialData.FinancialStatus = financial.FinancialStatus;
 				financialData.BankAccountId = financial.BankAccountId;
+				financialData.SettlementDate = financial.SettlementDate; // Novo
+				financialData.InterestValue = financial.InterestValue;     // Novo
+				financialData.FineValue = financial.FineValue;             // Novo
+				financialData.SettledValue = financial.SettledValue;       // Novo
 				await base.Alter(financialData);
 			}
 		}
@@ -106,7 +111,11 @@ namespace Service
 					IdCompany = (int)financial.IdCompany,
 					IdCostCenter = listCostCenter.FirstOrDefault()?.Id,
 					Value = financial.Value,
-					IdClient = financial.ClientId
+					IdClient = financial.ClientId,
+					SettlementDate = financial.SettlementDate, // Novo
+					InterestValue = financial.InterestValue,     // Novo
+					FineValue = financial.FineValue,             // Novo
+					SettledValue = financial.SettledValue,       // Novo
 				};
 				List<FinancialPaymentMethod> financialPaymentMethod = new();
 				foreach (var item in financial.PaymentMethods)

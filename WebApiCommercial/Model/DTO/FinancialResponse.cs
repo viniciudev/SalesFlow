@@ -24,6 +24,10 @@ namespace Model.DTO
         public  ICollection<FinancialResourcesResponse> FinancialResourcesResponseList { get; set; }
         public int? BankAccountId { get; set; }
 		public List<PaymentsDto> PaymentMethods { get; set; }=new List<PaymentsDto>();
+		public string SettlementDate { get; set; }
+		public decimal InterestValue { get; set; }
+		public decimal SettledValue { get; set; }
+		public decimal FineValue { get; set; }
 	}
     public class FinancialResourcesResponse {
         public int Id { get; set; }

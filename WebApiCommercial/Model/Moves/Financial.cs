@@ -45,6 +45,10 @@ namespace Model.Moves
 		public string ClientName { get; set; }
 		[NotMapped]
 		public string BankAccountName { get; set; }
+		public string SettlementDate { get; set; }
+		public decimal InterestValue { get; set; }
+		public decimal FineValue { get; set; }
+		public decimal SettledValue { get; set; }
 	}
 
 
