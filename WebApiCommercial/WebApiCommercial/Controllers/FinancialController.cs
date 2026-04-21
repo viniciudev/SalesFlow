@@ -110,7 +110,7 @@ namespace WebApiCommercial.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<dynamic>> Delete(int id)
         {
-            await financialService.DeleteAsync(id);
+            await financialService.DeleteFinancial(id);
             return Ok(true);
         }
         /// <summary>

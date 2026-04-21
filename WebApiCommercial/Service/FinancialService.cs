@@ -40,7 +40,19 @@ namespace Service
 		{
 			try
 			{
-				await base.DeleteAsync(id);
+				Financial financialData = await (repository as IFinancialRepository).GetById(id);
+				if (financialData != null)
+				{
+					if (financialData.FinancialPaymentMethods != null)
+					{
+						foreach (var item in financialData.FinancialPaymentMethods)
+						{
+							await _financialPaymentMethodRepository.DeleteAsync(item.Id);
+						}
+
+					}
+				}
+					await base.DeleteAsync(id);
 			}
 			catch (System.Exception ex)
 			{
