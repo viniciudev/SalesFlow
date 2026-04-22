@@ -90,84 +90,155 @@ namespace Repository
 			{
 				// Query base
 				var baseQuery = from fin in _dbContext.Set<Financial>()
-												.Include(x => x.Sale).ThenInclude(x => x.Client)
-												.Include(x => x.Product)
-												.Include(x => x.ServiceProvided)
-												.Include(x => x.Client)
-												.Include(x => x.FinancialPaymentMethods)
-												.ThenInclude(x => x.PaymentMethod)
-												.Include(x => x.BankAccount)
-
 												where fin.IdCompany == filters.IdCompany
 
 												// Filtro de texto
 												&& (string.IsNullOrEmpty(filters.TextOption)
-																|| fin.Description.Contains(filters.TextOption)
-																|| fin.Client.Name.Contains(filters.TextOption))
+																				|| fin.Description.Contains(filters.TextOption)
+																				|| fin.Client.Name.Contains(filters.TextOption))
 
 												// Filtro de status
 												&& (filters.FinancialStatus == null
-																|| fin.FinancialStatus == filters.FinancialStatus)
+																				|| fin.FinancialStatus == filters.FinancialStatus)
 
 												// Filtro de tipo
 												&& (fin.FinancialType == filters.FinancialType)
 
 												// Filtro de período
 												&& (string.IsNullOrEmpty(filters.StartDate)
-																|| fin.DueDate >= DateTime.Parse(filters.StartDate))
+																				|| fin.DueDate >= DateTime.Parse(filters.StartDate))
 												&& (string.IsNullOrEmpty(filters.EndDate)
-																|| fin.DueDate <= DateTime.Parse(filters.EndDate).AddDays(1).AddSeconds(-1))
+																				|| fin.DueDate <= DateTime.Parse(filters.EndDate).AddDays(1).AddSeconds(-1))
 
 												// Filtro de cliente
 												&& (filters.ClientId == null
-																|| fin.IdClient == filters.ClientId)
-
-												// Filtro de forma de pagamento
-												&& (filters.PaymentMethodId == null
-																|| fin.FinancialPaymentMethods
-															 .Any(x=>x.PaymentMethod.Id==filters.PaymentMethodId))
+																				|| fin.IdClient == filters.ClientId)
 
 												// Filtro de conta bancária
 												&& (filters.BankAccountId == null
-																|| fin.BankAccountId == filters.BankAccountId)
+																				|| fin.BankAccountId == filters.BankAccountId)
 
 												select fin;
 
-				// Calcular totais em uma única consulta
-				var totalsQuery = from fin in baseQuery
-													group fin by fin.FinancialType into g
-													select new
-													{
-														FinancialType = g.Key,
-														TotalPending = g.Where(x => x.FinancialStatus == FinancialStatus.pending
-																										 || x.FinancialStatus == FinancialStatus.renegotiated)
-																							.Sum(x => x.Value),
-														TotalPaid = g.Where(x => x.FinancialStatus == FinancialStatus.paid)
-																					.Sum(x => x.Value)
-													};
+				// Aplicar filtro de método de pagamento na baseQuery
+				if (filters.PaymentMethodId != null)
+				{
+					baseQuery = baseQuery.Where(fin => fin.FinancialPaymentMethods
+							.Any(x => x.PaymentMethodId == filters.PaymentMethodId));
+				}
 
-				var totalsResult = await totalsQuery.ToListAsync();
+				// Buscar todos os Financials com seus PaymentMethods para cálculo dos totais
+				var financialsComMetodos = await baseQuery
+						.Select(fin => new
+						{
+							fin.FinancialType,
+							fin.FinancialStatus,
+							fin.Value,
+							fin.SettledValue,
+							TotalPaymentMethodsAmount = fin.FinancialPaymentMethods.Sum(fpm => fpm.Amount),
+							FilteredPaymentMethod = filters.PaymentMethodId != null
+										? fin.FinancialPaymentMethods.FirstOrDefault(fpm => fpm.PaymentMethodId == filters.PaymentMethodId)
+										: null
+						})
+						.ToListAsync();
 
+				// Calcular totais em memória
 				var totals = new Totals();
 
-				foreach (var item in totalsResult)
+				foreach (var item in financialsComMetodos)
 				{
-					if (item.FinancialType == FinancialType.recipe) // Receitas
+					bool isPending = item.FinancialStatus == FinancialStatus.pending ||
+													 item.FinancialStatus == FinancialStatus.renegotiated;
+					bool isPaid = item.FinancialStatus == FinancialStatus.paid;
+
+					decimal valorPending = 0;
+					decimal valorPaid = 0;
+
+					if (filters.PaymentMethodId != null && item.FilteredPaymentMethod != null)
 					{
-						totals.TotalReceivable = item.TotalPending;
-						totals.TotalReceived = item.TotalPaid;
-						totals.TotalGeneralReceivable = item.TotalPending + item.TotalPaid;
+						// Com filtro de método de pagamento
+						if (isPending)
+						{
+							valorPending = item.FilteredPaymentMethod.Amount;
+						}
+						else if (isPaid)
+						{
+							var settledValue = item.SettledValue == 0 ? item.Value : item.SettledValue;
+							valorPaid = item.TotalPaymentMethodsAmount > 0
+									? settledValue * (item.FilteredPaymentMethod.Amount / item.TotalPaymentMethodsAmount)
+									: item.FilteredPaymentMethod.Amount;
+						}
 					}
-					else if (item.FinancialType == FinancialType.expense) // Despesas
+					else
 					{
-						totals.TotalPayable = item.TotalPending;
-						totals.TotalPaid = item.TotalPaid;
-						totals.TotalGeneralPayable = item.TotalPending + item.TotalPaid;
+						// Sem filtro de método de pagamento
+						if (isPending)
+						{
+							valorPending = item.Value;
+						}
+						else if (isPaid)
+						{
+							valorPaid = item.SettledValue == 0 ? item.Value : item.SettledValue;
+						}
+					}
+
+					// Acumular nos totais
+					if (item.FinancialType == FinancialType.recipe)
+					{
+						totals.TotalReceivable += valorPending;
+						totals.TotalReceived += valorPaid;
+						totals.TotalGeneralReceivable += valorPending + valorPaid;
+					}
+					else if (item.FinancialType == FinancialType.expense)
+					{
+						totals.TotalPayable += valorPending;
+						totals.TotalPaid += valorPaid;
+						totals.TotalGeneralPayable += valorPending + valorPaid;
 					}
 				}
 
-				// Query para paginação
-				var pagedQuery = from fin in baseQuery
+				// Query para paginação com Includes necessários
+				var pagedQuery = from fin in _dbContext.Set<Financial>()
+												 .Include(x => x.Sale).ThenInclude(x => x.Client)
+												 .Include(x => x.Product)
+												 .Include(x => x.ServiceProvided)
+												 .Include(x => x.Client)
+												 .Include(x => x.FinancialPaymentMethods)
+														 .ThenInclude(x => x.PaymentMethod)
+												 .Include(x => x.BankAccount)
+												 where fin.IdCompany == filters.IdCompany
+
+												 // Filtro de texto
+												 && (string.IsNullOrEmpty(filters.TextOption)
+																				 || fin.Description.Contains(filters.TextOption)
+																				 || fin.Client.Name.Contains(filters.TextOption))
+
+												 // Filtro de status
+												 && (filters.FinancialStatus == null
+																				 || fin.FinancialStatus == filters.FinancialStatus)
+
+												 // Filtro de tipo
+												 && (fin.FinancialType == filters.FinancialType)
+
+												 // Filtro de período
+												 && (string.IsNullOrEmpty(filters.StartDate)
+																				 || fin.DueDate >= DateTime.Parse(filters.StartDate))
+												 && (string.IsNullOrEmpty(filters.EndDate)
+																				 || fin.DueDate <= DateTime.Parse(filters.EndDate).AddDays(1).AddSeconds(-1))
+
+												 // Filtro de cliente
+												 && (filters.ClientId == null
+																				 || fin.IdClient == filters.ClientId)
+
+												 // Filtro de forma de pagamento
+												 && (filters.PaymentMethodId == null
+																				 || fin.FinancialPaymentMethods
+																			.Any(x => x.PaymentMethodId == filters.PaymentMethodId))
+
+												 // Filtro de conta bancária
+												 && (filters.BankAccountId == null
+																				 || fin.BankAccountId == filters.BankAccountId)
+
 												 orderby fin.DueDate
 												 select new FinancialResponse
 												 {
@@ -177,11 +248,13 @@ namespace Repository
 													 DueDate = fin.DueDate,
 													 Origin = fin.Origin,
 													 FinancialStatus = fin.FinancialStatus,
-													 PaymentMethods= fin.FinancialPaymentMethods.Select(x =>
-													 new PaymentsDto { PaymentMethodId=x.PaymentMethodId, 
-														 PaymentMethodName=x.PaymentMethod.Name,
-													 Value=x.Amount
-													 }).ToList(),
+													 PaymentMethods = fin.FinancialPaymentMethods.Select(x =>
+															 new PaymentsDto
+															 {
+																 PaymentMethodId = x.PaymentMethodId,
+																 PaymentMethodName = x.PaymentMethod.Name,
+																 Value = x.Amount
+															 }).ToList(),
 													 BankAccountId = fin.BankAccountId,
 													 Description = fin.Description,
 													 FinancialType = fin.FinancialType,
@@ -189,27 +262,27 @@ namespace Repository
 													 ClientName = fin.Client != null ? fin.Client.Name : null,
 													 ClientId = fin.IdClient,
 													 FinancialResourcesResponseList = _dbContext.Set<FinancialResources>()
-																 .Where(fr => fr.IdNewFinancial == fin.Id)
-																 .Join(_dbContext.Set<Financial>(),
-																			 fr => fr.IdRefOrigin,
-																			 f => f.Id,
-																			 (fr, f) => new { fr, f })
-																 .Select(x => new FinancialResourcesResponse
-																 {
-																	 Id = x.f.Id,
-																	 Description = x.f.Description,
-																	 Value = x.f.Value
-																 })
-																 .ToList(),
-													 SettlementDate =  fin.SettlementDate,
-													 FineValue=fin.FineValue,
-													 SettledValue=fin.SettledValue,
-													 InterestValue=fin.InterestValue
+																				 .Where(fr => fr.IdNewFinancial == fin.Id)
+																				 .Join(_dbContext.Set<Financial>(),
+																								 fr => fr.IdRefOrigin,
+																								 f => f.Id,
+																								 (fr, f) => new { fr, f })
+																				 .Select(x => new FinancialResourcesResponse
+																				 {
+																					 Id = x.f.Id,
+																					 Description = x.f.Description,
+																					 Value = x.f.Value
+																				 })
+																				 .ToList(),
+													 SettlementDate = fin.SettlementDate,
+													 FineValue = fin.FineValue,
+													 SettledValue = fin.SettledValue,
+													 InterestValue = fin.InterestValue
 												 };
 
 				var pagedResult = await pagedQuery.AsNoTracking()
-																					.WithCaseInsensitive()
-																					.GetPagedAsync<FinancialResponse>(filters.PageNumber, filters.PageSize);
+																						.WithCaseInsensitive()
+																						.GetPagedAsync<FinancialResponse>(filters.PageNumber, filters.PageSize);
 
 				return new PagedResultWithTotals
 				{
