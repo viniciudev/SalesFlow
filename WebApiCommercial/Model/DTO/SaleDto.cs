@@ -15,7 +15,7 @@ namespace Model.DTO
 
 		public DateTime ReleaseDate { get; set; }
 		public DateTime SaleDate { get; set; }
-		public int IdClient { get; set; }
+		public int? IdClient { get; set; }
 
 		public int? IdSeller { get; set; }
 
