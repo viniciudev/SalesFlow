@@ -1760,20 +1760,41 @@ namespace Service
 		{
 			var dest = new dest(versao);
 
-			// Configuração do documento (CPF ou CNPJ)
-			if (_currentSale?.Client?.TipoPessoa == "J")
+			// VERIFICAÇÃO PRINCIPAL: Quando o cliente é NULL
+			if (_currentSale?.Client == null)
 			{
-				dest.CNPJ = _currentSale.Client.Document; // CNPJ apenas números
+				// Consumidor final não identificado
+				dest.CPF = "99999999999";  // CPF genérico para consumidor não identificado
+
+				// Nome padrão para consumidor não identificado
+				dest.xNome = _currentFiscalConfiguration.Ambiente == AmbienteEnum.Homologacao
+						? "NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
+						: "CONSUMIDOR NAO IDENTIFICADO";
+
+				// Indicador de IE: 9 = Não Contribuinte (padrão para consumidor final)
+				dest.indIEDest = indIEDest.NaoContribuinte;
+
+				// Endereço padrão
+				dest.enderDest = GetEnderecoDestinatarioPadrao();
+
+				return dest;
+			}
+
+			// Cliente existe - fluxo normal
+			// Configuração do documento (CPF ou CNPJ)
+			if (_currentSale.Client.TipoPessoa == "J")
+			{
+				dest.CNPJ = _currentSale.Client.Document;
 			}
 			else
 			{
-				dest.CPF = _currentSale?.Client?.Document ?? "99999999999"; // CPF apenas números
+				dest.CPF = _currentSale?.Client?.Document ?? "99999999999";
 			}
 
-			// Nome do destinatário (para homologação, usa texto padrão)
+			// Nome do destinatário
 			dest.xNome = _currentFiscalConfiguration.Ambiente == AmbienteEnum.Homologacao
-					? "NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
-					: _currentSale?.Client?.Name ?? "CONSUMIDOR NAO IDENTIFICADO";
+							? "NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
+							: _currentSale?.Client?.Name ?? "CONSUMIDOR NAO IDENTIFICADO";
 
 			// Endereço do destinatário
 			dest.enderDest = GetEnderecoDestinatario();
@@ -1781,51 +1802,60 @@ namespace Service
 			// Configurações específicas por versão
 			if (versao == VersaoServico.Versao200)
 			{
-				// Para versão 2.00
 				if (!string.IsNullOrEmpty(_currentSale?.Client?.Ie))
 					dest.IE = _currentSale.Client.Ie;
 				else
 					dest.IE = "ISENTO";
-
 				return dest;
 			}
 
-			// Para versão 3.00 e superiores (NFCe/NFe)
-
-			// Indicador de IE (1=Contribuinte, 2=Isento, 9=Não Contribuinte)
+			// Para versão 3.00 e superiores
 			if (_currentSale?.Client?.IndicadorIE != null)
 			{
 				switch (_currentSale.Client.IndicadorIE)
 				{
-					case "1": // Contribuinte
+					case "1":
 						dest.indIEDest = indIEDest.ContribuinteICMS;
 						if (!string.IsNullOrEmpty(_currentSale.Client.Ie))
 							dest.IE = _currentSale.Client.Ie;
 						break;
-					case "2": // Isento
+					case "2":
 						dest.indIEDest = indIEDest.Isento;
 						dest.IE = "ISENTO";
 						break;
-					case "9": // Não Contribuinte
+					case "9":
 						dest.indIEDest = indIEDest.NaoContribuinte;
 						break;
 				}
 			}
 			else
 			{
-				// Default para NFCe: não contribuinte
 				dest.indIEDest = indIEDest.NaoContribuinte;
 			}
 
-			// Email (opcional)
 			if (!string.IsNullOrEmpty(_currentSale?.Client?.Email))
 				dest.email = _currentSale.Client.Email;
-
-			// Para NFCe em homologação, podemos usar email padrão
 			else if (_currentFiscalConfiguration.Ambiente == AmbienteEnum.Homologacao)
 				dest.email = "homologacao@sefaz.gov.br";
 
 			return dest;
+		}
+
+		protected virtual enderDest GetEnderecoDestinatarioPadrao()
+		{
+			return new enderDest
+			{
+				xLgr = "ENDERECO NAO INFORMADO",
+				nro = "S/N",
+				xCpl = null,
+				xBairro = "CENTRO",
+				cMun = 9999999,  // Código genérico
+				xMun = "NAO INFORMADO",
+				UF = _configuracaoApp.EnderecoEmitente.UF.ToString(), //(Estado)Enum.Parse(typeof(Estado), fiscalConfiguration.Emitente.EmitenteEndereco.Uf)  // UF padrão, pode ser configurável
+				CEP = "00000000",
+				cPais = 1058,
+				xPais = "BRASIL"
+			};
 		}
 		//protected virtual enderDest GetEnderecoDestinatario()
 		//{
@@ -1847,24 +1877,39 @@ namespace Service
 		{
 			var endereco = new enderDest();
 			var cliente = _currentSale?.Client;
+
+			// VERIFICAÇÃO: Se cliente é nulo, retorna endereço padrão
+			if (cliente == null)
+			{
+				return GetEnderecoDestinatarioPadrao();
+			}
+
 			try
 			{
-			if (cliente != null)
-			{
-				endereco.xLgr = cliente.Address;
-				endereco.nro = cliente.Numero;
+				endereco.xLgr = cliente.Address ?? "ENDERECO NAO INFORMADO";
+				endereco.nro = cliente.Numero ?? "S/N";
 				endereco.xCpl = cliente.Complemento;
-				endereco.xBairro = cliente.Bairro;
-				endereco.cMun = long.Parse(cliente.CodMunicipioIbge);
-				endereco.xMun = cliente.Municipio; // Usa NameCity como fallback
-				endereco.UF = cliente.Uf; // Usa NameState como fallback
-				endereco.CEP = cliente.ZipCode;
-				endereco.cPais = int.Parse(cliente.CodPais);
+				endereco.xBairro = cliente.Bairro ?? "CENTRO";
+
+				// Validação para evitar erros de parse
+				if (!string.IsNullOrEmpty(cliente.CodMunicipioIbge))
+					endereco.cMun = long.Parse(cliente.CodMunicipioIbge);
+				else
+					endereco.cMun = 9999999;
+
+				endereco.xMun = cliente.Municipio ?? "NAO INFORMADO";
+				endereco.UF = cliente.Uf ?? "SP";
+				endereco.CEP = cliente.ZipCode ?? "00000000";
+
+				if (!string.IsNullOrEmpty(cliente.CodPais))
+					endereco.cPais = int.Parse(cliente.CodPais);
+				else
+					endereco.cPais = 1058;
+
 				endereco.xPais = cliente.Pais ?? "Brasil";
 
 				if (!string.IsNullOrEmpty(cliente.CellPhone))
 				{
-					// Formata telefone (remover caracteres não numéricos)
 					var telefone = new string(cliente.CellPhone.Where(char.IsDigit).ToArray());
 					if (telefone.Length >= 10)
 					{
@@ -1872,36 +1917,12 @@ namespace Service
 					}
 				}
 			}
-			else
+			catch (Exception)
 			{
-				// Dados padrão para consumidor não identificado
-				endereco.xLgr = "ENDERECO NAO INFORMADO";
-				endereco.nro = "S/N";
-				endereco.xBairro = "NAO INFORMADO";
-				endereco.cMun = 9999999;
-				endereco.xMun = "NAO INFORMADO";
-				endereco.UF = "SP";
-				endereco.CEP = "00000000";
-				endereco.cPais = 1058;
-				endereco.xPais = "Brasil";
+				return GetEnderecoDestinatarioPadrao();
 			}
 
 			return endereco;
-			}
-			catch (Exception)
-			{
-
-				endereco.xLgr = "ENDERECO NAO INFORMADO";
-				endereco.nro = "S/N";
-				endereco.xBairro = "NAO INFORMADO";
-				endereco.cMun = 9999999;
-				endereco.xMun = "NAO INFORMADO";
-				endereco.UF = "SP";
-				endereco.CEP = "00000000";
-				endereco.cPais = 1058;
-				endereco.xPais = "Brasil";
-				return endereco;
-			}
 		}
 		protected virtual transp GetTransporte()
 		{
