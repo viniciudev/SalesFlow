@@ -873,7 +873,7 @@ namespace Service
 						detalhesPagamento.Add(new PagamentoDetalhe
 						{
 							PaymentMethod = paymentMethod.PaymentMethod,
-							Value = paymentMethod.Id, // Assumindo que existe um campo Value
+							Value = paymentMethod.Amount, // Assumindo que existe um campo Value
 							FinancialId = financial.Id // Para referência se precisar
 						});
 					}
@@ -1763,20 +1763,21 @@ namespace Service
 			if (_currentSale?.Client == null)
 			{
 				// Consumidor final não identificado
-				dest.CPF = "99999999999";  // CPF genérico para consumidor não identificado
-
+				//dest.idEstrangeiro = "ext";
 				// Nome padrão para consumidor não identificado
+				dest.CNPJ = "99999999000191";
 				dest.xNome = _currentFiscalConfiguration.Ambiente == AmbienteEnum.Homologacao
 						? "NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
 						: "CONSUMIDOR NAO IDENTIFICADO";
 
 				// Indicador de IE: 9 = Não Contribuinte (padrão para consumidor final)
 				dest.indIEDest = indIEDest.NaoContribuinte;
-
+				//dest.IE = null;
 				// Endereço padrão
-				dest.enderDest = GetEnderecoDestinatarioPadrao();
+				dest.enderDest = null;//GetEnderecoDestinatarioPadrao();
 
 				return dest;
+
 			}
 
 			// Cliente existe - fluxo normal
@@ -1848,7 +1849,7 @@ namespace Service
 				nro = "S/N",
 				xCpl = null,
 				xBairro = "CENTRO",
-				cMun = 9999999,  // Código genérico
+				cMun = _configuracaoApp.EnderecoEmitente.cMun,  // Código genérico
 				xMun = "NAO INFORMADO",
 				UF = _configuracaoApp.EnderecoEmitente.UF.ToString(), //(Estado)Enum.Parse(typeof(Estado), fiscalConfiguration.Emitente.EmitenteEndereco.Uf)  // UF padrão, pode ser configurável
 				CEP = "00000000",
