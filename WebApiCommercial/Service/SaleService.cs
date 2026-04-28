@@ -18,14 +18,15 @@ namespace Service
 		private readonly ICostCenterRepository _costCenterRepository;
 		private readonly IFinancialService _financialService;
 		private readonly IFinancialPaymentMethodRepository _financialPaymentMethodRepository;
-
+		private readonly IBoxRepository _boxRepository;
 		public SaleService(IGenericRepository<Sale> repository,
 			ISaleItemsService saleItemsService,
 			ICommissionService commissionService,
 			IStockService stockService,
 			ICostCenterRepository costCenterRepository,
 			IFinancialService financialService,
-			IFinancialPaymentMethodRepository financialPaymentMethodRepository) : base(repository)
+			IFinancialPaymentMethodRepository financialPaymentMethodRepository,
+			IBoxRepository boxRepository) : base(repository)
 		{
 			this.saleItemsService = saleItemsService;
 			this.commissionService = commissionService;
@@ -33,6 +34,7 @@ namespace Service
 			_costCenterRepository = costCenterRepository;
 			_financialPaymentMethodRepository = financialPaymentMethodRepository;
 			_financialService = financialService;
+			_boxRepository = boxRepository;
 		}
 
 		public async Task<PagedResult<Sale>> GetAllPaged(Filters filters)
@@ -121,6 +123,7 @@ namespace Service
 		{
 			if (formPaymentSales!=null&& formPaymentSales.Count() > 0)
 			{
+				var caixaAberto = await _boxRepository.GetByStatus(CaixaStatus.ABERTO, IdCompany);
 				var listCostCenter = await _costCenterRepository.GetByIdCompany(IdCompany);
 				Financial item = new Financial();
 				item.Id = 0;
@@ -131,7 +134,7 @@ namespace Service
 				item.CreationDate = DateTime.Now;
 				item.DueDate = DateTime.Now;
 				item.IdCompany = IdCompany;
-
+				item.BoxId=caixaAberto != null ? caixaAberto.Id : null;
 				item.Description = $"Venda no dia:{DateTime.Now}";
 				item.IdCostCenter = listCostCenter.FirstOrDefault()?.Id;
 				item.IdClient = IdClient;

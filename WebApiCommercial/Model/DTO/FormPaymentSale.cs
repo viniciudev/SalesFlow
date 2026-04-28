@@ -9,7 +9,7 @@ namespace Model.DTO
 	public class FormPaymentSale
 	{
 		public int PaymentMethodId { get; set; }
-		public int Value { get; set; }
+		public decimal Value { get; set; }
 		public string PaymentMethodName { get; set; }
 		public int? BankAccountId { get; set; }      // Nullable porque pode não existir
 		public string? BankAccountName { get; set; }

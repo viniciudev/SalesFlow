@@ -4,6 +4,7 @@ using Model.DTO.BoxDto;
 using Model.Moves;
 using Repository;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -73,7 +74,21 @@ namespace Service
 
             return new ResponseGeneric { Message = "Caixa fechado!", Success = true, Data = caixa };
         }
-        public async Task<PagedResult<Box>> GetMovimentacoesAsync(Filters filters)
+    public async Task<List<Financial>>? MovimentosDocaixa(int caixaId)
+    {
+			Box caixa = await (repository as IBoxRepository).GetByIdBox(caixaId);
+      if(caixa!= null && caixa.Movimentacoes.Count() > 0)
+      {
+        return caixa.Movimentacoes.ToList();
+      }
+      else
+      {
+        return null;
+      }
+     
+		}
+
+				public async Task<PagedResult<Box>> GetMovimentacoesAsync(Filters filters)
         {
            return await (repository as IBoxRepository).GetPaged(filters);
         }
@@ -88,5 +103,7 @@ namespace Service
         Task<ResponseGeneric> FecharCaixaAsync(int caixaId, CloseBoxDto dto);
         Task<PagedResult<Box>> GetMovimentacoesAsync(Filters filters);
         Task<BoxStatus> GetStatusByCompany(int tenantid);
-    }
+    Task<List<Financial>>? MovimentosDocaixa(int caixaId);
+
+		}
 }

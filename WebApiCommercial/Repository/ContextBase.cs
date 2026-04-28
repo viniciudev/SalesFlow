@@ -572,7 +572,7 @@ namespace Repository
             builder.Entity<Financial>()
         .HasOne(dc => dc.Box)
         .WithMany(c => c.Movimentacoes)
-        .HasForeignKey(dc => dc.IdProduct);
+        .HasForeignKey(dc => dc.BoxId);
 
             builder.Entity<Financial>()
         .HasOne(dc => dc.Client)

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Model;
 using Model.DTO.BoxDto;
@@ -37,7 +38,15 @@ namespace WebApiCommercial.Controllers
             return Ok(caixa);
         }
 
-        [HttpGet("status")]
+    [AllowAnonymous]
+		[HttpGet("movimentos/{boxId}")]
+		public async Task<ActionResult> GetMovimentosDocaixa(int boxId)
+		{
+			var status = await _caixaService.MovimentosDocaixa(boxId);
+			return Ok(status);
+		}
+
+		[HttpGet("status")]
         public async Task<ActionResult> GetBoxStatus([FromHeader] int tenantid)
         {
             var status = await _caixaService.GetStatusByCompany(tenantid);
