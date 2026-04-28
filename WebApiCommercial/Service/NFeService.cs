@@ -600,8 +600,7 @@ namespace Service
 					ManterDadosEmCache = false,
 					KeyStorageFlags =
 								X509KeyStorageFlags.MachineKeySet |
-								X509KeyStorageFlags.PersistKeySet |
-								X509KeyStorageFlags.Exportable
+								X509KeyStorageFlags.PersistKeySet 
 				};
 				var ConfiguracaoEmail = new ConfiguracaoEmail();
 				var ConfiguracaoCsc = new ConfiguracaoCsc
