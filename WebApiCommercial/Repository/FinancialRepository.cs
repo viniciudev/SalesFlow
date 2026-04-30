@@ -277,7 +277,8 @@ namespace Repository
 													 SettlementDate = fin.SettlementDate,
 													 FineValue = fin.FineValue,
 													 SettledValue = fin.SettledValue,
-													 InterestValue = fin.InterestValue
+													 InterestValue = fin.InterestValue,
+													 Troco=fin.Troco
 												 };
 
 				var pagedResult = await pagedQuery.AsNoTracking()

@@ -105,7 +105,8 @@ namespace Service
 					}
 					if (sale.IdSeller != null)
 						await commissionService.GenerateCommission(data, sharedCommission, (int)sale.IdSeller, sale.IdCompany);
-					await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany, sale.IdClient, sale.BankAccountId);
+					await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany,
+						sale.IdClient, sale.BankAccountId,sale.Troco);
 
 					transaction.Commit();
 					return s.Id;
@@ -119,12 +120,13 @@ namespace Service
 
 		}
 		private async Task GenerateFinancial(ICollection<FormPaymentSale> formPaymentSales, int IdSale, int IdCompany, 
-			int? IdClient = null, int? BankAccountId=null)
+			int? IdClient = null, int? BankAccountId=null,decimal ?troco=null)
 		{
 			if (formPaymentSales!=null&& formPaymentSales.Count() > 0)
 			{
 				var caixaAberto = await _boxRepository.GetByStatus(CaixaStatus.ABERTO, IdCompany);
 				var listCostCenter = await _costCenterRepository.GetByIdCompany(IdCompany);
+				decimal value = troco != null ? (decimal)(formPaymentSales.Sum(x => x.Value) - troco) : formPaymentSales.Sum(x => x.Value);
 				Financial item = new Financial();
 				item.Id = 0;
 				item.FinancialStatus = FinancialStatus.paid;
@@ -133,12 +135,14 @@ namespace Service
 				item.IdSale = IdSale;
 				item.CreationDate = DateTime.Now;
 				item.DueDate = DateTime.Now;
+				item.SettlementDate = DateTime.Now.ToString();
 				item.IdCompany = IdCompany;
 				item.BoxId=caixaAberto != null ? caixaAberto.Id : null;
 				item.Description = $"Venda no dia:{DateTime.Now}";
 				item.IdCostCenter = listCostCenter.FirstOrDefault()?.Id;
 				item.IdClient = IdClient;
-				item.Value = formPaymentSales.Sum(x=>x.Value);
+				item.Value = value;
+				item.Troco = troco;
 				item.BankAccountId = BankAccountId;
 
 				List<FinancialPaymentMethod> financialPaymentMethod = new();
@@ -202,7 +206,8 @@ namespace Service
 						await _financialService.DeleteAsync(item.Id);
 					}
 					//gerar novos financeiros
-					await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany, sale.IdClient,sale.BankAccountId);
+					await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany,
+						sale.IdClient,sale.BankAccountId,sale.Troco);
 					foreach (var item in sale.SaleItems)
 					{
 						item.IdSale = s.Id;

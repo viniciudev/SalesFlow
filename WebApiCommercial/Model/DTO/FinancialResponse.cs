@@ -28,6 +28,7 @@ namespace Model.DTO
 		public decimal InterestValue { get; set; }
 		public decimal SettledValue { get; set; }
 		public decimal FineValue { get; set; }
+		public decimal? Troco { get; set; }
 	}
     public class FinancialResourcesResponse {
         public int Id { get; set; }

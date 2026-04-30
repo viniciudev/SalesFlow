@@ -31,5 +31,6 @@ namespace Model.DTO
 		public ICollection<NFeEmission> NFeEmissions { get; set; } = new List<NFeEmission>();
 		public int Id { get; set; }
 		public int? BankAccountId { get; set; }
+		public decimal? Troco { get; set; }
 	}
 }

@@ -49,6 +49,7 @@ namespace Model.Moves
 		public decimal InterestValue { get; set; }
 		public decimal FineValue { get; set; }
 		public decimal SettledValue { get; set; }
+		public decimal? Troco { get; set; }
 	}
 
 
