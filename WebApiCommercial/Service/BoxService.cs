@@ -12,98 +12,129 @@ namespace Service
 {
 
 
-    public class BoxService : BaseService<Box>, IBoxService
-    {
-        public BoxService(IGenericRepository<Box> repository) : base(repository)
-        {
-        }
+	public class BoxService : BaseService<Box>, IBoxService
+	{
+		public BoxService(IGenericRepository<Box> repository) : base(repository)
+		{
+		}
 
-        public async Task<ResponseGeneric> AbrirCaixaAsync( OpenBoxDto dto)
-        {
-            // Validar se já existe caixa aberto
+		public async Task<ResponseGeneric> AbrirCaixaAsync(OpenBoxDto dto)
+		{
+			// Validar se já existe caixa aberto
 
-            var caixaAberto = await (repository as IBoxRepository).GetByStatus(CaixaStatus.ABERTO,dto.IdCompany);
+			var caixaAberto = await (repository as IBoxRepository).GetByStatus(CaixaStatus.ABERTO, dto.IdCompany);
 
 
-            if (caixaAberto != null)
-                return new ResponseGeneric { Message = "Já existe um caixa aberto!", Success = false };
+			if (caixaAberto != null)
+				return new ResponseGeneric { Message = "Já existe um caixa aberto!", Success = false };
 
-            var caixa = new Box
-            {
-                IdCompany=dto.IdCompany,
-                UsuarioId = null,
-                ValorInicial = dto.ValorInicial,
-                Observacoes = dto.Observacoes,
-                Status = CaixaStatus.ABERTO,
-                CreatedAt=DateTime.UtcNow,
-                DataAbertura=DateTime.UtcNow,
-            };
+			var caixa = new Box
+			{
+				IdCompany = dto.IdCompany,
+				UsuarioId = null,
+				ValorInicial = dto.ValorInicial,
+				Observacoes = dto.Observacoes,
+				Status = CaixaStatus.ABERTO,
+				CreatedAt = DateTime.UtcNow,
+				DataAbertura = DateTime.UtcNow,
+			};
 
-       
-            await repository.CreateAsync(caixa);
 
-            return new ResponseGeneric { Message = "Caixa aberto!", Success = true,Data= caixa };
-        }
-        public async Task<ResponseGeneric> FecharCaixaAsync(int caixaId, CloseBoxDto dto)
-        {
-            Box caixa = await (repository as IBoxRepository).GetByIdBox(caixaId);
+			await repository.CreateAsync(caixa);
 
-            if (caixa == null || caixa.Status == CaixaStatus.FECHADO)
-                return new ResponseGeneric { Message = "Caixa não encontrado ou já fechado", Success = false };
-
-            // Calcular saldo total das movimentações
-            var totalEntradas = caixa.Movimentacoes
-                .Where(m => m.FinancialType == FinancialType.recipe)
-                .Sum(x => x.Value);
-
-            var totalSaidas = caixa.Movimentacoes
-                .Where(m => m.FinancialType == FinancialType.expense)
-                .Sum(m => m.Value);
-
-            var saldoCalculado = caixa.ValorInicial + totalEntradas - totalSaidas;
-            var diferenca = dto.ValorFinal - saldoCalculado;
-
-            caixa.DataFechamento = DateTime.UtcNow;
-            caixa.ValorFinal = dto.ValorFinal;
-            caixa.SaldoCalculado = saldoCalculado;
-            caixa.Diferenca = diferenca;
-            caixa.Status = CaixaStatus.FECHADO;
-            caixa.Observacoes += $"\nFechamento: {dto.Observacoes}";
-
-            await repository.UpdateAsync(caixaId, caixa);
-
-            return new ResponseGeneric { Message = "Caixa fechado!", Success = true, Data = caixa };
-        }
-    public async Task<List<Financial>>? MovimentosDocaixa(int caixaId)
-    {
+			return new ResponseGeneric { Message = "Caixa aberto!", Success = true, Data = caixa };
+		}
+		public async Task<ResponseGeneric> FecharCaixaAsync(int caixaId, CloseBoxDto dto)
+		{
 			Box caixa = await (repository as IBoxRepository).GetByIdBox(caixaId);
-      if(caixa!= null && caixa.Movimentacoes.Count() > 0)
-      {
-        return caixa.Movimentacoes.ToList();
-      }
-      else
-      {
-        return null;
-      }
-     
+
+			if (caixa == null || caixa.Status == CaixaStatus.FECHADO)
+				return new ResponseGeneric { Message = "Caixa não encontrado ou já fechado", Success = false };
+
+			// Calcular saldo total das movimentações
+			var totalEntradas = caixa.Movimentacoes
+					.Where(m => m.FinancialType == FinancialType.recipe)
+					.Sum(x => x.Value);
+
+			var totalSaidas = caixa.Movimentacoes
+					.Where(m => m.FinancialType == FinancialType.expense)
+					.Sum(m => m.Value);
+
+			var saldoCalculado = caixa.ValorInicial + totalEntradas - totalSaidas;
+			var diferenca = dto.ValorFinal - saldoCalculado;
+
+			caixa.DataFechamento = DateTime.UtcNow;
+			caixa.ValorFinal = dto.ValorFinal;
+			caixa.SaldoCalculado = saldoCalculado;
+			caixa.Diferenca = diferenca;
+			caixa.Status = CaixaStatus.FECHADO;
+			caixa.Observacoes += $"\nFechamento: {dto.Observacoes}";
+
+			await repository.UpdateAsync(caixaId, caixa);
+
+			return new ResponseGeneric { Message = "Caixa fechado!", Success = true, Data = caixa };
+		}
+		public async Task<ResponseGeneric> AjustarCaixaAsync(int caixaId, CloseBoxDto dto)
+		{
+			Box caixa = await (repository as IBoxRepository).GetByIdBox(caixaId);
+
+			//if (caixa == null || caixa.Status == CaixaStatus.FECHADO)
+			//	return new ResponseGeneric { Message = "Caixa não encontrado ou já fechado", Success = false };
+
+			// Calcular saldo total das movimentações
+			var totalEntradas = caixa.Movimentacoes
+					.Where(m => m.FinancialType == FinancialType.recipe)
+					.Sum(x => x.Value);
+
+			var totalSaidas = caixa.Movimentacoes
+					.Where(m => m.FinancialType == FinancialType.expense)
+					.Sum(m => m.Value);
+
+			var saldoCalculado = caixa.ValorInicial + totalEntradas - totalSaidas;
+			var diferenca = dto.ValorFinal - saldoCalculado;
+
+			caixa.DataFechamento = DateTime.UtcNow;
+			caixa.ValorFinal = dto.ValorFinal;
+			caixa.SaldoCalculado = saldoCalculado;
+			caixa.Diferenca = diferenca;
+			caixa.Status = CaixaStatus.FECHADO;
+			caixa.Observacoes = dto.Observacoes;
+
+			await repository.UpdateAsync(caixaId, caixa);
+
+			return new ResponseGeneric { Message = "Caixa fechado!", Success = true, Data = caixa };
+		}
+		public async Task<List<Financial>>? MovimentosDocaixa(int caixaId)
+		{
+			Box caixa = await (repository as IBoxRepository).GetByIdBox(caixaId);
+			if (caixa != null && caixa.Movimentacoes.Count() > 0)
+			{
+				return caixa.Movimentacoes.ToList();
+			}
+			else
+			{
+				return null;
+			}
+
 		}
 
-				public async Task<PagedResult<Box>> GetMovimentacoesAsync(Filters filters)
-        {
-           return await (repository as IBoxRepository).GetPaged(filters);
-        }
-        public async Task<BoxStatus> GetStatusByCompany(int tenantid)
-        {
-            return await (repository as IBoxRepository).GetStatusByCompany(tenantid);
-        }
-    }
-    public interface IBoxService : IBaseService<Box>
-    {
-        Task<ResponseGeneric> AbrirCaixaAsync(OpenBoxDto dto);
-        Task<ResponseGeneric> FecharCaixaAsync(int caixaId, CloseBoxDto dto);
-        Task<PagedResult<Box>> GetMovimentacoesAsync(Filters filters);
-        Task<BoxStatus> GetStatusByCompany(int tenantid);
-    Task<List<Financial>>? MovimentosDocaixa(int caixaId);
-
+		public async Task<PagedResult<Box>> GetMovimentacoesAsync(Filters filters)
+		{
+			return await (repository as IBoxRepository).GetPaged(filters);
 		}
+		public async Task<BoxStatus> GetStatusByCompany(int tenantid)
+		{
+			return await (repository as IBoxRepository).GetStatusByCompany(tenantid);
+		}
+	}
+	public interface IBoxService : IBaseService<Box>
+	{
+		Task<ResponseGeneric> AbrirCaixaAsync(OpenBoxDto dto);
+		Task<ResponseGeneric> FecharCaixaAsync(int caixaId, CloseBoxDto dto);
+		Task<PagedResult<Box>> GetMovimentacoesAsync(Filters filters);
+		Task<BoxStatus> GetStatusByCompany(int tenantid);
+		Task<List<Financial>>? MovimentosDocaixa(int caixaId);
+		Task<ResponseGeneric> AjustarCaixaAsync(int caixaId, CloseBoxDto dto);
+
+	}
 }
