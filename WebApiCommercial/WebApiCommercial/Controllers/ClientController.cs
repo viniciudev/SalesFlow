@@ -53,11 +53,11 @@ namespace WebAppCommercial.Controllers
 
     
         [HttpPost]
-        public async Task<ActionResult<dynamic>> Post([FromBody] Client model, [FromHeader] int tenantid)
+        public async Task<ActionResult<dynamic>> Post([FromBody] ClientDto model, [FromHeader] int tenantid)
         {
             model.IdCompany = tenantid;
             model.CreatDate = DateTime.Now;
-            await clientService.Save(model);
+            await clientService.SaveClient(model);
             return Ok(model);
         }
 

@@ -43,7 +43,7 @@ namespace WebApiCommercial.Controllers
             return Ok(data);
         }
         [HttpGet("client")]
-        public async Task<ActionResult<PagedResult<Financial>>> GetByIdClient(
+        public async Task<ActionResult> GetByIdClient(
             [FromQuery] Filters filters
        , [FromHeader] int tenantid)
         {

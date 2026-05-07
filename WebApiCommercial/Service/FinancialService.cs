@@ -160,7 +160,7 @@ namespace Service
 		{
 			return await (repository as IFinancialRepository).GetPaged(filters);
 		}
-		public async Task<PagedResult<Financial>> GetPagedByIdClient(Filters filters)
+		public async Task<PagedResult<FinancialResponse>> GetPagedByIdClient(Filters filters)
 		{
 			return await (repository as IFinancialRepository).GetPagedByIdClient(filters);
 		}
@@ -170,6 +170,7 @@ namespace Service
 			{
 				Financial financialData = await base.GetByIdAsync(financial.Id);
 				financialData.FinancialStatus = financial.FinancialStatus;
+				financialData.SettlementDate = DateTime.Now.ToString("yyyy-MM-dd");
 				await base.Alter(financialData);
 			}
 			catch (System.Exception ex)
@@ -194,7 +195,7 @@ namespace Service
 				{
 					Financial financial = new Financial();
 					financial.Id = 0;
-					financial.FinancialStatus = i == 0 ? FinancialStatus.paid : FinancialStatus.pending;
+					financial.FinancialStatus =  FinancialStatus.pending;
 					financial.FinancialType = FinancialType.recipe;
 					financial.Origin = OriginFinancial.renegotiation;
 
@@ -262,7 +263,7 @@ namespace Service
 		Task<bool> CreateFinancial(FinancialRequest financial);
 		Task<PagedResultWithTotals> GetPaged(Filters filters);
 		Task AlterFinancialStatus(Financial financial);
-		Task<PagedResult<Financial>> GetPagedByIdClient(Filters filters);
+		Task<PagedResult<FinancialResponse>> GetPagedByIdClient(Filters filters);
 		Task CreateRenegotiationAsync(RenegotiationRequestDto request);
 	}
 }

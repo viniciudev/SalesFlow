@@ -337,7 +337,7 @@ namespace Repository
 					.ToListAsync();
 			return data;
 		}
-		public async Task<PagedResult<Financial>> GetPagedByIdClient(Filters filters)
+		public async Task<PagedResult<FinancialResponse>> GetPagedByIdClient(Filters filters)
 		{
 
 			try
@@ -348,7 +348,7 @@ namespace Repository
 													&& (fin.IdClient == filters.IdClient)
 												 && (fin.FinancialStatus == FinancialStatus.pending)
 												 && (fin.FinancialType == FinancialType.recipe)
-													select new Financial
+													select new FinancialResponse
 													{
 														Id = fin.Id,
 														Value = fin.Value,
@@ -358,6 +358,13 @@ namespace Repository
 														PaymentMethodName = fin.FinancialPaymentMethods.Select(x => x.PaymentMethod.Name).ToList(),
 														CreationDate = fin.CreationDate,
 														FinancialStatus = fin.FinancialStatus,
+														PaymentMethods = fin.FinancialPaymentMethods.Select(x =>
+															 new PaymentsDto
+															 {
+																 PaymentMethodId = x.PaymentMethodId,
+																 PaymentMethodName = x.PaymentMethod.Name,
+																 Value = x.Amount
+															 }).ToList(),
 
 													}).AsNoTracking()
 									 .GetPagedAsync(filters.PageNumber, filters.PageSize);
@@ -388,7 +395,7 @@ namespace Repository
 		Task<List<Financial>> GetByIdCompany(Filters filters);
 		Task<List<Financial>> GetByIdSaleAsync(int id);
 		Task<PagedResultWithTotals> GetPaged(Filters filters);
-		Task<PagedResult<Financial>> GetPagedByIdClient(Filters filters);
+		Task<PagedResult<FinancialResponse>> GetPagedByIdClient(Filters filters);
 		Task<Financial> GetById(int id);
 	}
 	public class PagedResultWithTotals
