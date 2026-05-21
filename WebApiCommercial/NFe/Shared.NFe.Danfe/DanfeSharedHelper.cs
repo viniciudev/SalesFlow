@@ -17,7 +17,8 @@ namespace Shared.DFe.Danfe
 {
     public static class DanfeSharedHelper
     {
-        public static Report GenerateDanfeNfceReport(nfeProc proc, ConfiguracaoDanfeNfce configuracaoDanfeNfce, string cIdToken, string csc, byte[] frx, string arquivoRelatorio, string textoRodape = "")
+		private static string FRLineBreak => "\n";
+		public static Report GenerateDanfeNfceReport(nfeProc proc, ConfiguracaoDanfeNfce configuracaoDanfeNfce, string cIdToken, string csc, byte[] frx, string arquivoRelatorio, string textoRodape = "")
         {
             //Define as variáveis que serão usadas no relatório (dúvidas a respeito do fast reports consulte a documentação em https://www.fast-report.com/pt/product/fast-report-net/documentation/)
 
@@ -121,7 +122,7 @@ namespace Shared.DFe.Danfe
             string resumoCanhoto = string.Empty;
             string contingenciaDescricao = string.Empty;
             string contingenciaValor = string.Empty;
-            string consultaAutenticidade = "Consulta de autenticidade no portal nacional da NF-e" + Environment.NewLine +
+            string consultaAutenticidade = "Consulta de autenticidade no portal nacional da NF-e" + FRLineBreak +
                                         "www.nfe.fazenda.gov.br/portal ou no site da Sefaz autorizadora";
 
             if (configuracaoDanfeNfe.ExibirResumoCanhoto)
@@ -145,12 +146,12 @@ namespace Shared.DFe.Danfe
                          proc.protNFe.infProt.cStat == 151 ||
                          proc.protNFe.infProt.cStat == 155))
                     {
-                        mensagem = "NFe sem Valor Fiscal - HOMOLOGAÇÃO" + Environment.NewLine +
+                        mensagem = "NFe sem Valor Fiscal - HOMOLOGAÇÃO" + FRLineBreak +
                                    "NFe em Contingência - CANCELADA";
                     }
                     else
                     {
-                        mensagem = "NFe sem Valor Fiscal - HOMOLOGAÇÃO" + Environment.NewLine +
+                        mensagem = "NFe sem Valor Fiscal - HOMOLOGAÇÃO" + FRLineBreak +
                                    "NFe em Contingência";
                     }
                 }

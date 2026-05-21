@@ -184,9 +184,9 @@ namespace NFe.Utils.Validacao
             }
 
             if (falhas.Length > 0)
-                throw new ValidacaoSchemaException($"Ocorreu o seguinte erro durante a validação XML: {Environment.NewLine}{falhas}", stringXml);
+                throw new ValidacaoSchemaException($"Ocorreu o seguinte erro durante a validação XML: {"\n"}{falhas}", stringXml);
 
-            return falhas.ToString().Trim().Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+            return falhas.ToString().Trim().Split(new string[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
         }
     }
 }

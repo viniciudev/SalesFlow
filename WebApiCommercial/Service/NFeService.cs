@@ -28,7 +28,11 @@ using NFe.Classes.Informacoes.Pagamento;
 using NFe.Classes.Informacoes.Total;
 using NFe.Classes.Informacoes.Transporte;
 using NFe.Classes.Protocolo;
+using NFe.Classes.Servicos.Download;
 using NFe.Classes.Servicos.Tipos;
+using NFe.Danfe.Base.NFe;
+using NFe.Danfe.OpenFast.NFe;
+using NFe.Danfe.QuestPdf.ImpressaoEventoNfe;
 using NFe.Danfe.QuestPdf.ImpressaoNfce;
 using NFe.Servicos;
 using NFe.Servicos.Retorno;
@@ -37,6 +41,7 @@ using NFe.Utils.Email;
 using NFe.Utils.Evento;
 using NFe.Utils.InformacoesSuplementares;
 using NFe.Utils.NFe;
+using QuestPDF.Fluent;
 using Repository;
 using System;
 using System.Collections.Generic;
@@ -433,7 +438,8 @@ namespace Service
 				_currentNaturezaOperacao = naturezaOperacao;
 				_currentSale = sale;
 				_configuracaoApp = criarConfiguracaoApp(fiscalConfiguration, naturezaOperacao);
-				_nfe = ObterNfeValidada(VersaoServico.Versao400, ModeloDocumento.NFCe,
+				ModeloDocumento modeloDocumento= _currentNaturezaOperacao.TipoDocumento== TipoDocumentoEnum.NFCE ? ModeloDocumento.NFCe : ModeloDocumento.NFe;
+				_nfe = ObterNfeValidada(VersaoServico.Versao400, modeloDocumento,
 						numero, new ConfiguracaoCsc
 						{
 							CIdToken = fiscalConfiguration.Csc.Identificador,
@@ -457,7 +463,7 @@ namespace Service
 				Console.WriteLine($"retorno: {retornoEnvio.Retorno.xMotivo}");
 
 				//ExibeNfe();
-
+			
 				//var dlg = new Microsoft.Win32.SaveFileDialog
 				//{
 				//    FileName = _nfe.infNFe.Id.Substring(3),
@@ -468,7 +474,7 @@ namespace Service
 				//if (result != true) return;
 				//var arquivoXml = dlg.FileName;
 				//_nfe.SalvarArquivoXml(arquivoXml);
-				retornoEnvio.Xml = xml;
+							retornoEnvio.Xml =  xml ;
 
 				return retornoEnvio;
 			}
@@ -1089,6 +1095,12 @@ namespace Service
 
 			if (!financials.Any())
 				return null;
+			// SE FOR PAGAMENTO À VISTA (apenas 1 parcela na mesma data ou sem prazo)
+			// NÃO deve informar cobrança
+			if (financials.Count == 1 && financials.First().DueDate <= DateTime.Now.AddDays(1))
+			{
+				return null; // Pagamento à vista - não envia <cobr>
+			}
 
 			decimal totalParcelas = financials.Sum(f => f.Value);
 			decimal totalNF = icmsTot.vNF;
@@ -1622,41 +1634,38 @@ namespace Service
 			var t = new total
 			{
 				ICMSTot = icmsTot,
-				//IBSCBSTot = (modeloDocumento == ModeloDocumento.NFe && _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIBS == true) ? new IBSCBSTot
-				//{
-				//    vBCIBSCBS = 0,
-				//    gIBS = new gIBSTotal
-				//    {
-				//        gIBSUF = new gIBSUFTotal
-				//        {
-				//            vDif = 0,
-				//            vDevTrib = 0,
-				//            vIBSUF = 0
-				//        },
-				//        gIBSMun = new gIBSMunTotal
-				//        {
-				//            vDif = 0,
-				//            vDevTrib = 0,
-				//            vIBSMun = 0
-				//        },
-				//        vIBS = 0,
-				//        vCredPres = 0,
-				//        vCredPresCondSus = 0
-				//    },
-				//    gCBS = new gCBSTotal
-				//    {
-				//        vDif = 0,
-				//        vDevTrib = 0,
-				//        vCBS = 0,
-				//        vCredPres = 0,
-				//        vCredPresCondSus = 0
-				//    }
-				//} : null,
-				//ISTot =(modeloDocumento == ModeloDocumento.NFe&& _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIS == true) ? new ISTot()
-				//{
-				//    vIS = 0
-				//} : null
+				ISTot = (modeloDocumento == ModeloDocumento.NFe && _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIS == true) ? new ISTot() { vIS = 0 } : null
 			};
+
+			// SÓ adiciona IBSCBSTot se for NFe E IBS ativo E ambiente de produção específico
+			// Geralmente não usado para NFCe
+			var deveEnviarIBSCBS = modeloDocumento == ModeloDocumento.NFe &&
+														 _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIBS == true;
+
+			if (deveEnviarIBSCBS)
+			{
+				t.IBSCBSTot = new IBSCBSTot
+				{
+					vBCIBSCBS = 0,
+					gIBS = new gIBSTotal
+					{
+						gIBSUF = new gIBSUFTotal { vDif = 0, vDevTrib = 0, vIBSUF = 0 },
+						gIBSMun = new gIBSMunTotal { vDif = 0, vDevTrib = 0, vIBSMun = 0 },
+						vIBS = 0,
+						vCredPres = 0,
+						vCredPresCondSus = 0
+					},
+					gCBS = new gCBSTotal
+					{
+						vDif = 0,
+						vDevTrib = 0,
+						vCBS = 0,
+						vCredPres = 0,
+						vCredPresCondSus = 0
+					}
+				};
+			}
+
 			return t;
 		}
 		protected virtual ide GetIdentificacao(int numero, ModeloDocumento modelo, VersaoServico versao)
@@ -1997,6 +2006,7 @@ namespace Service
 				catch (Exception)
 				{
 					nfe = new NFe.Classes.NFe().CarregarDeXmlString(nFeEmission.XmlCompleto);
+					
 					arquivo = nfe.ObterXmlString();
 				}
 
@@ -2004,26 +2014,68 @@ namespace Service
 				//if (fiscalConfiguration == null)
 				//    return new ResponseGeneric { Success = false, Message = "Não encontrado as configurações para emissão de nota!" };
 				//var proc = new nfeProc().CarregarDeArquivoXml(Caminho_do_arquivo_XML);
+				if (nFeEmission.TipoDocumento == TipoDocumentoEnum.NFE)
+				{
+					//var configuracaoDanfeNfe = _configuracoes.ConfiguracaoDanfeNfe;
+					var procM = new nfeProc()
+					{
+						NFe = nfe,
+						protNFe = new protNFe
+						{
+							infProt = new infProt
+							{
+								chNFe = nfe.infNFe.Id,
+								dhRecbto = DateTime.Now,
+								nProt = nFeEmission.Protocolo,
+								xMotivo = "Autorizado o uso da NF-e"
+							}
+						},
+						versao= "4.00"
+					};
+					DanfeFrNfe danfe = new DanfeFrNfe(proc: procM, configuracaoDanfeNfe: new ConfiguracaoDanfeNfe()
+					{
+						//Logomarca = configuracaoDanfeNfe.Logomarca,
+						DuasLinhas = false,
+						DocumentoCancelado = false,
+						//QuebrarLinhasObservacao = configuracaoDanfeNfe.QuebrarLinhasObservacao,
+						ExibirResumoCanhoto = false,
+						//ResumoCanhoto = configuracaoDanfeNfe.ResumoCanhoto,
+						//ChaveContingencia = configuracaoDanfeNfe.ChaveContingencia,
+						//ExibeCampoFatura = configuracaoDanfeNfe.ExibeCampoFatura,
+						//ImprimirISSQN = configuracaoDanfeNfe.ImprimirISSQN,
+						//ImprimirDescPorc = configuracaoDanfeNfe.ImprimirDescPorc,
+						//ImprimirTotalLiquido = configuracaoDanfeNfe.ImprimirTotalLiquido,
+						//ImprimirUnidQtdeValor = configuracaoDanfeNfe.ImprimirUnidQtdeValor,
+						//ExibirTotalTributos = configuracaoDanfeNfe.ExibirTotalTributos,
+						//ExibeRetencoes = configuracaoDanfeNfe.ExibeRetencoes
+					},
+desenvolvedor: "SERVICE BOX",
+arquivoRelatorio: string.Empty);
+					var pdfBytes = danfe.ExportarPdf();
+					return pdfBytes;
+				}
+				else
+				{
+					var danfeDocument = new DanfeNfceDocument(arquivo, null/*logoBytes*/);
+					danfeDocument.TamanhoImpressao(NFe.Danfe.QuestPdf.ImpressaoNfce.TamanhoImpressao.Impressao80);
 
-				var danfeDocument = new DanfeNfceDocument(arquivo, null/*logoBytes*/);
-				danfeDocument.TamanhoImpressao(NFe.Danfe.QuestPdf.ImpressaoNfce.TamanhoImpressao.Impressao80);
-			
-				var pdfBytes = danfeDocument.GerarPdfBytes();
-				//DanfeNativoNfce impr = new DanfeNativoNfce(arquivo,
-				//		VersaoQrCode.QrCodeVersao3,
-				//	 null,
-				//		fiscalConfiguration.Csc.Identificador,//_configuracoes.ConfiguracaoCsc.CIdToken,
-				//		fiscalConfiguration.Csc.Valor,//",//_configuracoes.ConfiguracaoCsc.Csc,
-				//		0 /*troco*//*, "Arial Black"*/);
+					var pdfBytes = danfeDocument.GerarPdfBytes();
+					//DanfeNativoNfce impr = new DanfeNativoNfce(arquivo,
+					//		VersaoQrCode.QrCodeVersao3,
+					//	 null,
+					//		fiscalConfiguration.Csc.Identificador,//_configuracoes.ConfiguracaoCsc.CIdToken,
+					//		fiscalConfiguration.Csc.Valor,//",//_configuracoes.ConfiguracaoCsc.Csc,
+					//		0 /*troco*//*, "Arial Black"*/);
 
-				//SaveFileDialog fileDialog = new SaveFileDialog();
+					//SaveFileDialog fileDialog = new SaveFileDialog();
 
-				//fileDialog.ShowDialog();
+					//fileDialog.ShowDialog();
 
-				//if (string.IsNullOrEmpty(fileDialog.FileName))
-				//    throw new ArgumentException("Não foi selecionado nem uma pasta");
+					//if (string.IsNullOrEmpty(fileDialog.FileName))
+					//    throw new ArgumentException("Não foi selecionado nem uma pasta");
 
-				return pdfBytes;
+					return pdfBytes;
+				}
 
 				//impr.Imprimir(salvarArquivoPdfEm: fileDialog.FileName.Replace(".pdf", "") + ".pdf");
 				//var bytes = impr.PdfBytes();

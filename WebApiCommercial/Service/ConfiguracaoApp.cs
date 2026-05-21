@@ -70,7 +70,7 @@ namespace NFe.App
             camposEmBranco.Remove(propinfo.Name);
 
             if (camposEmBranco.Count > 0)
-                throw new Exception("Informe os dados abaixo antes de salvar as Configurações:" + Environment.NewLine + string.Join(", ", camposEmBranco.ToArray()));
+                throw new Exception("Informe os dados abaixo antes de salvar as Configurações:" + "\n" + string.Join(", ", camposEmBranco.ToArray()));
 
             var dir = Path.GetDirectoryName(arquivo);
             if (dir != null && !Directory.Exists(dir))

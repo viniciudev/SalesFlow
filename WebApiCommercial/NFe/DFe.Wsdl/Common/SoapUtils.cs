@@ -53,6 +53,7 @@ namespace CTe.CTeOSDocumento.Soap
         public string SendRequest(XmlDocument xmlEnvelop, X509Certificate2 certificadoDigital, string url, int timeOut, TipoEvento? tipoEvento = null, string actionUrn = "")
         {
             return _requestSefaz.SendRequest(xmlEnvelop, certificadoDigital, url, timeOut, tipoEvento, actionUrn);
+
         }
     }
 

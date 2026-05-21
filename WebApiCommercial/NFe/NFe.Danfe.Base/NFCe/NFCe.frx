@@ -170,9 +170,9 @@ namespace FastReport
       string msgHomologacao = &quot;&quot;;
       string msgContigencia = &quot;&quot;;
       if ( ((TipoAmbiente)Report.GetColumnValue(&quot;NFCe.NFe.infNFe.ide.tpAmb&quot;)) == TipoAmbiente.Homologacao )
-        msgHomologacao = &quot;EMITIDA EM AMBIENTE DE HOMOLOGAÇÃO – SEM VALOR FISCAL&quot; + Environment.NewLine;
+        msgHomologacao = &quot;EMITIDA EM AMBIENTE DE HOMOLOGAÇÃO – SEM VALOR FISCAL&quot; + "\n";
       if ( ((TipoEmissao)Report.GetColumnValue(&quot;NFCe.NFe.infNFe.ide.tpEmis&quot;)) != TipoEmissao.teNormal )
-        msgContigencia = &quot;EMITIDA EM CONTINGÊNCIA&quot; + Environment.NewLine;
+        msgContigencia = &quot;EMITIDA EM CONTINGÊNCIA&quot; + "\n";
 
       memMsgFiscal.Text = msgHomologacao + msgContigencia + memMsgFiscal.Text;
     }
@@ -180,7 +180,7 @@ namespace FastReport
 
     private void txtObs_BeforePrint(object sender, EventArgs e)
     {
-      txtObs.Text = ((String)Report.GetColumnValue(&quot;NFCe.NFe.infNFe.infAdic.infCpl&quot;)).Replace(&quot;;&quot;, Environment.NewLine);
+      txtObs.Text = ((String)Report.GetColumnValue(&quot;NFCe.NFe.infNFe.infAdic.infCpl&quot;)).Replace(&quot;;&quot;, "\n");
     }
 
     private void PgNfce_StartPage(object sender, EventArgs e)

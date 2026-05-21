@@ -168,25 +168,25 @@ namespace FastReport
         }
       }
 
-      string infAdicionais = (string)Report.GetColumnValue(&quot;NFe.NFe.infNFe.infAdic.infCpl&quot;) + Environment.NewLine + (string)Report.GetColumnValue(&quot;NFe.NFe.infNFe.infAdic.infAdFisco&quot;);
+      string infAdicionais = (string)Report.GetColumnValue(&quot;NFe.NFe.infNFe.infAdic.infCpl&quot;) + "\n" + (string)Report.GetColumnValue(&quot;NFe.NFe.infNFe.infAdic.infAdFisco&quot;);
 
       infAdicionais = infAdicionais.Replace(&quot;[&quot;,&quot;[\&quot;[&quot;).Replace(&quot;]&quot;,&quot;]\&quot;]&quot;);
 
       if((bool)Report.GetParameterValue(&quot;QuebrarLinhasObservacao&quot;))
       {
-        infAdicionais = infAdicionais.Replace(&quot;;&quot;, Environment.NewLine);
+        infAdicionais = infAdicionais.Replace(&quot;;&quot;, "\n");
       }
 
       TextInfAdicionais.Text = infAdicionais;
       //memContInfAdicionais.Text = string.Empty;
 
-      //string[] lines = infAdicionais.Split(new string[]{ Environment.NewLine, &quot;\n&quot; }, StringSplitOptions.None);
+      //string[] lines = infAdicionais.Split(new string[]{ "\n", &quot;\n&quot; }, StringSplitOptions.None);
       //pgContDadosAdicionais.Visible = lines.Length &gt; LINHAS_DADOS_ADICIONAIS;
 
       //if(pgContDadosAdicionais.Visible)
       //{
-      //  TextInfAdicionais.Text = string.Join(Environment.NewLine, lines.Take(LINHAS_DADOS_ADICIONAIS-1).ToArray());
-      //  memContInfAdicionais.Text = string.Join(Environment.NewLine, lines.Skip(LINHAS_DADOS_ADICIONAIS-1).ToArray());
+      //  TextInfAdicionais.Text = string.Join("\n", lines.Take(LINHAS_DADOS_ADICIONAIS-1).ToArray());
+      //  memContInfAdicionais.Text = string.Join("\n", lines.Skip(LINHAS_DADOS_ADICIONAIS-1).ToArray());
       //}
       }
 
@@ -277,9 +277,9 @@ namespace FastReport
           var vUnComFormatado = FormatNumber(vUnCom, decimaisValorUnitario);
           var vUnTribFormatado = FormatNumber(vUnTrib, decimaisValorUnitario);
 
-          prodUnidadeCell.Text = string.Format(&quot;{0}{2}{1}&quot;, uCom, uTrib, Environment.NewLine);
-          prodQtdCell.Text = string.Format(&quot;{0}{2}{1}&quot;, qComFormatado, qTribFormatado, Environment.NewLine);
-          prodValorUnitarioCell.Text = string.Format(&quot;{0}{2}{1}&quot;, vUnComFormatado, vUnTribFormatado, Environment.NewLine);
+          prodUnidadeCell.Text = string.Format(&quot;{0}{2}{1}&quot;, uCom, uTrib, "\n");
+          prodQtdCell.Text = string.Format(&quot;{0}{2}{1}&quot;, qComFormatado, qTribFormatado, "\n");
+          prodValorUnitarioCell.Text = string.Format(&quot;{0}{2}{1}&quot;, vUnComFormatado, vUnTribFormatado, "\n");
           break;
       }
 
