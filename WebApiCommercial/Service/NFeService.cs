@@ -2083,6 +2083,8 @@ arquivoRelatorio: string.Empty);
 			}
 			catch (Exception ex)
 			{
+				Console.WriteLine("=== EXCEPTION NA DANFE===");
+				Console.WriteLine(ex.ToString());
 				return [];
 			}
 		}
