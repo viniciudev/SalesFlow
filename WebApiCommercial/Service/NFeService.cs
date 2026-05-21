@@ -28,11 +28,9 @@ using NFe.Classes.Informacoes.Pagamento;
 using NFe.Classes.Informacoes.Total;
 using NFe.Classes.Informacoes.Transporte;
 using NFe.Classes.Protocolo;
-using NFe.Classes.Servicos.Download;
 using NFe.Classes.Servicos.Tipos;
 using NFe.Danfe.Base.NFe;
 using NFe.Danfe.OpenFast.NFe;
-using NFe.Danfe.QuestPdf.ImpressaoEventoNfe;
 using NFe.Danfe.QuestPdf.ImpressaoNfce;
 using NFe.Servicos;
 using NFe.Servicos.Retorno;
@@ -41,7 +39,6 @@ using NFe.Utils.Email;
 using NFe.Utils.Evento;
 using NFe.Utils.InformacoesSuplementares;
 using NFe.Utils.NFe;
-using QuestPDF.Fluent;
 using Repository;
 using System;
 using System.Collections.Generic;
@@ -170,7 +167,7 @@ namespace Service
 
 			var respEmissao = await TransmitirNfe(proximoNumeroNfe, fiscalConfig, sale, naturezaOperacao);
 
-			var entity = CreateNFeEmission(attempt, respEmissao, fiscalConfig, proximoNumeroNfe);
+			var entity = CreateNFeEmission(attempt, respEmissao, fiscalConfig, proximoNumeroNfe, naturezaOperacao);
 
 			await repository.CreateAsync(entity);
 			return new ResponseGeneric { Success = true, Data = entity };
@@ -230,13 +227,13 @@ namespace Service
 		}
 
 		// Método privado para criar nova entidade
-		private NFeEmission CreateNFeEmission(NFeEmissionDto attempt, object respEmissao, FiscalConfiguration fiscalConfig, int numero)
+		private NFeEmission CreateNFeEmission(NFeEmissionDto attempt, object respEmissao, FiscalConfiguration fiscalConfig, int numero, NaturezaOperacao naturezaOperacao)
 		{
 			var entity = new NFeEmission
 			{
 				NaturezaOperacaoId = attempt.NaturezaOperacaoId,
 				SaleId = attempt.SaleId,
-				TipoDocumento = attempt.TipoDocumento,
+				TipoDocumento = naturezaOperacao.TipoDocumento==TipoDocumentoEnum.NFE? TipoDocumentoEnum.NFE: TipoDocumentoEnum.NFCE,
 				Serie = fiscalConfig.NumeracaoDocumentos.Nfce.Serie,
 				Numero = numero,
 				CreatedAt = DateTime.Now,
@@ -438,7 +435,7 @@ namespace Service
 				_currentNaturezaOperacao = naturezaOperacao;
 				_currentSale = sale;
 				_configuracaoApp = criarConfiguracaoApp(fiscalConfiguration, naturezaOperacao);
-				ModeloDocumento modeloDocumento= _currentNaturezaOperacao.TipoDocumento== TipoDocumentoEnum.NFCE ? ModeloDocumento.NFCe : ModeloDocumento.NFe;
+				ModeloDocumento modeloDocumento = _currentNaturezaOperacao.TipoDocumento == TipoDocumentoEnum.NFCE ? ModeloDocumento.NFCe : ModeloDocumento.NFe;
 				_nfe = ObterNfeValidada(VersaoServico.Versao400, modeloDocumento,
 						numero, new ConfiguracaoCsc
 						{
@@ -463,7 +460,7 @@ namespace Service
 				Console.WriteLine($"retorno: {retornoEnvio.Retorno.xMotivo}");
 
 				//ExibeNfe();
-			
+
 				//var dlg = new Microsoft.Win32.SaveFileDialog
 				//{
 				//    FileName = _nfe.infNFe.Id.Substring(3),
@@ -474,7 +471,7 @@ namespace Service
 				//if (result != true) return;
 				//var arquivoXml = dlg.FileName;
 				//_nfe.SalvarArquivoXml(arquivoXml);
-							retornoEnvio.Xml =  xml ;
+				retornoEnvio.Xml = xml;
 
 				return retornoEnvio;
 			}
@@ -606,7 +603,7 @@ namespace Service
 					ManterDadosEmCache = false,
 					KeyStorageFlags =
 								X509KeyStorageFlags.MachineKeySet |
-								X509KeyStorageFlags.PersistKeySet 
+								X509KeyStorageFlags.PersistKeySet
 				};
 				var ConfiguracaoEmail = new ConfiguracaoEmail();
 				var ConfiguracaoCsc = new ConfiguracaoCsc
@@ -1991,7 +1988,6 @@ namespace Service
 		public async Task<byte[]> Danfe(int id)
 		{
 			NFeEmission nFeEmission = await repository.GetByIdAsync(id);
-			//new nfeProc().CarregarDeXmlString(nFeEmission.XmlCompleto);//Funcoes.BuscarArquivoXml();
 			try
 			{
 				nfeProc proc = null;
@@ -2006,17 +2002,14 @@ namespace Service
 				catch (Exception)
 				{
 					nfe = new NFe.Classes.NFe().CarregarDeXmlString(nFeEmission.XmlCompleto);
-					
+
 					arquivo = nfe.ObterXmlString();
 				}
 
 				FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(nFeEmission.CompanyId);
-				//if (fiscalConfiguration == null)
-				//    return new ResponseGeneric { Success = false, Message = "Não encontrado as configurações para emissão de nota!" };
-				//var proc = new nfeProc().CarregarDeArquivoXml(Caminho_do_arquivo_XML);
+
 				if (nFeEmission.TipoDocumento == TipoDocumentoEnum.NFE)
 				{
-					//var configuracaoDanfeNfe = _configuracoes.ConfiguracaoDanfeNfe;
 					var procM = new nfeProc()
 					{
 						NFe = nfe,
@@ -2030,7 +2023,7 @@ namespace Service
 								xMotivo = "Autorizado o uso da NF-e"
 							}
 						},
-						versao= "4.00"
+						versao = "4.00"
 					};
 					DanfeFrNfe danfe = new DanfeFrNfe(proc: procM, configuracaoDanfeNfe: new ConfiguracaoDanfeNfe()
 					{
@@ -2058,28 +2051,9 @@ arquivoRelatorio: string.Empty);
 				{
 					var danfeDocument = new DanfeNfceDocument(arquivo, null/*logoBytes*/);
 					danfeDocument.TamanhoImpressao(NFe.Danfe.QuestPdf.ImpressaoNfce.TamanhoImpressao.Impressao80);
-
 					var pdfBytes = danfeDocument.GerarPdfBytes();
-					//DanfeNativoNfce impr = new DanfeNativoNfce(arquivo,
-					//		VersaoQrCode.QrCodeVersao3,
-					//	 null,
-					//		fiscalConfiguration.Csc.Identificador,//_configuracoes.ConfiguracaoCsc.CIdToken,
-					//		fiscalConfiguration.Csc.Valor,//",//_configuracoes.ConfiguracaoCsc.Csc,
-					//		0 /*troco*//*, "Arial Black"*/);
-
-					//SaveFileDialog fileDialog = new SaveFileDialog();
-
-					//fileDialog.ShowDialog();
-
-					//if (string.IsNullOrEmpty(fileDialog.FileName))
-					//    throw new ArgumentException("Não foi selecionado nem uma pasta");
-
 					return pdfBytes;
 				}
-
-				//impr.Imprimir(salvarArquivoPdfEm: fileDialog.FileName.Replace(".pdf", "") + ".pdf");
-				//var bytes = impr.PdfBytes();
-				//var base64 = Convert.ToBase64String(bytes);
 			}
 			catch (Exception ex)
 			{

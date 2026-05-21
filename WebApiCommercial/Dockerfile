@@ -24,26 +24,30 @@ RUN dotnet publish WebApiCommercial/WebApiCommercial.csproj -c Release -o /publi
 # Etapa 2 — Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 
-# 🔧 INSTALA DEPENDÊNCIAS PARA SKIASHARP E OPENSSL
+# 🔧 INSTALA DEPENDÊNCIAS PARA SKIASHARP, OPENSSL E LIBGDIPLUS (FastReport)
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        ca-certificates \
-        openssl \
-        libssl3 \
-        libfontconfig1 \
-        libfreetype6 \
-        libpng-dev \
-        libjpeg-dev \
-        libgif-dev \
-        libwebp-dev \
-        libbrotli-dev \
-        libc6-dev \
-        tzdata && \
-    update-ca-certificates --fresh
+  apt-get install -y --no-install-recommends \
+  ca-certificates \
+  openssl \
+  libssl3 \
+  libfontconfig1 \
+  libfreetype6 \
+  libpng-dev \
+  libjpeg-dev \
+  libgif-dev \
+  libwebp-dev \
+  libbrotli-dev \
+  libc6-dev \
+  libgdiplus \
+  tzdata && \
+  update-ca-certificates --fresh
+
+# 🔧 CRIA LINK SIMBÓLICO PARA O GDIPLUS (necessário para algumas versões do FastReport)
+RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll || true
 
 # 🔧 CONFIGURAÇÃO OPENSSL PARA ALGORITMOS LEGADOS
 RUN sed -i 's/^#\(openssl_conf = openssl_init\)/\1/' /etc/ssl/openssl.cnf 2>/dev/null || true && \
-    echo "\n[openssl_init]\nssl_conf = ssl_sect\n\n[ssl_sect]\nsystem_default = system_default_sect\n\n[system_default_sect]\nCipherString = DEFAULT@SECLEVEL=1\n" >> /etc/ssl/openssl.cnf
+  echo "\n[openssl_init]\nssl_conf = ssl_sect\n\n[ssl_sect]\nsystem_default = system_default_sect\n\n[system_default_sect]\nCipherString = DEFAULT@SECLEVEL=1\n" >> /etc/ssl/openssl.cnf
 
 # 🔧 TIMEZONE BRASÍLIA
 ENV TZ=America/Sao_Paulo
@@ -55,6 +59,9 @@ ENV DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER=0
 ENV COMPlus_SystemNetHttp_UseSocketsHttpHandler=false
 ENV ASPNETCORE_URLS=http://+:80
 ENV RENDER=true
+
+# 🔧 CONFIGURAÇÃO ADICIONAL PARA FASTREPORT NO LINUX
+ENV FASTREPORT_USE_SKIA=true
 
 WORKDIR /app
 EXPOSE 80
