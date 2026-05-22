@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"D:\\\\SalesFlow\\\\WebApiCommercial\" -Recurse -Filter \"DanfeNfceDocument.cs\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Get-ChildItem -Path \"D:\\\\SalesFlow\\\\WebApiCommercial\" -Recurse -Filter \"DanfeSharedHelper.cs\")",
+      "Bash(Get-ChildItem -Path \"D:\\\\SalesFlow\\\\WebApiCommercial\" -Recurse -Filter \"DanfeOpenFastBase.cs\")",
+      "Bash(python3 *)",
+      "Bash(node *)"
+    ]
+  }
+}

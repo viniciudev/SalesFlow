@@ -41,33 +41,33 @@ RUN apt-get update && \
         && rm -rf /var/lib/apt/lists/*
 
 # 🔧 CRIA MÚLTIPLOS LINKS SIMBÓLICOS
-RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll || true && \
-    ln -s /usr/lib/libgdiplus.so /usr/lib/libgdiplus.dll.so || true && \
-    ldconfig
+# RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll || true && \
+#     ln -s /usr/lib/libgdiplus.so /usr/lib/libgdiplus.dll.so || true && \
+#     ldconfig
 
-# 🔧 CONFIGURA VARIÁVEIS DE AMBIENTE PARA System.Drawing.Common
-ENV DOTNET_SYSTEM_DRAWING_DISABLE_USEAPPCLDRESOLVER=true
-ENV COMPlus_EnableConsistentDeviceRemap=false
-# 🔧 INSTALA DEPENDÊNCIAS PARA SKIASHARP, OPENSSL E LIBGDIPLUS (FastReport)
-RUN apt-get update && \
-  apt-get install -y --no-install-recommends \
-  ca-certificates \
-  openssl \
-  libssl3 \
-  libfontconfig1 \
-  libfreetype6 \
-  libpng-dev \
-  libjpeg-dev \
-  libgif-dev \
-  libwebp-dev \
-  libbrotli-dev \
-  libc6-dev \
-  libgdiplus \
-  tzdata && \
-  update-ca-certificates --fresh
+# # 🔧 CONFIGURA VARIÁVEIS DE AMBIENTE PARA System.Drawing.Common
+# ENV DOTNET_SYSTEM_DRAWING_DISABLE_USEAPPCLDRESOLVER=true
+# ENV COMPlus_EnableConsistentDeviceRemap=false
+# # 🔧 INSTALA DEPENDÊNCIAS PARA SKIASHARP, OPENSSL E LIBGDIPLUS (FastReport)
+# RUN apt-get update && \
+#   apt-get install -y --no-install-recommends \
+#   ca-certificates \
+#   openssl \
+#   libssl3 \
+#   libfontconfig1 \
+#   libfreetype6 \
+#   libpng-dev \
+#   libjpeg-dev \
+#   libgif-dev \
+#   libwebp-dev \
+#   libbrotli-dev \
+#   libc6-dev \
+#   libgdiplus \
+#   tzdata && \
+#   update-ca-certificates --fresh
 
-# 🔧 CRIA LINK SIMBÓLICO PARA O GDIPLUS (necessário para algumas versões do FastReport)
-RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll || true
+# # 🔧 CRIA LINK SIMBÓLICO PARA O GDIPLUS (necessário para algumas versões do FastReport)
+# RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll || true
 
 # 🔧 CONFIGURAÇÃO OPENSSL PARA ALGORITMOS LEGADOS
 RUN sed -i 's/^#\(openssl_conf = openssl_init\)/\1/' /etc/ssl/openssl.cnf 2>/dev/null || true && \

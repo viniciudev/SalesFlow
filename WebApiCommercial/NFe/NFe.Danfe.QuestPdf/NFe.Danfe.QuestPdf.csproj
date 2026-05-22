@@ -28,6 +28,7 @@
     <ProjectReference Include="..\DFe.Classes\DFe.Classes.csproj" />
     <ProjectReference Include="..\DFe.Utils\DFe.Utils.csproj" />
     <ProjectReference Include="..\NFe.Classes\NFe.Classes.csproj" />
+    <ProjectReference Include="..\NFe.Danfe.Base\NFe.Danfe.Base.csproj" />
     <ProjectReference Include="..\NFe.Utils\NFe.Utils.csproj" />
   </ItemGroup>
 

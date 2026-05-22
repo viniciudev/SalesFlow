@@ -32,6 +32,7 @@ using NFe.Classes.Servicos.Tipos;
 using NFe.Danfe.Base.NFe;
 using NFe.Danfe.OpenFast.NFe;
 using NFe.Danfe.QuestPdf.ImpressaoNfce;
+using NFe.Danfe.QuestPdf.ImpressaoNfe;
 using NFe.Servicos;
 using NFe.Servicos.Retorno;
 using NFe.Utils;
@@ -106,7 +107,7 @@ namespace Service
 						};
 					}
 				}
-				return new ResponseGeneric { Success = false, Message = "Não foi encontrado a nota!" };
+				return new ResponseGeneric { Success = false, Message = "Nï¿½o foi encontrado a nota!" };
 			}
 			else
 			{
@@ -131,12 +132,12 @@ namespace Service
 			}
 		}
 
-		// Método principal para reenvio
+		// Mï¿½todo principal para reenvio
 		public async Task<ResponseGeneric> Resend(int id)
 		{
 			NFeEmission nFeEmission = await (repository as INFeRepository).GetByIdAsync(id);
 			if (nFeEmission == null)
-				return new ResponseGeneric { Success = false, Message = "Não foi encontrado a nota!" };
+				return new ResponseGeneric { Success = false, Message = "Nï¿½o foi encontrado a nota!" };
 
 			var (validationResult, fiscalConfig, sale, naturezaOperacao) =
 					await ValidateAndGetDependencies(nFeEmission.CompanyId, nFeEmission.SaleId, nFeEmission.NaturezaOperacaoId);
@@ -153,7 +154,7 @@ namespace Service
 			return new ResponseGeneric { Success = true, Data = nFeEmission };
 		}
 
-		// Método principal para criação
+		// Mï¿½todo principal para criaï¿½ï¿½o
 		public async Task<ResponseGeneric> CreateAttemptAsync(NFeEmissionDto attempt)
 		{
 			var (validationResult, fiscalConfig, sale, naturezaOperacao) =
@@ -173,32 +174,32 @@ namespace Service
 			return new ResponseGeneric { Success = true, Data = entity };
 		}
 
-		// Método privado para validações comuns
+		// Mï¿½todo privado para validaï¿½ï¿½es comuns
 		private async Task<(ResponseGeneric ValidationResult, FiscalConfiguration FiscalConfig, Sale Sale, NaturezaOperacao NaturezaOperacao)>
 				ValidateAndGetDependencies(int companyId, int saleId, int naturezaOperacaoId)
 		{
-			// Configuração da empresa
+			// Configuraï¿½ï¿½o da empresa
 			FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(companyId);
 			if (fiscalConfiguration == null)
-				return (new ResponseGeneric { Success = false, Message = "Não encontrado as configurações para emissão de nota!" }, null, null, null);
+				return (new ResponseGeneric { Success = false, Message = "Nï¿½o encontrado as configuraï¿½ï¿½es para emissï¿½o de nota!" }, null, null, null);
 
 			// Verifica se existe a venda
 			Sale sale = await _saleRepository.GetSaleByCompany(saleId, companyId);
 			if (sale == null)
-				return (new ResponseGeneric { Success = false, Message = "Venda não encontrada para a empresa." }, null, null, null);
+				return (new ResponseGeneric { Success = false, Message = "Venda nï¿½o encontrada para a empresa." }, null, null, null);
 
 			if (sale.Financials == null || sale.Financials.Count() == 0)
-				return (new ResponseGeneric { Success = false, Message = "Venda não possui financeiro!" }, null, null, null);
+				return (new ResponseGeneric { Success = false, Message = "Venda nï¿½o possui financeiro!" }, null, null, null);
 
-			// Natureza da operação
+			// Natureza da operaï¿½ï¿½o
 			NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(naturezaOperacaoId);
 			if (naturezaOperacao == null)
-				return (new ResponseGeneric { Success = false, Message = "Natureza de operação não encontrada." }, null, null, null);
+				return (new ResponseGeneric { Success = false, Message = "Natureza de operaï¿½ï¿½o nï¿½o encontrada." }, null, null, null);
 
 			return (new ResponseGeneric { Success = true }, fiscalConfiguration, sale, naturezaOperacao);
 		}
 
-		// Método privado para atualizar entidade existente
+		// Mï¿½todo privado para atualizar entidade existente
 		private void UpdateNFeEmission(NFeEmission nFeEmission, object respEmissao, FiscalConfiguration fiscalConfig)
 		{
 			nFeEmission.Sent = true;
@@ -226,7 +227,7 @@ namespace Service
 			}
 		}
 
-		// Método privado para criar nova entidade
+		// Mï¿½todo privado para criar nova entidade
 		private NFeEmission CreateNFeEmission(NFeEmissionDto attempt, object respEmissao, FiscalConfiguration fiscalConfig, int numero, NaturezaOperacao naturezaOperacao)
 		{
 			var entity = new NFeEmission
@@ -263,7 +264,7 @@ namespace Service
 			return entity;
 		}
 
-		// Método para calcular próximo número
+		// Mï¿½todo para calcular prï¿½ximo nï¿½mero
 		private int CalculateNextNumber(NFeEmission ultimaNota, FiscalConfiguration fiscalConfig)
 		{
 			if (ultimaNota == null)
@@ -276,21 +277,21 @@ namespace Service
 		//     {
 		//         NFeEmission nFeEmission = await (repository as INFeRepository).GetByIdAsync(id);
 		//         if (nFeEmission == null)
-		//             return new ResponseGeneric { Success = false, Message = "Não foi encontrado a nota!" };
-		//         //configuraçao da empresa para nfe
+		//             return new ResponseGeneric { Success = false, Message = "Nï¿½o foi encontrado a nota!" };
+		//         //configuraï¿½ao da empresa para nfe
 		//         FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(nFeEmission.CompanyId);
 		//         if (fiscalConfiguration == null)
-		//             return new ResponseGeneric { Success = false, Message = "Não encontrado as configurações para emissão de nota!" };
+		//             return new ResponseGeneric { Success = false, Message = "Nï¿½o encontrado as configuraï¿½ï¿½es para emissï¿½o de nota!" };
 		//         //verifica se existe a venda
 		//         Sale sale = await _saleRepository.GetSaleByCompany(nFeEmission.SaleId, nFeEmission.CompanyId);
 		//         if (sale == null)
-		//             return new ResponseGeneric { Success = false, Message = "Venda não encontrada para a empresa." };
+		//             return new ResponseGeneric { Success = false, Message = "Venda nï¿½o encontrada para a empresa." };
 		//         if (sale.Financials == null)
-		//             return new ResponseGeneric { Success = false, Message = "Venda não possui financeiro!" };
+		//             return new ResponseGeneric { Success = false, Message = "Venda nï¿½o possui financeiro!" };
 
 		//         NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(nFeEmission.NaturezaOperacaoId);
 		//         if (naturezaOperacao == null)
-		//             return new ResponseGeneric { Success = false, Message = "Natureza de operação não encontrada." };
+		//             return new ResponseGeneric { Success = false, Message = "Natureza de operaï¿½ï¿½o nï¿½o encontrada." };
 
 
 		//         //classes externas para gerar nfe
@@ -335,22 +336,22 @@ namespace Service
 		//         //ultima nota emitida com sucesso
 		//         NFeEmission nFeEmission = await (repository as INFeRepository).GetByCompany(attempt.CompanyId);
 
-		//         //configuraçao da empresa para nfe
+		//         //configuraï¿½ao da empresa para nfe
 		//         FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(attempt.CompanyId);
 		//         if (fiscalConfiguration == null)
-		//             return new ResponseGeneric { Success = false, Message = "Não encontrado as configurações para emissão de nota!" };
+		//             return new ResponseGeneric { Success = false, Message = "Nï¿½o encontrado as configuraï¿½ï¿½es para emissï¿½o de nota!" };
 
 		//         //verifica se existe a venda
 		//         Sale sale = await _saleRepository.GetSaleByCompany(attempt.SaleId, attempt.CompanyId);
 		//         if (sale == null)
-		//             return new ResponseGeneric { Success = false, Message = "Venda não encontrada para a empresa." };
+		//             return new ResponseGeneric { Success = false, Message = "Venda nï¿½o encontrada para a empresa." };
 		//         if (sale.Financials == null)
-		//             return new ResponseGeneric { Success = false, Message = "Venda não possui financeiro!" };
+		//             return new ResponseGeneric { Success = false, Message = "Venda nï¿½o possui financeiro!" };
 		//if (sale.Financials == null)
-		//	return new ResponseGeneric { Success = false, Message = "Venda não possui financeiro!" };
+		//	return new ResponseGeneric { Success = false, Message = "Venda nï¿½o possui financeiro!" };
 		//NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(attempt.NaturezaOperacaoId);
 		//         if (naturezaOperacao == null)
-		//             return new ResponseGeneric { Success = false, Message = "Natureza de operação não encontrada." };
+		//             return new ResponseGeneric { Success = false, Message = "Natureza de operaï¿½ï¿½o nï¿½o encontrada." };
 		//         int proximoNumeroNfe = Convert.ToInt32( nFeEmission == null ? fiscalConfiguration.NumeracaoDocumentos.Nfce.NumeroInicial : nFeEmission.Numero + 1);
 		//         //classes externas para gerar nfe
 		//         var respEmissao = await TransmitirNfe(proximoNumeroNfe, fiscalConfiguration, sale, naturezaOperacao);
@@ -406,11 +407,11 @@ namespace Service
 					X509KeyStorageFlags.Exportable
 			);
 
-			Console.WriteLine("===== VALIDAÇÃO CERTIFICADO =====");
+			Console.WriteLine("===== VALIDAï¿½ï¿½O CERTIFICADO =====");
 			Console.WriteLine($"Subject: {cert.Subject}");
 			Console.WriteLine($"Issuer: {cert.Issuer}");
 			Console.WriteLine($"Valido de: {cert.NotBefore}");
-			Console.WriteLine($"Valido até: {cert.NotAfter}");
+			Console.WriteLine($"Valido atï¿½: {cert.NotAfter}");
 			Console.WriteLine($"HasPrivateKey: {cert.HasPrivateKey}");
 			Console.WriteLine($"Thumbprint: {cert.Thumbprint}");
 
@@ -418,7 +419,7 @@ namespace Service
 				throw new Exception("Certificado sem chave privada (HasPrivateKey=false)");
 
 			if (DateTime.Now < cert.NotBefore || DateTime.Now > cert.NotAfter)
-				throw new Exception("Certificado expirado ou ainda não válido");
+				throw new Exception("Certificado expirado ou ainda nï¿½o vï¿½lido");
 
 			return cert;
 		}
@@ -426,8 +427,8 @@ namespace Service
 		{
 			try
 			{
-				//var numero = Funcoes.InpuBox(this, "Criar e Enviar NFe", "Número da Nota:");
-				//if (string.IsNullOrEmpty(numero)) throw new Exception("O Número deve ser informado!");
+				//var numero = Funcoes.InpuBox(this, "Criar e Enviar NFe", "Nï¿½mero da Nota:");
+				//if (string.IsNullOrEmpty(numero)) throw new Exception("O Nï¿½mero deve ser informado!");
 				//byte[] certbyte = await ObterCertificado(fiscalConfiguration.CertificadoDigital.Arquivo);
 
 
@@ -451,7 +452,7 @@ namespace Service
 						SecurityProtocolType.Tls;
 
 				var servicoNFe = new ServicosNFe(_configuracaoApp.CfgServico);
-				Console.WriteLine("=== INICIANDO TRANSMISSÃO NFCe ===");
+				Console.WriteLine("=== INICIANDO TRANSMISSï¿½O NFCe ===");
 				Console.WriteLine($"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
 				Console.WriteLine($"Environment: {Environment.GetEnvironmentVariable("RENDER")}");
 				var retornoEnvio = servicoNFe.NFeAutorizacao(int.Parse(fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie), IndicadorSincronizacao.Sincrono, new List<NFe.Classes.NFe> { _nfe }, false/*Envia a mensagem compactada para a SEFAZ*/);
@@ -495,12 +496,12 @@ namespace Service
 
 			if (manterEspacos)
 			{
-				// Mantém letras, números e espaços
+				// Mantï¿½m letras, nï¿½meros e espaï¿½os
 				return Regex.Replace(texto, @"[^a-zA-Z0-9\s]", "");
 			}
 			else
 			{
-				// Mantém apenas letras e números
+				// Mantï¿½m apenas letras e nï¿½meros
 				return Regex.Replace(texto, @"[^a-zA-Z0-9]", "");
 			}
 		}
@@ -547,10 +548,10 @@ namespace Service
 		//	// Extrai apenas o nome do arquivo do caminho salvo no banco
 		//	// Exemplo: "/certs/399ff91c-fe15-43f3-b1cf-0d773e9f49cd.pfx" -> "399ff91c-fe15-43f3-b1cf-0d773e9f49cd.pfx"
 		//	string nomeArquivo = Path.GetFileName(caminhoRelativo.TrimStart('/'));
-		//	Console.WriteLine($"Nome do arquivo extraído: {nomeArquivo}");
+		//	Console.WriteLine($"Nome do arquivo extraï¿½do: {nomeArquivo}");
 		//	string caminhoCompleto;
 
-		//	// Verifica se está no Render
+		//	// Verifica se estï¿½ no Render
 		//	if (Environment.GetEnvironmentVariable("RENDER") == "true")
 		//	{
 		//		// NO RENDER: usa o caminho ABSOLUTO do Disk mount
@@ -568,7 +569,7 @@ namespace Service
 		//		if (!System.IO.File.Exists(caminhoCompleto))
 		//	{
 		//		throw new FileNotFoundException(
-		//				$"Certificado não encontrado. Procurado em: {caminhoCompleto}. " +
+		//				$"Certificado nï¿½o encontrado. Procurado em: {caminhoCompleto}. " +
 		//				$"Nome do arquivo: {nomeArquivo}. " +
 		//				$"Caminho original: {caminhoRelativo}"
 		//		);
@@ -728,7 +729,7 @@ namespace Service
 				infNFe.pag = GetPagamento(infNFe.total.ICMSTot, versao); //NFCe Somente  
 
 			if (infNFe.ide.mod == ModeloDocumento.NFCe & versao != VersaoServico.Versao400)
-				infNFe.infAdic = new infAdic() { infCpl = "" }; //Susgestão para impressão do troco em NFCe
+				infNFe.infAdic = new infAdic() { infCpl = "" }; //Susgestï¿½o para impressï¿½o do troco em NFCe
 
 			return infNFe;
 		}
@@ -736,7 +737,7 @@ namespace Service
 		//{
 		//    var valorPagto = (icmsTot.vNF / 2).Arredondar(2);
 
-		//    if (versao != VersaoServico.Versao400) // difernte de versão 4 retorna isso
+		//    if (versao != VersaoServico.Versao400) // difernte de versï¿½o 4 retorna isso
 		//    {
 		//        var p = new List<pag>
 		//        {
@@ -747,7 +748,7 @@ namespace Service
 		//    }
 
 
-		//    // igual a versão 4 retorna isso
+		//    // igual a versï¿½o 4 retorna isso
 		//    var p4 = new List<pag>
 		//    {
 		//        //new pag {detPag = new detPag {tPag = FormaPagamento.fpDinheiro, vPag = valorPagto}},
@@ -781,16 +782,16 @@ namespace Service
 		//	decimal totalPagamentos = pagamentos.Sum(f => f.Value);
 		//	decimal totalNF = icmsTot.vNF;
 
-		//	// Validação: o total dos pagamentos deve ser igual ao total da NF
+		//	// Validaï¿½ï¿½o: o total dos pagamentos deve ser igual ao total da NF
 		//	if (Math.Abs(totalPagamentos - totalNF) > 0.01m)
 		//	{
-		//		// Log de aviso ou ajuste automático
-		//		// Pode-se ajustar o último pagamento para igualar
+		//		// Log de aviso ou ajuste automï¿½tico
+		//		// Pode-se ajustar o ï¿½ltimo pagamento para igualar
 		//		var ultimoPagamento = pagamentos.Last();
 		//		ultimoPagamento.Value = totalNF - (totalPagamentos - ultimoPagamento.Value);
 		//	}
 
-		//	// Versão 3.10 ou inferior
+		//	// Versï¿½o 3.10 ou inferior
 		//	if (versao != VersaoServico.Versao400)
 		//	{
 		//		return pagamentos.Select(f => new pag
@@ -811,8 +812,8 @@ namespace Service
 		//		}
 		//	}
 
-		//	// Versão 4.00
-		//	// Versão 4.00
+		//	// Versï¿½o 4.00
+		//	// Versï¿½o 4.00
 		//	var pagamentosV4 = new pag
 		//	{
 		//		detPag = pagamentos.Select(f =>
@@ -824,7 +825,7 @@ namespace Service
 		//				vPag = Math.Round(f.Value, 2)
 		//			};
 
-		//			// SÓ adicionar dados do cartão se for cartão de crédito OU cartão de débito
+		//			// Sï¿½ adicionar dados do cartï¿½o se for cartï¿½o de crï¿½dito OU cartï¿½o de dï¿½bito
 		//			if (formaPagamento == FormaPagamento.fpCartaoCredito ||
 		//					formaPagamento == FormaPagamento.fpCartaoDebito)
 		//			{
@@ -837,14 +838,14 @@ namespace Service
 		//				};
 		//			}
 
-		//			// Adicionar descrição se for "Outros" (99)
+		//			// Adicionar descriï¿½ï¿½o se for "Outros" (99)
 		//			if (formaPagamento == FormaPagamento.fpOutro)
 		//			{
 		//				detPagObj.xPag = f.PaymentMethod?.Name ?? "Outros";
 		//			}
 
-		//			// Para PIX, não precisa de dados adicionais
-		//			// Para Dinheiro, Cheque, etc., também não precisa
+		//			// Para PIX, nï¿½o precisa de dados adicionais
+		//			// Para Dinheiro, Cheque, etc., tambï¿½m nï¿½o precisa
 
 		//			return detPagObj;
 		//		}).ToList()
@@ -877,13 +878,13 @@ namespace Service
 						{
 							PaymentMethod = paymentMethod.PaymentMethod,
 							Value = paymentMethod.Amount, // Assumindo que existe um campo Value
-							FinancialId = financial.Id // Para referência se precisar
+							FinancialId = financial.Id // Para referï¿½ncia se precisar
 						});
 					}
 				}
 				else
 				{
-					// Fallback para o caso de não ter FinancialPaymentMethods
+					// Fallback para o caso de nï¿½o ter FinancialPaymentMethods
 					//detalhesPagamento.Add(new PagamentoDetalhe
 					//{
 					//	PaymentMethod = financial.FinancialPaymentMethods.,
@@ -899,15 +900,15 @@ namespace Service
 			decimal totalPagamentos = detalhesPagamento.Sum(d => d.Value);
 			decimal totalNF = icmsTot.vNF;
 
-			// Validação: o total dos pagamentos deve ser igual ao total da NF
+			// Validaï¿½ï¿½o: o total dos pagamentos deve ser igual ao total da NF
 			if (Math.Abs(totalPagamentos - totalNF) > 0.01m)
 			{
-				// Ajusta o último pagamento para igualar
+				// Ajusta o ï¿½ltimo pagamento para igualar
 				var ultimoPagamento = detalhesPagamento.Last();
 				ultimoPagamento.Value = totalNF - (totalPagamentos - ultimoPagamento.Value);
 			}
 
-			// Versão 3.10 ou inferior
+			// Versï¿½o 3.10 ou inferior
 			if (versao != VersaoServico.Versao400)
 			{
 				return detalhesPagamento.Select(d => new pag
@@ -917,7 +918,7 @@ namespace Service
 				}).ToList();
 			}
 
-			// Versão 4.00
+			// Versï¿½o 4.00
 			var pagamentosV4 = new pag
 			{
 				detPag = detalhesPagamento.Select(d =>
@@ -929,7 +930,7 @@ namespace Service
 						vPag = Math.Round(d.Value, 2)
 					};
 
-					// Adicionar dados do cartão se for cartão de crédito OU cartão de débito
+					// Adicionar dados do cartï¿½o se for cartï¿½o de crï¿½dito OU cartï¿½o de dï¿½bito
 					if (formaPagamento == FormaPagamento.fpCartaoCredito ||
 							formaPagamento == FormaPagamento.fpCartaoDebito)
 					{
@@ -942,7 +943,7 @@ namespace Service
 						};
 					}
 
-					// Adicionar descrição se for "Outros" (99)
+					// Adicionar descriï¿½ï¿½o se for "Outros" (99)
 					if (formaPagamento == FormaPagamento.fpOutro)
 					{
 						detPagObj.xPag = d.PaymentMethod?.Name ?? "Outros";
@@ -1011,10 +1012,10 @@ namespace Service
 			if (nomeUpper.Contains("CHEQUE"))
 				return FormaPagamento.fpCheque;
 
-			if (nomeUpper.Contains("CRÉDITO") || nomeUpper.Contains("CREDITO"))
+			if (nomeUpper.Contains("CRï¿½DITO") || nomeUpper.Contains("CREDITO"))
 				return FormaPagamento.fpCartaoCredito;
 
-			if (nomeUpper.Contains("DÉBITO") || nomeUpper.Contains("DEBITO"))
+			if (nomeUpper.Contains("Dï¿½BITO") || nomeUpper.Contains("DEBITO"))
 				return FormaPagamento.fpCartaoDebito;
 			if (nomeUpper.Contains("BOLETO") || nomeUpper.Contains("DUPLICATA"))
 				return FormaPagamento.fpBoletoBancario;
@@ -1023,7 +1024,7 @@ namespace Service
 		}
 		//private FormaPagamento ConverterParaFormaPagamento(PaymentMethod paymentMethod)
 		//      {
-		//          // Mapeamento baseado no nome ou ID do método de pagamento
+		//          // Mapeamento baseado no nome ou ID do mï¿½todo de pagamento
 		//          switch (paymentMethod.Name?.ToUpper())
 		//          {
 
@@ -1033,34 +1034,34 @@ namespace Service
 		//              case "CHEQUE":
 		//                  return FormaPagamento.fpCheque;
 
-		//              case "CARTÃO DE CRÉDITO":
+		//              case "CARTï¿½O DE CRï¿½DITO":
 		//              case "CARTAO CREDITO":
 		//              case "CREDITO":
 		//              case "CARTAO":
-		//              case "CARTÃO":
+		//              case "CARTï¿½O":
 		//                  return FormaPagamento.fpCartaoCredito;
 
-		//              case "CARTÃO DE DÉBITO":
+		//              case "CARTï¿½O DE Dï¿½BITO":
 		//              case "CARTAO DEBITO":
 		//              case "DEBITO":
 		//                  return FormaPagamento.fpCartaoDebito;
 
-		//              //case "CRÉDITO LOJA":
+		//              //case "CRï¿½DITO LOJA":
 		//              //case "CREDITO LOJA":
 		//              //    return FormaPagamento.fpCreditoLoja;
 
-		//              case "VALE ALIMENTAÇÃO":
+		//              case "VALE ALIMENTAï¿½ï¿½O":
 		//              case "VALE ALIMENTACAO":
 		//                  return FormaPagamento.fpValeAlimentacao;
 
-		//              case "VALE REFEIÇÃO":
+		//              case "VALE REFEIï¿½ï¿½O":
 		//              case "VALE REFEICAO":
 		//                  return FormaPagamento.fpValeRefeicao;
 
 		//              case "VALE PRESENTE":
 		//                  return FormaPagamento.fpValePresente;
 
-		//              case "VALE COMBUSTÍVEL":
+		//              case "VALE COMBUSTï¿½VEL":
 		//              case "VALE COMBUSTIVEL":
 		//                  return FormaPagamento.fpValeCombustivel;
 
@@ -1092,22 +1093,22 @@ namespace Service
 
 			if (!financials.Any())
 				return null;
-			// SE FOR PAGAMENTO À VISTA (apenas 1 parcela na mesma data ou sem prazo)
-			// NÃO deve informar cobrança
+			// SE FOR PAGAMENTO ï¿½ VISTA (apenas 1 parcela na mesma data ou sem prazo)
+			// Nï¿½O deve informar cobranï¿½a
 			if (financials.Count == 1 && financials.First().DueDate <= DateTime.Now.AddDays(1))
 			{
-				return null; // Pagamento à vista - não envia <cobr>
+				return null; // Pagamento ï¿½ vista - nï¿½o envia <cobr>
 			}
 
 			decimal totalParcelas = financials.Sum(f => f.Value);
 			decimal totalNF = icmsTot.vNF;
 
-			// Validação: a soma das parcelas deve ser igual ao total da NF
+			// Validaï¿½ï¿½o: a soma das parcelas deve ser igual ao total da NF
 			// (considerando uma pequena margem de erro por arredondamento)
 			if (Math.Abs(totalParcelas - totalNF) > 0.01m)
 			{
-				// Log de aviso ou ajuste automático
-				// Pode-se ajustar a última parcela para igualar
+				// Log de aviso ou ajuste automï¿½tico
+				// Pode-se ajustar a ï¿½ltima parcela para igualar
 				var ultimaParcela = financials.Last();
 				ultimaParcela.Value = totalNF - (totalParcelas - ultimaParcela.Value);
 			}
@@ -1152,18 +1153,18 @@ namespace Service
 			if (string.IsNullOrEmpty(gtin))
 				return false;
 
-			// Remove espaços e caracteres não numéricos
+			// Remove espaï¿½os e caracteres nï¿½o numï¿½ricos
 			gtin = new string(gtin.Where(char.IsDigit).ToArray());
 
-			// Verifica se tem 8, 12, 13 ou 14 dígitos
+			// Verifica se tem 8, 12, 13 ou 14 dï¿½gitos
 			if (gtin.Length != 8 && gtin.Length != 12 && gtin.Length != 13 && gtin.Length != 14)
 				return false;
 
-			// Validação básica - não pode começar com zero
+			// Validaï¿½ï¿½o bï¿½sica - nï¿½o pode comeï¿½ar com zero
 			if (gtin.StartsWith("0"))
 				return false;
 
-			// Valida dígito verificador (opcional, mas recomendado)
+			// Valida dï¿½gito verificador (opcional, mas recomendado)
 			return ValidarDigitoVerificadorGTIN(gtin);
 		}
 
@@ -1187,7 +1188,7 @@ namespace Service
 			}
 			else
 			{
-				return true; // Para outros tamanhos, não valida
+				return true; // Para outros tamanhos, nï¿½o valida
 			}
 
 			int soma = 0;
@@ -1210,7 +1211,7 @@ namespace Service
 				cProd = i.Product.Id.ToString().PadLeft(5, '0'),
 				cEAN = isGtinValido ? gtin : "SEM GTIN",
 				xProd = _currentFiscalConfiguration.Ambiente == AmbienteEnum.Homologacao
-						? "NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"  // Texto padrão para produto
+						? "NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"  // Texto padrï¿½o para produto
 						: i.Product.Name,
 				NCM = i.Product.Ncm,
 				CFOP = int.Parse(_currentNaturezaOperacao.Cfop),
@@ -1251,10 +1252,10 @@ namespace Service
 
 								ICMS = new ICMS
 								{
-										//Se você já tem os dados de toda a tributação persistida no banco em uma única tabela, utilize a linha comentada abaixo para preencher as tags do ICMS
+										//Se vocï¿½ jï¿½ tem os dados de toda a tributaï¿½ï¿½o persistida no banco em uma ï¿½nica tabela, utilize a linha comentada abaixo para preencher as tags do ICMS
 										//TipoICMS = ObterIcmsBasico(crt),
 
-										//Caso você resolva utilizar método ObterIcmsBasico(), comente esta proxima linha
+										//Caso vocï¿½ resolva utilizar mï¿½todo ObterIcmsBasico(), comente esta proxima linha
 										TipoICMS =
 												crt == CRT.SimplesNacional || crt == CRT.SimplesNacionalMei
 														? InformarCSOSN(Csosnicms.Csosn102)
@@ -1275,10 +1276,10 @@ namespace Service
 
 								COFINS = new COFINS
 								{
-										//Se você já tem os dados de toda a tributação persistida no banco em uma única tabela, utilize a linha comentada abaixo para preencher as tags do COFINS
+										//Se vocï¿½ jï¿½ tem os dados de toda a tributaï¿½ï¿½o persistida no banco em uma ï¿½nica tabela, utilize a linha comentada abaixo para preencher as tags do COFINS
 										//TipoCOFINS = ObterCofinsBasico(),
 
-										//Caso você resolva utilizar método ObterCofinsBasico(), comente esta proxima linha
+										//Caso vocï¿½ resolva utilizar mï¿½todo ObterCofinsBasico(), comente esta proxima linha
 
 										TipoCOFINS = !_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarCOFINS ?
 										new COFINSOutr { CST = CSTCOFINS.cofins99,
@@ -1295,10 +1296,10 @@ namespace Service
 
 								PIS = new PIS
 								{
-										//Se você já tem os dados de toda a tributação persistida no banco em uma única tabela, utilize a linha comentada abaixo para preencher as tags do PIS
+										//Se vocï¿½ jï¿½ tem os dados de toda a tributaï¿½ï¿½o persistida no banco em uma ï¿½nica tabela, utilize a linha comentada abaixo para preencher as tags do PIS
 										//TipoPIS = ObterPisBasico(),
 
-										//Caso você resolva utilizar método ObterPisBasico(), comente esta proxima linha
+										//Caso vocï¿½ resolva utilizar mï¿½todo ObterPisBasico(), comente esta proxima linha
 										TipoPIS = new PISOutr { CST = CSTPIS.pis99, pPIS = 0, vBC = 0, vPIS = 0 }
 								},
 
@@ -1340,16 +1341,16 @@ namespace Service
 						}
 				};
 
-				if (modelo == ModeloDocumento.NFe) //NFCe não aceita grupo "IPI"
+				if (modelo == ModeloDocumento.NFe) //NFCe nï¿½o aceita grupo "IPI"
 				{
 						det.imposto.IPI = new IPI()
 						{
 								cEnq = 999,
 
-								//Se você já tem os dados de toda a tributação persistida no banco em uma única tabela, utilize a linha comentada abaixo para preencher as tags do IPI
+								//Se vocï¿½ jï¿½ tem os dados de toda a tributaï¿½ï¿½o persistida no banco em uma ï¿½nica tabela, utilize a linha comentada abaixo para preencher as tags do IPI
 								//TipoIPI = ObterIPIBasico(),
 
-								//Caso você resolva utilizar método ObterIPIBasico(), comente esta proxima linha
+								//Caso vocï¿½ resolva utilizar mï¿½todo ObterIPIBasico(), comente esta proxima linha
 								TipoIPI = new IPITrib() { CST = CSTIPI.ipi00, pIPI = 5, vBC = 1, vIPI = 0.05m }
 						};
 				}
@@ -1367,10 +1368,10 @@ namespace Service
 			decimal aliquotaIPI = _currentNaturezaOperacao.ConfiguracaoTributaria.AliquotaIPI;
 			//string cstPIS = _currentNaturezaOperacao.ConfiguracaoTributaria.CstPIS;
 
-			//// Validar se o CST é válido, se não for, usar 99
+			//// Validar se o CST ï¿½ vï¿½lido, se nï¿½o for, usar 99
 			//if (!Enum.IsDefined(typeof(CSTPIS),int.Parse( cstPIS)))
 			//{
-			//	cstPIS = "99"; // Default para outras operações
+			//	cstPIS = "99"; // Default para outras operaï¿½ï¿½es
 			//}
 			var det = new det
 			{
@@ -1428,16 +1429,16 @@ namespace Service
 				}
 			};
 
-			if (modelo == ModeloDocumento.NFe) //NFCe não aceita grupo "IPI"
+			if (modelo == ModeloDocumento.NFe) //NFCe nï¿½o aceita grupo "IPI"
 			{
 				det.imposto.IPI = new IPI()
 				{
 					cEnq = 999,
 
-					//Se você já tem os dados de toda a tributação persistida no banco em uma única tabela, utilize a linha comentada abaixo para preencher as tags do IPI
+					//Se vocï¿½ jï¿½ tem os dados de toda a tributaï¿½ï¿½o persistida no banco em uma ï¿½nica tabela, utilize a linha comentada abaixo para preencher as tags do IPI
 					//TipoIPI = ObterIPIBasico(),
 
-					//Caso você resolva utilizar método ObterIPIBasico(), comente esta proxima linha
+					//Caso vocï¿½ resolva utilizar mï¿½todo ObterIPIBasico(), comente esta proxima linha
 					TipoIPI = new IPITrib() { CST = CSTIPI.ipi00, pIPI = 5, vBC = 1, vIPI = 0.05m }
 				};
 			}
@@ -1445,31 +1446,31 @@ namespace Service
 			return det;
 		}
 
-		// Métodos auxiliares
+		// Mï¿½todos auxiliares
 		private decimal CalcularTotalTributos(SaleItems item, decimal aliquotaCOFINS, decimal aliquotaPIS, decimal aliquotaIPI)
 		{
 			decimal valorTotalItem = item.Value * item.Amount;
 			decimal totalTributos = 0;
 
-			// Adicionar COFINS se aplicável
+			// Adicionar COFINS se aplicï¿½vel
 			if (_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarCOFINS && aliquotaCOFINS > 0)
 			{
 				totalTributos += valorTotalItem * aliquotaCOFINS / 100;
 			}
 
-			// Adicionar PIS se aplicável
+			// Adicionar PIS se aplicï¿½vel
 			if (_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarPIS && aliquotaPIS > 0)
 			{
 				totalTributos += valorTotalItem * aliquotaPIS / 100;
 			}
 
-			// Adicionar IPI se aplicável (apenas para NFe)
+			// Adicionar IPI se aplicï¿½vel (apenas para NFe)
 			if (_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIPI && aliquotaIPI > 0)
 			{
 				totalTributos += valorTotalItem * aliquotaIPI / 100;
 			}
 
-			// Adicionar ICMS aproximado se disponível
+			// Adicionar ICMS aproximado se disponï¿½vel
 			var icms = CalcularICMSAproximado(item);
 			if (icms > 0)
 			{
@@ -1505,15 +1506,15 @@ namespace Service
 
 		private decimal CalcularICMSAproximado(SaleItems item)
 		{
-			// Implementar cálculo do ICMS aproximado baseado na configuração
-			// Este é um valor aproximado para o vTotTrib
+			// Implementar cï¿½lculo do ICMS aproximado baseado na configuraï¿½ï¿½o
+			// Este ï¿½ um valor aproximado para o vTotTrib
 			decimal valorTotalItem = item.Value * item.Amount;
-			decimal aliquotaICMS = 18; // Alíquota padrão, ajuste conforme necessidade
+			decimal aliquotaICMS = 18; // Alï¿½quota padrï¿½o, ajuste conforme necessidade
 
-			// Verificar se é Simples Nacional
+			// Verificar se ï¿½ Simples Nacional
 			if (_configuracaoApp.Emitente.CRT == CRT.SimplesNacional)
 			{
-				// Para Simples Nacional, usar alíquota aproximada do produto
+				// Para Simples Nacional, usar alï¿½quota aproximada do produto
 				aliquotaICMS = 7; // Exemplo: 7% para Simples Nacional
 			}
 
@@ -1611,10 +1612,10 @@ namespace Service
 					icmsTot.vBC = icmsTot.vBC + ((ICMS20)produto.imposto.ICMS.TipoICMS).vBC;
 					icmsTot.vICMS = icmsTot.vICMS + ((ICMS20)produto.imposto.ICMS.TipoICMS).vICMS;
 				}
-				//Outros Ifs aqui, caso vá usar as classes ICMS00, ICMS10 para totalizar
+				//Outros Ifs aqui, caso vï¿½ usar as classes ICMS00, ICMS10 para totalizar
 			}
 
-			//** Regra de validação W16-10 que rege sobre o Total da NF **//
+			//** Regra de validaï¿½ï¿½o W16-10 que rege sobre o Total da NF **//
 			icmsTot.vNF =
 					icmsTot.vProd
 					- icmsTot.vDesc
@@ -1634,8 +1635,8 @@ namespace Service
 				ISTot = (modeloDocumento == ModeloDocumento.NFe && _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIS == true) ? new ISTot() { vIS = 0 } : null
 			};
 
-			// SÓ adiciona IBSCBSTot se for NFe E IBS ativo E ambiente de produção específico
-			// Geralmente não usado para NFCe
+			// Sï¿½ adiciona IBSCBSTot se for NFe E IBS ativo E ambiente de produï¿½ï¿½o especï¿½fico
+			// Geralmente nï¿½o usado para NFCe
 			var deveEnviarIBSCBS = modeloDocumento == ModeloDocumento.NFe &&
 														 _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIBS == true;
 
@@ -1688,7 +1689,7 @@ namespace Service
 			if (ide.tpEmis != TipoEmissao.teNormal)
 			{
 				ide.dhCont = DateTime.Now;
-				ide.xJust = "CONTIGÊNCIA PARA NFe/NFCe";
+				ide.xJust = "CONTIGï¿½NCIA PARA NFe/NFCe";
 			}
 
 			#region V2.00
@@ -1713,8 +1714,8 @@ namespace Service
 
 			ide.idDest = DestinoOperacao.doInterna;
 			ide.dhEmi = DateTime.Now;
-			Console.WriteLine($"DataEmissão>>>>>>>>>>{DateTime.Now}");
-			Console.WriteLine($"DataEmissãoUTC>>>>>>>>>>{DateTime.UtcNow}");
+			Console.WriteLine($"DataEmissï¿½o>>>>>>>>>>{DateTime.Now}");
+			Console.WriteLine($"DataEmissï¿½oUTC>>>>>>>>>>{DateTime.UtcNow}");
 			//Mude aqui para enviar a nfe vinculada ao EPEC, V3.10
 			if (ide.mod == ModeloDocumento.NFe)
 				ide.dhSaiEnt = DateTime.Now;
@@ -1747,7 +1748,7 @@ namespace Service
 		{
 			var enderEmit = _configuracaoApp.EnderecoEmitente; // new enderEmit
 																												 //{
-																												 //    xLgr = "RUA TESTE DE ENREREÇO",
+																												 //    xLgr = "RUA TESTE DE ENREREï¿½O",
 																												 //    nro = "123",
 																												 //    xCpl = "1 ANDAR",
 																												 //    xBairro = "CENTRO",
@@ -1765,21 +1766,21 @@ namespace Service
 		{
 			var dest = new dest(versao);
 
-			// VERIFICAÇÃO PRINCIPAL: Quando o cliente é NULL
+			// VERIFICAï¿½ï¿½O PRINCIPAL: Quando o cliente ï¿½ NULL
 			if (_currentSale?.Client == null)
 			{
-				// Consumidor final não identificado
+				// Consumidor final nï¿½o identificado
 				//dest.idEstrangeiro = "ext";
-				// Nome padrão para consumidor não identificado
+				// Nome padrï¿½o para consumidor nï¿½o identificado
 				dest.CNPJ = "99999999000191";
 				dest.xNome = _currentFiscalConfiguration.Ambiente == AmbienteEnum.Homologacao
 						? "NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
 						: "CONSUMIDOR NAO IDENTIFICADO";
 
-				// Indicador de IE: 9 = Não Contribuinte (padrão para consumidor final)
+				// Indicador de IE: 9 = Nï¿½o Contribuinte (padrï¿½o para consumidor final)
 				dest.indIEDest = indIEDest.NaoContribuinte;
 				//dest.IE = null;
-				// Endereço padrão
+				// Endereï¿½o padrï¿½o
 				dest.enderDest = null;//GetEnderecoDestinatarioPadrao();
 
 				return dest;
@@ -1787,7 +1788,7 @@ namespace Service
 			}
 
 			// Cliente existe - fluxo normal
-			// Configuração do documento (CPF ou CNPJ)
+			// Configuraï¿½ï¿½o do documento (CPF ou CNPJ)
 			if (_currentSale.Client.TipoPessoa == "J")
 			{
 				dest.CNPJ = _currentSale.Client.Document;
@@ -1797,15 +1798,15 @@ namespace Service
 				dest.CPF = _currentSale?.Client?.Document ?? "99999999999";
 			}
 
-			// Nome do destinatário
+			// Nome do destinatï¿½rio
 			dest.xNome = _currentFiscalConfiguration.Ambiente == AmbienteEnum.Homologacao
 							? "NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
 							: _currentSale?.Client?.Name ?? "CONSUMIDOR NAO IDENTIFICADO";
 
-			// Endereço do destinatário
+			// Endereï¿½o do destinatï¿½rio
 			dest.enderDest = GetEnderecoDestinatario();
 
-			// Configurações específicas por versão
+			// Configuraï¿½ï¿½es especï¿½ficas por versï¿½o
 			if (versao == VersaoServico.Versao200)
 			{
 				if (!string.IsNullOrEmpty(_currentSale?.Client?.Ie))
@@ -1815,7 +1816,7 @@ namespace Service
 				return dest;
 			}
 
-			// Para versão 3.00 e superiores
+			// Para versï¿½o 3.00 e superiores
 			if (_currentSale?.Client?.IndicadorIE != null)
 			{
 				switch (_currentSale.Client.IndicadorIE)
@@ -1855,9 +1856,9 @@ namespace Service
 				nro = "S/N",
 				xCpl = null,
 				xBairro = "CENTRO",
-				cMun = _configuracaoApp.EnderecoEmitente.cMun,  // Código genérico
+				cMun = _configuracaoApp.EnderecoEmitente.cMun,  // Cï¿½digo genï¿½rico
 				xMun = "NAO INFORMADO",
-				UF = _configuracaoApp.EnderecoEmitente.UF.ToString(), //(Estado)Enum.Parse(typeof(Estado), fiscalConfiguration.Emitente.EmitenteEndereco.Uf)  // UF padrão, pode ser configurável
+				UF = _configuracaoApp.EnderecoEmitente.UF.ToString(), //(Estado)Enum.Parse(typeof(Estado), fiscalConfiguration.Emitente.EmitenteEndereco.Uf)  // UF padrï¿½o, pode ser configurï¿½vel
 				CEP = "00000000",
 				cPais = 1058,
 				xPais = "BRASIL"
@@ -1884,7 +1885,7 @@ namespace Service
 			var endereco = new enderDest();
 			var cliente = _currentSale?.Client;
 
-			// VERIFICAÇÃO: Se cliente é nulo, retorna endereço padrão
+			// VERIFICAï¿½ï¿½O: Se cliente ï¿½ nulo, retorna endereï¿½o padrï¿½o
 			if (cliente == null)
 			{
 				return GetEnderecoDestinatarioPadrao();
@@ -1897,7 +1898,7 @@ namespace Service
 				endereco.xCpl = cliente.Complemento;
 				endereco.xBairro = cliente.Bairro ?? "CENTRO";
 
-				// Validação para evitar erros de parse
+				// Validaï¿½ï¿½o para evitar erros de parse
 				if (!string.IsNullOrEmpty(cliente.CodMunicipioIbge))
 					endereco.cMun = long.Parse(cliente.CodMunicipioIbge);
 				else
@@ -1936,7 +1937,7 @@ namespace Service
 
 			var t = new transp
 			{
-				modFrete = ModalidadeFrete.mfSemFrete //NFCe: Não pode ter frete
+				modFrete = ModalidadeFrete.mfSemFrete //NFCe: Nï¿½o pode ter frete
 																							//vol = volumes 
 			};
 
@@ -1946,7 +1947,7 @@ namespace Service
 		public async Task UpdateResultAsync(int id, bool sent, long? numero, string? responseJson, string? errorMessage)
 		{
 			var existing = await repository.GetByIdAsync(id);
-			if (existing == null) throw new InvalidOperationException("Registro NFe não encontrado.");
+			if (existing == null) throw new InvalidOperationException("Registro NFe nï¿½o encontrado.");
 
 			existing.Sent = sent;
 			existing.Numero = numero ?? existing.Numero;
@@ -2010,41 +2011,9 @@ namespace Service
 
 				if (nFeEmission.TipoDocumento == TipoDocumentoEnum.NFE)
 				{
-					var procM = new nfeProc()
-					{
-						NFe = nfe,
-						protNFe = new protNFe
-						{
-							infProt = new infProt
-							{
-								chNFe = nfe.infNFe.Id,
-								dhRecbto = DateTime.Now,
-								nProt = nFeEmission.Protocolo,
-								xMotivo = "Autorizado o uso da NF-e"
-							}
-						},
-						versao = "4.00"
-					};
-					DanfeFrNfe danfe = new DanfeFrNfe(proc: procM, configuracaoDanfeNfe: new ConfiguracaoDanfeNfe()
-					{
-						//Logomarca = configuracaoDanfeNfe.Logomarca,
-						DuasLinhas = false,
-						DocumentoCancelado = false,
-						//QuebrarLinhasObservacao = configuracaoDanfeNfe.QuebrarLinhasObservacao,
-						ExibirResumoCanhoto = false,
-						//ResumoCanhoto = configuracaoDanfeNfe.ResumoCanhoto,
-						//ChaveContingencia = configuracaoDanfeNfe.ChaveContingencia,
-						//ExibeCampoFatura = configuracaoDanfeNfe.ExibeCampoFatura,
-						//ImprimirISSQN = configuracaoDanfeNfe.ImprimirISSQN,
-						//ImprimirDescPorc = configuracaoDanfeNfe.ImprimirDescPorc,
-						//ImprimirTotalLiquido = configuracaoDanfeNfe.ImprimirTotalLiquido,
-						//ImprimirUnidQtdeValor = configuracaoDanfeNfe.ImprimirUnidQtdeValor,
-						//ExibirTotalTributos = configuracaoDanfeNfe.ExibirTotalTributos,
-						//ExibeRetencoes = configuracaoDanfeNfe.ExibeRetencoes
-					},
-desenvolvedor: "SERVICE BOX",
-arquivoRelatorio: string.Empty);
-					var pdfBytes = danfe.ExportarPdf();
+					var configuracaoDanfeNfe = new NFe.Danfe.Base.NFe.ConfiguracaoDanfeNfe(null, true, false, true);
+					var danfeDocument = new DanfeNfeDocument(arquivo, null/*logoBytes*/, configuracaoDanfeNfe);
+					var pdfBytes = danfeDocument.GerarPdfBytes();
 					return pdfBytes;
 				}
 				else
@@ -2062,7 +2031,7 @@ arquivoRelatorio: string.Empty);
 				return [];
 			}
 		}
-		// Método de extensão para IDocument
+		// Mï¿½todo de extensï¿½o para IDocument
 
 		public async Task<byte[]> ObterXml(int id)
 		{
@@ -2094,17 +2063,17 @@ arquivoRelatorio: string.Empty);
 		public async Task<ResponseGeneric> CancelarNfe(CancelarNotaRequest cancelarNota)
 		{
 			NFeEmission nFeEmission = await repository.GetByIdAsync(cancelarNota.Id);
-			if (nFeEmission == null) return new ResponseGeneric { Success = false, Message = "NFe não encontrada." };
+			if (nFeEmission == null) return new ResponseGeneric { Success = false, Message = "NFe nï¿½o encontrada." };
 			try
 			{
 				//var idlote = Funcoes.InpuBox(this, titulo, "Identificador de controle do Lote de envio:");
 				//if (string.IsNullOrEmpty(idlote)) throw new Exception("A Id do Lote deve ser informada!");
 
-				//var sequenciaEvento = Funcoes.InpuBox(this, titulo, "Número sequencial do evento:");
+				//var sequenciaEvento = Funcoes.InpuBox(this, titulo, "Nï¿½mero sequencial do evento:");
 				//if (string.IsNullOrEmpty(sequenciaEvento))
-				//    throw new Exception("O número sequencial deve ser informado!");
+				//    throw new Exception("O nï¿½mero sequencial deve ser informado!");
 
-				//var protocolo = Funcoes.InpuBox(this, titulo, "Protocolo de Autorização da NFe:");
+				//var protocolo = Funcoes.InpuBox(this, titulo, "Protocolo de Autorizaï¿½ï¿½o da NFe:");
 				//if (string.IsNullOrEmpty(protocolo)) throw new Exception("O protocolo deve ser informado!");
 
 				//var chave = Funcoes.InpuBox(this, titulo, "Chave da NFe:");
