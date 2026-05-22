@@ -28,6 +28,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Settings = ProfControl.WebApi.Settings;
 
+
 namespace WebAppCommercial
 {
 	public class Startup
@@ -42,6 +43,18 @@ namespace WebAppCommercial
 		public void ConfigureServices(IServiceCollection services)
 		{
 			QuestPDF.Settings.License = LicenseType.Community;
+			// ===== ADICIONE ESTA SEÇÃO PARA FASTREPORT SKIA =====
+
+			// INICIALIZAÇÃO CRÍTICA DO FASTREPORT SKIA
+			//FastReport.Utils.Config.WebMode = true;
+			//FastReport.Utils.Config.EnableScripts = true;
+			//FastReport.Utils.Config.PreferDefaultFonts = true;
+			//FastReport.Drawing.GraphicsFactory.UseSkia = true;
+
+			// Força a não dependência de Windows Forms
+			AppContext.SetSwitch("System.Drawing.EnableUnixSupport", true);
+			// ===== FIM DA CONFIGURAÇÃO FASTREPORT =====
+
 			// 🔧 CONFIGURAÇÃO SSL GLOBAL
 			System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
 			System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, cert, chain, errors) =>

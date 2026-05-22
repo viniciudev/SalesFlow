@@ -233,7 +233,7 @@ namespace Service
 			{
 				NaturezaOperacaoId = attempt.NaturezaOperacaoId,
 				SaleId = attempt.SaleId,
-				TipoDocumento = naturezaOperacao.TipoDocumento==TipoDocumentoEnum.NFE? TipoDocumentoEnum.NFE: TipoDocumentoEnum.NFCE,
+				TipoDocumento = naturezaOperacao.TipoDocumento == TipoDocumentoEnum.NFE ? TipoDocumentoEnum.NFE : TipoDocumentoEnum.NFCE,
 				Serie = fiscalConfig.NumeracaoDocumentos.Nfce.Serie,
 				Numero = numero,
 				CreatedAt = DateTime.Now,

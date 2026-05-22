@@ -23,7 +23,31 @@ RUN dotnet publish WebApiCommercial/WebApiCommercial.csproj -c Release -o /publi
 
 # Etapa 2 — Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+# 🔧 INSTALA DEPENDÊNCIAS COMPLETAS PARA System.Drawing.Common
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        libc6-dev \
+        libgdiplus \
+        libx11-dev \
+        libxft2 \
+        libxrandr2 \
+        libxrender1 \
+        libxcursor1 \
+        libxinerama1 \
+        libxi6 \
+        libgl1-mesa-glx \
+        tzdata \
+        && rm -rf /var/lib/apt/lists/*
 
+# 🔧 CRIA MÚLTIPLOS LINKS SIMBÓLICOS
+RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll || true && \
+    ln -s /usr/lib/libgdiplus.so /usr/lib/libgdiplus.dll.so || true && \
+    ldconfig
+
+# 🔧 CONFIGURA VARIÁVEIS DE AMBIENTE PARA System.Drawing.Common
+ENV DOTNET_SYSTEM_DRAWING_DISABLE_USEAPPCLDRESOLVER=true
+ENV COMPlus_EnableConsistentDeviceRemap=false
 # 🔧 INSTALA DEPENDÊNCIAS PARA SKIASHARP, OPENSSL E LIBGDIPLUS (FastReport)
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
