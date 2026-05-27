@@ -27,7 +27,7 @@ RUN dotnet publish WebApiCommercial/WebApiCommercial.csproj -c Release -o /publi
 # Etapa 2 — Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 
-# Instala dependências incluindo libSkiaSharp do sistema
+# Instala apenas dependências essenciais (SEM libSkiaSharp do sistema)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
@@ -44,11 +44,9 @@ RUN apt-get update && \
         tzdata \
         && rm -rf /var/lib/apt/lists/*
 
-# Instala uma versão mais nova do libSkiaSharp
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        libskia-dev \
-        && rm -rf /var/lib/apt/lists/* || true
+# REMOVE qualquer libSkiaSharp existente no sistema
+RUN find /usr -name "*libSkiaSharp*" -type f -delete 2>/dev/null || true && \
+    find /usr -name "*libHarfBuzzSharp*" -type f -delete 2>/dev/null || true
 
 # Configuração OpenSSL
 RUN sed -i 's/^#\(openssl_conf = openssl_init\)/\1/' /etc/ssl/openssl.cnf 2>/dev/null || true && \
@@ -62,11 +60,18 @@ ENV ASPNETCORE_URLS=http://+:80
 ENV RENDER=true
 ENV SKIA_SHARP_SKIP_NATIVE_LOADER_CHECK=true
 
+# Força o .NET a usar as native libs da pasta de publicação
+ENV LD_LIBRARY_PATH="/app/runtimes/linux-x64/native:/app"
+
 WORKDIR /app
 EXPOSE 80
 
 COPY --from=build /publish .
 
-RUN mkdir -p /app/wwwroot/certs
+RUN mkdir -p /app/wwwroot/certs && \
+    echo "=== Native libraries in /app ===" && \
+    find /app -name "*.so" -type f | grep -E "(SkiaSharp|HarfBuzz)" || echo "No SkiaSharp libs found" && \
+    echo "=== Native libraries in runtimes ===" && \
+    find /app/runtimes -name "*.so" -type f 2>/dev/null | grep -E "(SkiaSharp|HarfBuzz)" || echo "No libs in runtimes"
 
 ENTRYPOINT ["dotnet", "WebApiCommercial.dll"]

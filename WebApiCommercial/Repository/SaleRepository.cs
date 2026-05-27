@@ -78,7 +78,7 @@ namespace Repository
                                        BankAccountId=x.BankAccountId,
                                        BankAccountName=x.BankAccount.BankName
                                    }).ToList(),
-                                   NFeEmissions=sale.NFeEmissions.Select(x=>new NFeEmission {Id= x.Id,StatusNfe=x.StatusNfe }).ToList()
+                                   NFeEmissions=sale.NFeEmissions.Select(x=>new NFeEmission {Id= x.Id,StatusNfe=x.StatusNfe,TipoDocumento=x.TipoDocumento }).ToList()
                                })
                                .AsNoTracking()
                                .GetPagedAsync<Sale>(filters.PageNumber, filters.PageSize);
