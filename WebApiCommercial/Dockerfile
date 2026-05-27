@@ -27,7 +27,7 @@ RUN dotnet publish WebApiCommercial/WebApiCommercial.csproj -c Release -o /publi
 # Etapa 2 — Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 
-# 🔧 INSTALA DEPENDÊNCIAS BÁSICAS (SEM SKIASHARP NATIVO DO SISTEMA)
+# 🔧 INSTALA DEPENDÊNCIAS BÁSICAS
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
@@ -47,10 +47,10 @@ RUN apt-get update && \
         tzdata \
         && rm -rf /var/lib/apt/lists/*
 
-# 🔧 REMOVE VERSÕES ANTIGAS DO SKIASHARP QUE PODEM CAUSAR CONFLITO
+# 🔧 REMOVE VERSÕES ANTIGAS DO SKIASHARP
 RUN find /usr/lib -name "*libSkiaSharp*" -type f -delete 2>/dev/null || true
 
-# 🔧 CONFIGURAÇÃO OPENSSL PARA ALGORITMOS LEGADOS
+# 🔧 CONFIGURAÇÃO OPENSSL
 RUN sed -i 's/^#\(openssl_conf = openssl_init\)/\1/' /etc/ssl/openssl.cnf 2>/dev/null || true && \
     echo "\n[openssl_init]\nssl_conf = ssl_sect\n\n[ssl_sect]\nsystem_default = system_default_sect\n\n[system_default_sect]\nCipherString = DEFAULT@SECLEVEL=1\n" >> /etc/ssl/openssl.cnf
 
@@ -65,12 +65,10 @@ ENV COMPlus_SystemNetHttp_UseSocketsHttpHandler=false
 ENV ASPNETCORE_URLS=http://+:80
 ENV RENDER=true
 
-# 🔧 CONFIGURAÇÕES PARA SKIASHARP - USAR A VERSÃO EMBUTIDA NO PUBLISH
-# Isso força o .NET a usar as native libs que estão na pasta de publish
+# 🔧 CONFIGURAÇÕES PARA SKIASHARP
 ENV LD_LIBRARY_PATH="/app/runtimes/linux-x64/native:/app"
-
-# 🔧 CONFIGURAÇÃO PARA FASTREPORT E SKIASHARP
 ENV FASTREPORT_USE_SKIA=true
+ENV SKIA_SHARP_SKIP_NATIVE_LOADER_CHECK=true
 
 WORKDIR /app
 EXPOSE 80
@@ -78,14 +76,11 @@ EXPOSE 80
 # Copia os arquivos publicados
 COPY --from=build /publish .
 
-# Copia os schemas e wwwroot
-COPY --from=build /src/WebApiCommercial/NFSchemas ./NFSchemas 2>/dev/null || true
-COPY --from=build /src/WebApiCommercial/wwwroot ./wwwroot 2>/dev/null || true
+# Copia os schemas e wwwroot (sem operadores shell)
+COPY --from=build /src/WebApiCommercial/NFSchemas ./NFSchemas
+COPY --from=build /src/WebApiCommercial/wwwroot ./wwwroot
 
-# 🔧 CRIA DIRETÓRIO DE CERTIFICADOS E VERIFICA SE AS NATIVE LIBS FORAM COPIADAS
-RUN mkdir -p /app/wwwroot/certs && \
-    echo "Verificando native libraries do SkiaSharp..." && \
-    find /app -name "*SkiaSharp*" -type f 2>/dev/null | head -20 || true && \
-    chmod +x /app/runtimes/linux-x64/native/* 2>/dev/null || true
+# 🔧 CRIA DIRETÓRIO DE CERTIFICADOS
+RUN mkdir -p /app/wwwroot/certs
 
 ENTRYPOINT ["dotnet", "WebApiCommercial.dll"]
