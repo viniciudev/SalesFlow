@@ -14,6 +14,9 @@ COPY ["NFe/NFe.Utils/NFe.Utils.csproj", "NFe/NFe.Utils/"]
 COPY ["NFe/NFe.Servicos/NFe.Servicos.csproj", "NFe/NFe.Servicos/"]
 COPY ["NFe/NFe.Wsdl.Standard/NFe.Wsdl.Standard.csproj", "NFe/NFe.Wsdl.Standard/"]
 COPY ["NFe/NFe.Danfe.QuestPdf/NFe.Danfe.QuestPdf.csproj", "NFe/NFe.Danfe.QuestPdf/"]
+COPY ["NFe/DFe.Classes/DFe.Classes.csproj", "NFe/DFe.Classes/"]
+COPY ["NFe/DFe.Utils/DFe.Utils.csproj", "NFe/DFe.Utils/"]
+COPY ["NFe/NFe.Danfe.Base/NFe.Danfe.Base.csproj", "NFe/NFe.Danfe.Base/"]
 
 RUN dotnet restore WebApiCommercial/WebApiCommercial.csproj
 
@@ -23,55 +26,33 @@ RUN dotnet publish WebApiCommercial/WebApiCommercial.csproj -c Release -o /publi
 
 # Etapa 2 — Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
-# 🔧 INSTALA DEPENDÊNCIAS COMPLETAS PARA System.Drawing.Common
+
+# 🔧 INSTALA DEPENDÊNCIAS BÁSICAS (SEM SKIASHARP NATIVO DO SISTEMA)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         libc6-dev \
         libgdiplus \
-        libx11-dev \
-        libxft2 \
-        libxrandr2 \
+        libx11-6 \
+        libxcb1 \
+        libxext6 \
         libxrender1 \
+        libxrandr2 \
         libxcursor1 \
         libxinerama1 \
         libxi6 \
-        libgl1-mesa-glx \
+        libfontconfig1 \
+        libfreetype6 \
+        openssl \
         tzdata \
         && rm -rf /var/lib/apt/lists/*
 
-# 🔧 CRIA MÚLTIPLOS LINKS SIMBÓLICOS
-# RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll || true && \
-#     ln -s /usr/lib/libgdiplus.so /usr/lib/libgdiplus.dll.so || true && \
-#     ldconfig
-
-# # 🔧 CONFIGURA VARIÁVEIS DE AMBIENTE PARA System.Drawing.Common
-# ENV DOTNET_SYSTEM_DRAWING_DISABLE_USEAPPCLDRESOLVER=true
-# ENV COMPlus_EnableConsistentDeviceRemap=false
-# # 🔧 INSTALA DEPENDÊNCIAS PARA SKIASHARP, OPENSSL E LIBGDIPLUS (FastReport)
-# RUN apt-get update && \
-#   apt-get install -y --no-install-recommends \
-#   ca-certificates \
-#   openssl \
-#   libssl3 \
-#   libfontconfig1 \
-#   libfreetype6 \
-#   libpng-dev \
-#   libjpeg-dev \
-#   libgif-dev \
-#   libwebp-dev \
-#   libbrotli-dev \
-#   libc6-dev \
-#   libgdiplus \
-#   tzdata && \
-#   update-ca-certificates --fresh
-
-# # 🔧 CRIA LINK SIMBÓLICO PARA O GDIPLUS (necessário para algumas versões do FastReport)
-# RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll || true
+# 🔧 REMOVE VERSÕES ANTIGAS DO SKIASHARP QUE PODEM CAUSAR CONFLITO
+RUN find /usr/lib -name "*libSkiaSharp*" -type f -delete 2>/dev/null || true
 
 # 🔧 CONFIGURAÇÃO OPENSSL PARA ALGORITMOS LEGADOS
 RUN sed -i 's/^#\(openssl_conf = openssl_init\)/\1/' /etc/ssl/openssl.cnf 2>/dev/null || true && \
-  echo "\n[openssl_init]\nssl_conf = ssl_sect\n\n[ssl_sect]\nsystem_default = system_default_sect\n\n[system_default_sect]\nCipherString = DEFAULT@SECLEVEL=1\n" >> /etc/ssl/openssl.cnf
+    echo "\n[openssl_init]\nssl_conf = ssl_sect\n\n[ssl_sect]\nsystem_default = system_default_sect\n\n[system_default_sect]\nCipherString = DEFAULT@SECLEVEL=1\n" >> /etc/ssl/openssl.cnf
 
 # 🔧 TIMEZONE BRASÍLIA
 ENV TZ=America/Sao_Paulo
@@ -84,16 +65,27 @@ ENV COMPlus_SystemNetHttp_UseSocketsHttpHandler=false
 ENV ASPNETCORE_URLS=http://+:80
 ENV RENDER=true
 
-# 🔧 CONFIGURAÇÃO ADICIONAL PARA FASTREPORT NO LINUX
+# 🔧 CONFIGURAÇÕES PARA SKIASHARP - USAR A VERSÃO EMBUTIDA NO PUBLISH
+# Isso força o .NET a usar as native libs que estão na pasta de publish
+ENV LD_LIBRARY_PATH="/app/runtimes/linux-x64/native:/app"
+
+# 🔧 CONFIGURAÇÃO PARA FASTREPORT E SKIASHARP
 ENV FASTREPORT_USE_SKIA=true
 
 WORKDIR /app
 EXPOSE 80
 
+# Copia os arquivos publicados
 COPY --from=build /publish .
-COPY --from=build /src/WebApiCommercial/NFSchemas ./NFSchemas
-COPY --from=build /src/WebApiCommercial/wwwroot ./wwwroot
 
-RUN rm -rf ./wwwroot/certs 2>/dev/null || true && mkdir -p /app/wwwroot/certs
+# Copia os schemas e wwwroot
+COPY --from=build /src/WebApiCommercial/NFSchemas ./NFSchemas 2>/dev/null || true
+COPY --from=build /src/WebApiCommercial/wwwroot ./wwwroot 2>/dev/null || true
+
+# 🔧 CRIA DIRETÓRIO DE CERTIFICADOS E VERIFICA SE AS NATIVE LIBS FORAM COPIADAS
+RUN mkdir -p /app/wwwroot/certs && \
+    echo "Verificando native libraries do SkiaSharp..." && \
+    find /app -name "*SkiaSharp*" -type f 2>/dev/null | head -20 || true && \
+    chmod +x /app/runtimes/linux-x64/native/* 2>/dev/null || true
 
 ENTRYPOINT ["dotnet", "WebApiCommercial.dll"]
