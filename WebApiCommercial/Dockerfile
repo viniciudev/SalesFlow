@@ -27,7 +27,7 @@ RUN dotnet publish WebApiCommercial/WebApiCommercial.csproj -c Release -o /publi
 # Etapa 2 — Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 
-# 🔧 INSTALA DEPENDÊNCIAS BÁSICAS
+# 🔧 NÃO INSTALA NENHUMA DEPENDÊNCIA SKIASHARP DO SISTEMA
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
@@ -37,18 +37,15 @@ RUN apt-get update && \
         libxcb1 \
         libxext6 \
         libxrender1 \
-        libxrandr2 \
-        libxcursor1 \
-        libxinerama1 \
-        libxi6 \
         libfontconfig1 \
         libfreetype6 \
         openssl \
         tzdata \
         && rm -rf /var/lib/apt/lists/*
 
-# 🔧 REMOVE VERSÕES ANTIGAS DO SKIASHARP
-RUN find /usr/lib -name "*libSkiaSharp*" -type f -delete 2>/dev/null || true
+# 🔧 REMOVE QUALQUER VERSÃO EXISTENTE DO SKIASHARP
+RUN find /usr -name "*libSkiaSharp*" -type f -delete 2>/dev/null || true && \
+    find /usr -name "*libHarfBuzzSharp*" -type f -delete 2>/dev/null || true
 
 # 🔧 CONFIGURAÇÃO OPENSSL
 RUN sed -i 's/^#\(openssl_conf = openssl_init\)/\1/' /etc/ssl/openssl.cnf 2>/dev/null || true && \
@@ -65,10 +62,9 @@ ENV COMPlus_SystemNetHttp_UseSocketsHttpHandler=false
 ENV ASPNETCORE_URLS=http://+:80
 ENV RENDER=true
 
-# 🔧 CONFIGURAÇÕES PARA SKIASHARP
-ENV LD_LIBRARY_PATH="/app/runtimes/linux-x64/native:/app"
-ENV FASTREPORT_USE_SKIA=true
+# 🔧 CONFIGURAÇÕES CRÍTICAS PARA SKIASHARP
 ENV SKIA_SHARP_SKIP_NATIVE_LOADER_CHECK=true
+ENV DOTNET_GCHeapHardLimit=1C0000000
 
 WORKDIR /app
 EXPOSE 80
@@ -76,11 +72,25 @@ EXPOSE 80
 # Copia os arquivos publicados
 COPY --from=build /publish .
 
-# Copia os schemas e wwwroot (sem operadores shell)
-COPY --from=build /src/WebApiCommercial/NFSchemas ./NFSchemas
-COPY --from=build /src/WebApiCommercial/wwwroot ./wwwroot
+# 🔧 VERIFICA E MOSTRA AS NATIVE LIBS QUE FORAM COPIADAS
+RUN echo "=== Native libraries in /app ===" && \
+    find /app -name "*.so" -type f 2>/dev/null | grep -E "(SkiaSharp|HarfBuzz)" || echo "No SkiaSharp libs found in /app" && \
+    echo "=== Native libraries in /app/runtimes ===" && \
+    find /app/runtimes -name "*.so" -type f 2>/dev/null | grep -E "(SkiaSharp|HarfBuzz)" || echo "No SkiaSharp libs found in runtimes" && \
+    echo "=== Setting up library paths ==="
 
-# 🔧 CRIA DIRETÓRIO DE CERTIFICADOS
+# 🔧 COPIA MANUALMENTE AS NATIVE LIBS DO SKIASHARP PARA O DIRETÓRIO DO SISTEMA
+RUN if [ -d "/app/runtimes/linux-x64/native" ]; then \
+        cp -f /app/runtimes/linux-x64/native/libSkiaSharp.so* /usr/lib/ 2>/dev/null || true; \
+        cp -f /app/runtimes/linux-x64/native/libHarfBuzzSharp.so* /usr/lib/ 2>/dev/null || true; \
+        echo "Copied native libs from runtimes"; \
+    fi && \
+    if [ -f "/app/libSkiaSharp.so" ]; then \
+        cp -f /app/libSkiaSharp.so* /usr/lib/ 2>/dev/null || true; \
+        echo "Copied native libs from app root"; \
+    fi && \
+    ldconfig 2>/dev/null || true
+
 RUN mkdir -p /app/wwwroot/certs
 
 ENTRYPOINT ["dotnet", "WebApiCommercial.dll"]
