@@ -23,7 +23,10 @@ using Service;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.IO.Compression;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Settings = ProfControl.WebApi.Settings;
@@ -42,14 +45,10 @@ namespace WebAppCommercial
 
 		public void ConfigureServices(IServiceCollection services)
 		{
-			QuestPDF.Settings.License = LicenseType.Community;
-			// ===== ADICIONE ESTA SEÇÃO PARA FASTREPORT SKIA =====
 
-			// INICIALIZAÇÃO CRÍTICA DO FASTREPORT SKIA
-			//FastReport.Utils.Config.WebMode = true;
-			//FastReport.Utils.Config.EnableScripts = true;
-			//FastReport.Utils.Config.PreferDefaultFonts = true;
-			//FastReport.Drawing.GraphicsFactory.UseSkia = true;
+			ConfigureSkiaSharp();
+
+			QuestPDF.Settings.License = LicenseType.Community;
 
 			// Força a não dependência de Windows Forms
 			AppContext.SetSwitch("System.Drawing.EnableUnixSupport", true);
@@ -118,9 +117,9 @@ namespace WebAppCommercial
 			services.AddTransient<IBaseService<Client>, ClientService>();
 			//File
 			services.AddTransient<IFileService, FileService>();
-			services.AddTransient<IGenericRepository<File>, FileRepository>();
+			services.AddTransient<IGenericRepository<Model.Registrations.File>, FileRepository>();
 			services.AddTransient<IFileRepository, FileRepository>();
-			services.AddTransient<IBaseService<File>, FileService>();
+			services.AddTransient<IBaseService<Model.Registrations.File>, FileService>();
 			//company
 			services.AddTransient<ICompanyService, CompanyService>();
 			services.AddTransient<IGenericRepository<Company>, CompanyRepository>();
@@ -291,7 +290,7 @@ namespace WebAppCommercial
 			//FinancialPaymentMethod
 			services.AddTransient<IGenericRepository<FinancialPaymentMethod>, FinancialPaymentMethodRepository>();
 			services.AddTransient<IFinancialPaymentMethodRepository, FinancialPaymentMethodRepository>();
-		
+
 			//services.AddCors(options =>
 			//{
 			//    options.AddPolicy("EnableCORS", builder =>
@@ -310,16 +309,16 @@ namespace WebAppCommercial
 				options.AddPolicy("AllowSpecificOrigin",
 									builder =>
 									{
-								builder.WithOrigins(
-															"http://localhost:3000",
-															"http://localhost:9002",
-															"https://localhost:44365",
-															"https://studio-to69.onrender.com"// Adicione também o próprio backend
-													)
-													.AllowAnyHeader()
-													.AllowAnyMethod()
-													.AllowCredentials(); // Importante para cookies/auth
-							});
+										builder.WithOrigins(
+																	"http://localhost:3000",
+																	"http://localhost:9002",
+																	"https://localhost:44365",
+																	"https://studio-to69.onrender.com"// Adicione também o próprio backend
+															)
+															.AllowAnyHeader()
+															.AllowAnyMethod()
+															.AllowCredentials(); // Importante para cookies/auth
+									});
 			});
 
 			var key = Encoding.ASCII.GetBytes(Settings.Secret);
@@ -429,9 +428,9 @@ namespace WebAppCommercial
 				// Opcional: redirecionar rota raiz para o Swagger
 				endpoints.MapGet("/", context =>
 							{
-						context.Response.Redirect("/swagger");
-						return Task.CompletedTask;
-					}
+								context.Response.Redirect("/swagger");
+								return Task.CompletedTask;
+							}
 							);
 			});
 
@@ -476,6 +475,80 @@ namespace WebAppCommercial
 			ConventionPermissionMiddleware.RegisterPublicAction("authenticate");
 
 			Console.WriteLine("✅ Permission mappings configured successfully!");
+		}
+		// 🔧 MÉTODO DE CONFIGURAÇÃO DO SKIASHARP
+		private void ConfigureSkiaSharp()
+		{
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+			{
+				try
+				{
+					Console.WriteLine("=== CONFIGURANDO SKIASHARP PARA LINUX ===");
+
+					// Pula a verificação de compatibilidade
+					Environment.SetEnvironmentVariable("SKIA_SHARP_SKIP_NATIVE_LOADER_CHECK", "true");
+
+					// Força o uso da native lib embutida
+					var basePath = AppDomain.CurrentDomain.BaseDirectory;
+					var nativePaths = new List<string>();
+
+					// Procura pelas native libs em várias possíveis localizações
+					var possiblePaths = new[]
+					{
+								Path.Combine(basePath, "runtimes", "linux-x64", "native"),
+								Path.Combine(basePath, "runtimes", "linux", "native"),
+								Path.Combine(basePath, "native"),
+								basePath,
+								"/usr/lib",
+								"/usr/local/lib"
+						};
+
+					foreach (var path in possiblePaths)
+					{
+						if (Directory.Exists(path))
+						{
+							nativePaths.Add(path);
+							Console.WriteLine($"✅ Native library path found: {path}");
+						}
+					}
+
+					if (nativePaths.Any())
+					{
+						var ldPath = string.Join(":", nativePaths);
+						Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", ldPath);
+						Console.WriteLine($"✅ LD_LIBRARY_PATH set to: {ldPath}");
+					}
+					else
+					{
+						Console.WriteLine("⚠️ No native library paths found!");
+					}
+
+					// Verifica se as native libs existem
+					var skiaLibs = Directory.GetFiles(basePath, "libSkiaSharp*", SearchOption.AllDirectories);
+					if (skiaLibs.Any())
+					{
+						Console.WriteLine($"✅ Found SkiaSharp libs: {string.Join(", ", skiaLibs.Select(p => Path.GetFileName(p)))}");
+					}
+					else
+					{
+						Console.WriteLine("⚠️ WARNING: No SkiaSharp native libraries found in publish directory!");
+
+						// Tenta encontrar em outros locais
+						var systemSkiaLibs = Directory.GetFiles("/usr/lib", "libSkiaSharp*", SearchOption.AllDirectories);
+						if (systemSkiaLibs.Any())
+						{
+							Console.WriteLine($"⚠️ Found system SkiaSharp libs: {string.Join(", ", systemSkiaLibs.Select(p => Path.GetFileName(p)))}");
+							Console.WriteLine("⚠️ These may be incompatible versions!");
+						}
+					}
+
+					Console.WriteLine("=== CONFIGURAÇÃO SKIASHARP COMPLETADA ===");
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"❌ Error configuring SkiaSharp: {ex.Message}");
+				}
+			}
 		}
 		private static void UpdateDatabase(IApplicationBuilder app)
 		{
