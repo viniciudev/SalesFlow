@@ -6,8 +6,6 @@ namespace Model.Registrations
 {
   public class Provider : BaseEntity
   {
-    [Key]
-    public int id { get; set; }
     public string nome { get; set; }
     public string razaoSocial { get; set; }
     public string nomeFantasia { get; set; }

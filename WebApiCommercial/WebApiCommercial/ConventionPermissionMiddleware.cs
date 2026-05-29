@@ -48,9 +48,9 @@ public class ConventionPermissionMiddleware
         // === DASHBOARD ===
         { "Dashboard", "DASHBOARD" }, // Se tiver no enum
                 // === COMPRA ===
-      //                  { "Purchase", "COMPRA" },
-      //{ "Provider", "FORNECEDOR" },
-    };
+                     { "Compras", "COMPRA" },
+      { "Fornecedores", "FORNECEDOR" },
+		};
 
 	// 🔥 Controllers que NÃO exigem permissão (públicos)
 	private static readonly HashSet<string> _publicControllers = new(StringComparer.OrdinalIgnoreCase)
@@ -302,6 +302,10 @@ public class ConventionPermissionMiddleware
 			PermissionEnum.COMPRA_CANCELAR => "Cancelar compra",
 			PermissionEnum.COMPRA_DELETE => "Deletar compra",
 			PermissionEnum.COMPRA_EDIT => "Editar compra",
+			PermissionEnum.FORNECEDOR_CREATE => "Criar fornecedor",
+			PermissionEnum.FORNECEDOR_EDIT => "Editar fornecedor",
+			PermissionEnum.FORNECEDOR_VIEW => "Visualizar fornecedor",
+			PermissionEnum.FORNECEDOR_DELETE => "Deletar fornecedor",
 			_ => permission.ToString().Replace("_", " ")
 		};
 	}

@@ -347,8 +347,31 @@ namespace Model
                             Code = PermissionEnum.COMPRA_EDIT,
                             Name = "Editar Compras",
                             Category = "Compras"
+										},
+                    new Permission {
+                            Id = (int)PermissionEnum.FORNECEDOR_CREATE,
+                            Code = PermissionEnum.FORNECEDOR_CREATE,
+                            Name = "Criar Fornecedor",
+                            Category = "Fornecedores"
+                    },
+                    new Permission {
+                            Id = (int)PermissionEnum.FORNECEDOR_EDIT,
+                            Code = PermissionEnum.FORNECEDOR_EDIT,
+                            Name = "Editar Fornecedor",
+                            Category = "Fornecedores"
+                    },
+                    new Permission {
+                            Id = (int)PermissionEnum.FORNECEDOR_DELETE,
+                            Code = PermissionEnum.FORNECEDOR_DELETE,
+                            Name = "Deletar Fornecedor",
+                            Category = "Fornecedores"
+                    },
+                    new Permission {
+                            Id = (int)PermissionEnum.FORNECEDOR_VIEW,
+                            Code = PermissionEnum.FORNECEDOR_VIEW,
+                            Name = "Visualizar Fornecedor",
+                            Category = "Fornecedores"
 										}
-
 						};
         }
     }

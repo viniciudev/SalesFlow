@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Repository;
@@ -11,9 +12,11 @@ using Repository;
 namespace Repository.Migrations
 {
     [DbContext(typeof(ContextBase))]
-    partial class ContextBaseModelSnapshot : ModelSnapshot
+    [Migration("20260529171927_tabelasparacompra")]
+    partial class tabelasparacompra
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1615,34 +1618,6 @@ namespace Repository.Migrations
                             Category = "Compras",
                             Code = 104,
                             Name = "Editar Compras"
-                        },
-                        new
-                        {
-                            Id = 106,
-                            Category = "Fornecedores",
-                            Code = 106,
-                            Name = "Criar Fornecedor"
-                        },
-                        new
-                        {
-                            Id = 107,
-                            Category = "Fornecedores",
-                            Code = 107,
-                            Name = "Editar Fornecedor"
-                        },
-                        new
-                        {
-                            Id = 108,
-                            Category = "Fornecedores",
-                            Code = 108,
-                            Name = "Deletar Fornecedor"
-                        },
-                        new
-                        {
-                            Id = 105,
-                            Category = "Fornecedores",
-                            Code = 105,
-                            Name = "Visualizar Fornecedor"
                         });
                 });
 
@@ -1779,6 +1754,9 @@ namespace Repository.Migrations
                     b.Property<string>("email")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<int>("id")
+                        .HasColumnType("integer");
 
                     b.Property<int>("idcnae")
                         .HasColumnType("integer");

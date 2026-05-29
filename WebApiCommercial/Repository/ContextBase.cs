@@ -863,7 +863,7 @@ namespace Repository
             {
                 entity.ToTable("tb_provider");
                 entity.HasKey(c => c.Id);
-                entity.Property(c => c.Id).ValueGeneratedOnAdd();
+							entity.Property(c => c.Id).ValueGeneratedOnAdd();
                 entity.Property(c => c.nome).HasMaxLength(200);
                 entity.Property(c => c.razaoSocial).HasMaxLength(200);
                 entity.Property(c => c.nomeFantasia).HasMaxLength(200);
