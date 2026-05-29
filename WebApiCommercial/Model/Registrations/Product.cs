@@ -25,5 +25,6 @@ namespace Model.Registrations
         public string Reference { get; set; }
         public decimal CostPrice { get; set; }
         public string Ncm { get; set; }
+        public ICollection<PurchaseItem> PurchaseItems { get; set; }
     }
 }

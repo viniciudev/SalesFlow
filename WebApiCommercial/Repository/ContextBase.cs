@@ -21,6 +21,9 @@ namespace Repository
 
         }
         public virtual DbSet<User> User { get; set; }
+        public virtual DbSet<Provider> Provider { get; set; }
+        public virtual DbSet<Purchase> Purchase { get; set; }
+        public virtual DbSet<PurchaseItem> PurchaseItem { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -101,6 +104,9 @@ namespace Repository
             ConfiguraFiscalConfiguration(modelBuilder);
             ConfiguraNFeEmission(modelBuilder);
       ConfiguraFinancialPaymentMethod(modelBuilder);
+            ConfiguraProvider(modelBuilder);
+            ConfiguraPurchase(modelBuilder);
+            ConfiguraPurchaseItem(modelBuilder);
 						var cascadeFKs = modelBuilder.Model.GetEntityTypes()
      .SelectMany(t => t.GetForeignKeys())
      .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
@@ -849,6 +855,81 @@ namespace Repository
                     .HasForeignKey(e => e.SaleId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
+        }
+
+        private void ConfiguraProvider(ModelBuilder builder)
+        {
+            builder.Entity<Provider>(entity =>
+            {
+                entity.ToTable("tb_provider");
+                entity.HasKey(c => c.Id);
+                entity.Property(c => c.Id).ValueGeneratedOnAdd();
+                entity.Property(c => c.nome).HasMaxLength(200);
+                entity.Property(c => c.razaoSocial).HasMaxLength(200);
+                entity.Property(c => c.nomeFantasia).HasMaxLength(200);
+                entity.Property(c => c.cnpj).HasMaxLength(20);
+                entity.Property(c => c.inscricaoEstadual).HasMaxLength(20);
+                entity.Property(c => c.telefone).HasMaxLength(20);
+                entity.Property(c => c.email).HasMaxLength(100);
+                entity.Property(c => c.logradouro).HasMaxLength(200);
+                entity.Property(c => c.bairro).HasMaxLength(100);
+                entity.Property(c => c.cidade).HasMaxLength(100);
+                entity.Property(c => c.uf).HasMaxLength(2);
+                entity.Property(c => c.cep).HasMaxLength(10);
+                entity.Property(c => c.complemento).HasMaxLength(200);
+            });
+            builder.Entity<Provider>()
+                .HasOne(dc => dc.Company)
+                .WithMany(c => c.Providers)
+                .HasForeignKey(dc => dc.IdCompany);
+        }
+
+        private void ConfiguraPurchase(ModelBuilder builder)
+        {
+            builder.Entity<Purchase>(entity =>
+            {
+                entity.ToTable("tb_purchase");
+                entity.HasKey(c => c.Id);
+                entity.Property(c => c.Id).ValueGeneratedOnAdd();
+                entity.Property(c => c.ChaveNfe).HasMaxLength(44).IsRequired();
+                entity.Property(c => c.ValorTotal).HasColumnType("decimal(18,2)");
+            });
+            builder.Entity<Purchase>()
+                .HasOne(dc => dc.Company)
+                .WithMany(c => c.Purchases)
+                .HasForeignKey(dc => dc.IdCompany)
+                .OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<Purchase>()
+                .HasOne(dc => dc.Fornecedor)
+                .WithMany(c => c.Purchases)
+                .HasForeignKey(dc => dc.FornecedorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
+
+        private void ConfiguraPurchaseItem(ModelBuilder builder)
+        {
+            builder.Entity<PurchaseItem>(entity =>
+            {
+                entity.ToTable("tb_purchaseItem");
+                entity.HasKey(c => c.Id);
+                entity.Property(c => c.Id).ValueGeneratedOnAdd();
+                entity.Property(c => c.CodigoProduto).HasMaxLength(50);
+                entity.Property(c => c.DescricaoProduto).HasMaxLength(200);
+                entity.Property(c => c.Quantidade).HasColumnType("decimal(18,3)");
+                entity.Property(c => c.ValorUnitario).HasColumnType("decimal(18,2)");
+                entity.Property(c => c.Desconto).HasColumnType("decimal(18,2)");
+                entity.Property(c => c.ValorTotal).HasColumnType("decimal(18,2)");
+            });
+            builder.Entity<PurchaseItem>()
+                .HasOne(dc => dc.Compra)
+                .WithMany(c => c.PurchaseItems)
+                .HasForeignKey(dc => dc.CompraId)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<PurchaseItem>()
+                .HasOne(dc => dc.Produto)
+                .WithMany(c => c.PurchaseItems)
+                .HasForeignKey(dc => dc.ProdutoId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

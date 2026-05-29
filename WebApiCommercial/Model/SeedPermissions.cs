@@ -318,9 +318,38 @@ namespace Model
                             Code = PermissionEnum.NOTA_FISCAL_EDIT,
                             Name = "Editar Notas Fiscais",
                             Category = "Notas"
-                    }
+                    }, new Permission {
+                            Id = (int)PermissionEnum.COMPRA_VIEW,
+                            Code = PermissionEnum.COMPRA_VIEW,
+                            Name = "Visualizar Compras",
+                            Category = "Compras"
+                    },
+                    new Permission {
+                            Id = (int)PermissionEnum.COMPRA_CREATE,
+                            Code = PermissionEnum.COMPRA_CREATE,
+                            Name = "Criar Compras",
+                            Category = "Compras"
+                    },
+                    new Permission {
+                            Id = (int)PermissionEnum.COMPRA_CANCELAR,
+                            Code = PermissionEnum.COMPRA_CANCELAR,
+                            Name = "Cancelar Compras",
+                            Category = "Compras"
+                    },
+                    new Permission {
+                            Id = (int)PermissionEnum.COMPRA_DELETE,
+                            Code = PermissionEnum.COMPRA_DELETE,
+                            Name = "Deletar Compras",
+                            Category = "Compras"
+                    },
+                    new Permission {
+                            Id = (int)PermissionEnum.COMPRA_EDIT,
+                            Code = PermissionEnum.COMPRA_EDIT,
+                            Name = "Editar Compras",
+                            Category = "Compras"
+										}
 
-            };
+						};
         }
     }
 }

@@ -1,5 +1,7 @@
-﻿using Model.Registrations;
+﻿using Model;
+using Model.Registrations;
 using Repository;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Service
@@ -9,20 +11,21 @@ namespace Service
       public ProviderService(IGenericRepository<Provider> repository) : base(repository)
       {
       }
-      //public Task<bool> ExistsCpf(string cpf)
-      //{
-      //   return (repository as IClientRepository).ExistsCpf(cpf);
 
-      //}
-      public Task<PagedResult<Provider>> GetAllPaged()
+      public Task<PagedResult<Provider>> GetAllPaged(Filters filters)
       {
-         return (repository as IProviderRepository).GetAllPaged();
+         return (repository as IProviderRepository).GetAllPaged(filters);
       }
 
+      public Task<List<Provider>> GetListByName(Filters filters)
+      {
+         return (repository as IProviderRepository).GetListByName(filters);
+      }
    }
+
    public interface IProviderService : IBaseService<Provider>
    {
-      Task<PagedResult<Provider>> GetAllPaged();
-     // Task<bool> ExistsCpf(string cpf);
+      Task<PagedResult<Provider>> GetAllPaged(Filters filters);
+      Task<List<Provider>> GetListByName(Filters filters);
    }
 }

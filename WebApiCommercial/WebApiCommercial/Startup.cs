@@ -278,6 +278,16 @@ namespace WebAppCommercial
 			//FinancialPaymentMethod
 			services.AddTransient<IGenericRepository<FinancialPaymentMethod>, FinancialPaymentMethodRepository>();
 			services.AddTransient<IFinancialPaymentMethodRepository, FinancialPaymentMethodRepository>();
+			//Provider
+			services.AddTransient<IProviderService, ProviderService>();
+			services.AddTransient<IGenericRepository<Provider>, ProviderRepository>();
+			services.AddTransient<IProviderRepository, ProviderRepository>();
+			services.AddTransient<IBaseService<Provider>, ProviderService>();
+			//Purchase
+			services.AddTransient<IPurchaseService, PurchaseService>();
+			services.AddTransient<IGenericRepository<Purchase>, PurchaseRepository>();
+			services.AddTransient<IPurchaseRepository, PurchaseRepository>();
+			services.AddTransient<IBaseService<Purchase>, PurchaseService>();
 		
 			//services.AddCors(options =>
 			//{

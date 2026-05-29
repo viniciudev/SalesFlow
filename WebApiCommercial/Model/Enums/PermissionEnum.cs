@@ -64,7 +64,12 @@
         NOTA_FISCAL_CREATE = 96,
         NOTA_FISCAL_CANCEL = 97,
         NOTA_FISCAL_EDIT = 98
+      //compra
+      ,COMPRA_VIEW = 100,
+        COMPRA_CREATE = 101,
+        COMPRA_CANCELAR = 102,
+        COMPRA_DELETE =103, COMPRA_EDIT =104,
 
 
-    }
+	}
 }
