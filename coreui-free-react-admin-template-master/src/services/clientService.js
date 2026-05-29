@@ -1,1 +1,0 @@
-export const URL_Client = (`${process.env.REACT_APP_HOST}/client`)
