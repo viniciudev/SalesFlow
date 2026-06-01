@@ -47,7 +47,8 @@ namespace WebApiCommercial.Controllers
             [FromHeader] int tenantid)
         {
             provider.IdCompany = tenantid;
-            await providerService.Save(provider);
+    
+			await providerService.Create(provider);
             return Ok(provider.Id);
         }
 
