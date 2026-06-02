@@ -1,189 +1,222 @@
-﻿using Model;
+﻿using Microsoft.EntityFrameworkCore;
+using Model;
 using Model.DTO;
 using Model.Moves;
 using Repository;
-using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Service
 {
-    public class PurchaseService : BaseService<Purchase>, IPurchaseService
-    {
-        private readonly ContextBase _dbContext;
+	public class PurchaseService : BaseService<Purchase>, IPurchaseService
+	{
+		private readonly ContextBase _dbContext;
+		private readonly IStockService _stockService;
 
-        public PurchaseService(IGenericRepository<Purchase> repository, ContextBase dbContext) : base(repository)
-        {
-            _dbContext = dbContext;
-        }
+		public PurchaseService(IGenericRepository<Purchase> repository, ContextBase dbContext, IStockService stockService) : base(repository)
+		{
+			_dbContext = dbContext;
+			_stockService = stockService;
+		}
 
-        public async Task<PagedResult<Purchase>> GetAllPaged(Filters filters)
-        {
-            return await (repository as IPurchaseRepository).GetAllPaged(filters);
-        }
+		public async Task<PagedResult<Purchase>> GetAllPaged(Filters filters)
+		{
+			return await (repository as IPurchaseRepository).GetAllPaged(filters);
+		}
 
-        public async Task<Purchase> GetByIdWithItems(int id)
-        {
-            return await (repository as IPurchaseRepository).GetByIdWithItems(id);
-        }
+		public async Task<Purchase> GetByIdWithItems(int id)
+		{
+			return await (repository as IPurchaseRepository).GetByIdWithItems(id);
+		}
 
-        public async Task<int> SaveWithItems(PurchaseDto purchaseDto)
-        {
-            using (var transaction = await repository.CreateTransactionAsync())
-            {
-                try
-                {
-                    if (string.IsNullOrEmpty(purchaseDto.ChaveNfe) || purchaseDto.ChaveNfe.Length != 44)
-                        throw new ArgumentException("Chave da NF-e deve possuir exatamente 44 caracteres.");
+		public async Task<int> SaveWithItems(PurchaseDto purchaseDto)
+		{
+			using (var transaction = await repository.CreateTransactionAsync())
+			{
+				try
+				{
+					if (string.IsNullOrEmpty(purchaseDto.ChaveNfe) || purchaseDto.ChaveNfe.Length != 44)
+						throw new ArgumentException("Chave da NF-e deve possuir exatamente 44 caracteres.");
 
-                    if (purchaseDto.FornecedorId <= 0)
-                        throw new ArgumentException("Fornecedor eh obrigatorio.");
+					if (purchaseDto.FornecedorId <= 0)
+						throw new ArgumentException("Fornecedor eh obrigatorio.");
 
-                    if (purchaseDto.PurchaseItems == null || !purchaseDto.PurchaseItems.Any())
-                        throw new ArgumentException("A compra deve ter pelo menos um item.");
+					if (purchaseDto.PurchaseItems == null || !purchaseDto.PurchaseItems.Any())
+						throw new ArgumentException("A compra deve ter pelo menos um item.");
 
-                    foreach (var item in purchaseDto.PurchaseItems)
-                    {
-                        if (item.Quantidade <= 0)
-                            throw new ArgumentException("Quantidade do item deve ser maior que zero.");
+					foreach (var item in purchaseDto.PurchaseItems)
+					{
+						if (item.Quantidade <= 0)
+							throw new ArgumentException("Quantidade do item deve ser maior que zero.");
 
-                        if (item.ValorUnitario <= 0)
-                            throw new ArgumentException("Valor unitario do item deve ser maior que zero.");
+						if (item.ValorUnitario <= 0)
+							throw new ArgumentException("Valor unitario do item deve ser maior que zero.");
 
-                        item.ValorTotal = (item.Quantidade * item.ValorUnitario) - item.Desconto;
-                    }
+						item.ValorTotal = (item.Quantidade * item.ValorUnitario) - item.Desconto;
+					}
 
-                    purchaseDto.ValorTotal = purchaseDto.PurchaseItems.Sum(x => x.ValorTotal);
+					purchaseDto.ValorTotal = purchaseDto.PurchaseItems.Sum(x => x.ValorTotal);
 
-                    Purchase compra = new Purchase
-                    {
-                        IdCompany = purchaseDto.IdCompany,
-                        DataEntrada = purchaseDto.DataEntrada,
-                        DataCompra = purchaseDto.DataCompra,
-                        ChaveNfe = purchaseDto.ChaveNfe,
-                        FornecedorId = purchaseDto.FornecedorId,
-                        ValorTotal = purchaseDto.ValorTotal,
-                        DataCadastro = DateTime.Now
-                    };
+					Purchase compra = new Purchase
+					{
+						IdCompany = purchaseDto.IdCompany,
+						DataEntrada = purchaseDto.DataEntrada,
+						DataCompra = purchaseDto.DataCompra,
+						ChaveNfe = purchaseDto.ChaveNfe,
+						FornecedorId = purchaseDto.FornecedorId,
+						ValorTotal = purchaseDto.ValorTotal,
+						DataCadastro = DateTime.Now
+					};
 
-                    await base.Save(compra);
+					await base.Save(compra);
 
-                    foreach (var item in purchaseDto.PurchaseItems)
-                    {
-                        PurchaseItem purchaseItem = new PurchaseItem
-                        {
-                            CompraId = compra.Id,
-                            ProdutoId = item.ProdutoId,
-                            CodigoProduto = item.CodigoProduto,
-                            DescricaoProduto = item.DescricaoProduto,
-                            Quantidade = item.Quantidade,
-                            ValorUnitario = item.ValorUnitario,
-                            Desconto = item.Desconto,
-                            ValorTotal = item.ValorTotal
-                        };
+					foreach (var item in purchaseDto.PurchaseItems)
+					{
+						PurchaseItem purchaseItem = new PurchaseItem
+						{
+							CompraId = compra.Id,
+							ProdutoId = item.ProdutoId,
+							CodigoProduto = item.CodigoProduto,
+							DescricaoProduto = item.DescricaoProduto,
+							Quantidade = item.Quantidade,
+							ValorUnitario = item.ValorUnitario,
+							Desconto = item.Desconto,
+							ValorTotal = item.ValorTotal
+						};
 
-                        await _dbContext.Set<PurchaseItem>().AddAsync(purchaseItem);
-                    }
+						await _dbContext.Set<PurchaseItem>().AddAsync(purchaseItem);
+						await _dbContext.SaveChangesAsync();
 
-                    await _dbContext.SaveChangesAsync();
-                    transaction.Commit();
-                    return compra.Id;
-                }
-                catch (Exception)
-                {
-                    transaction.Rollback();
-                    throw;
-                }
-            }
-        }
+						await _stockService.Create(new Stock
+						{
+							IdCompany = purchaseDto.IdCompany,
+							Quantity = item.Quantidade,
+							Date = purchaseDto.DataEntrada,
+							IdProduct = (int)item.ProdutoId,
+							Reason = $"Compra: dia {purchaseDto.DataEntrada}",
+							Type = StockType.entry,
+							ReferenceId = purchaseItem.Id,
+						});
 
-        public async Task<int> UpdateWithItems(PurchaseDto purchaseDto)
-        {
-            using (var transaction = await repository.CreateTransactionAsync())
-            {
-                try
-                {
-                    if (string.IsNullOrEmpty(purchaseDto.ChaveNfe) || purchaseDto.ChaveNfe.Length != 44)
-                        throw new ArgumentException("Chave da NF-e deve possuir exatamente 44 caracteres.");
+					}
 
-                    if (purchaseDto.FornecedorId <= 0)
-                        throw new ArgumentException("Fornecedor eh obrigatorio.");
+			
+					transaction.Commit();
+					return compra.Id;
+				}
+				catch (Exception)
+				{
+					transaction.Rollback();
+					throw;
+				}
+			}
+		}
 
-                    if (purchaseDto.PurchaseItems == null || !purchaseDto.PurchaseItems.Any())
-                        throw new ArgumentException("A compra deve ter pelo menos um item.");
+		public async Task<int> UpdateWithItems(PurchaseDto purchaseDto)
+		{
+			using (var transaction = await repository.CreateTransactionAsync())
+			{
+				try
+				{
+					if (string.IsNullOrEmpty(purchaseDto.ChaveNfe) || purchaseDto.ChaveNfe.Length != 44)
+						throw new ArgumentException("Chave da NF-e deve possuir exatamente 44 caracteres.");
 
-                    foreach (var item in purchaseDto.PurchaseItems)
-                    {
-                        if (item.Quantidade <= 0)
-                            throw new ArgumentException("Quantidade do item deve ser maior que zero.");
+					if (purchaseDto.FornecedorId <= 0)
+						throw new ArgumentException("Fornecedor eh obrigatorio.");
 
-                        if (item.ValorUnitario <= 0)
-                            throw new ArgumentException("Valor unitario do item deve ser maior que zero.");
+					if (purchaseDto.PurchaseItems == null || !purchaseDto.PurchaseItems.Any())
+						throw new ArgumentException("A compra deve ter pelo menos um item.");
 
-                        item.ValorTotal = (item.Quantidade * item.ValorUnitario) - item.Desconto;
-                    }
+					foreach (var item in purchaseDto.PurchaseItems)
+					{
+						if (item.Quantidade <= 0)
+							throw new ArgumentException("Quantidade do item deve ser maior que zero.");
 
-                    purchaseDto.ValorTotal = purchaseDto.PurchaseItems.Sum(x => x.ValorTotal);
+						if (item.ValorUnitario <= 0)
+							throw new ArgumentException("Valor unitario do item deve ser maior que zero.");
 
-                    Purchase compra = new Purchase
-                    {
-                        Id = purchaseDto.Id,
-                        IdCompany = purchaseDto.IdCompany,
-                        DataEntrada = purchaseDto.DataEntrada,
-                        DataCompra = purchaseDto.DataCompra,
-                        ChaveNfe = purchaseDto.ChaveNfe,
-                        FornecedorId = purchaseDto.FornecedorId,
-                        ValorTotal = purchaseDto.ValorTotal,
-                        DataCadastro = DateTime.Now
-                    };
+						item.ValorTotal = (item.Quantidade * item.ValorUnitario) - item.Desconto;
+					}
 
-                    await base.Alter(compra);
+					purchaseDto.ValorTotal = purchaseDto.PurchaseItems.Sum(x => x.ValorTotal);
 
-                    var existingItems = await _dbContext.Set<PurchaseItem>()
-                        .Where(x => x.CompraId == compra.Id).ToListAsync();
+					Purchase compra = new Purchase
+					{
+						Id = purchaseDto.Id,
+						IdCompany = purchaseDto.IdCompany,
+						DataEntrada = purchaseDto.DataEntrada,
+						DataCompra = purchaseDto.DataCompra,
+						ChaveNfe = purchaseDto.ChaveNfe,
+						FornecedorId = purchaseDto.FornecedorId,
+						ValorTotal = purchaseDto.ValorTotal,
+						DataCadastro = DateTime.Now
+					};
 
-                    foreach (var item in existingItems)
-                    {
-                        _dbContext.Set<PurchaseItem>().Remove(item);
-                    }
+					await base.Alter(compra);
 
-                    foreach (var item in purchaseDto.PurchaseItems)
-                    {
-                        PurchaseItem purchaseItem = new PurchaseItem
-                        {
-                            CompraId = compra.Id,
-                            ProdutoId = item.ProdutoId,
-                            CodigoProduto = item.CodigoProduto,
-                            DescricaoProduto = item.DescricaoProduto,
-                            Quantidade = item.Quantidade,
-                            ValorUnitario = item.ValorUnitario,
-                            Desconto = item.Desconto,
-                            ValorTotal = item.ValorTotal
-                        };
+					var existingItems = await _dbContext.Set<PurchaseItem>()
+							.Where(x => x.CompraId == compra.Id).ToListAsync();
 
-                        await _dbContext.Set<PurchaseItem>().AddAsync(purchaseItem);
-                    }
+					foreach (var item in existingItems)
+					{
+						_dbContext.Set<PurchaseItem>().Remove(item);
 
-                    await _dbContext.SaveChangesAsync();
-                    transaction.Commit();
-                    return compra.Id;
-                }
-                catch (Exception)
-                {
-                    transaction.Rollback();
-                    throw;
-                }
-            }
-        }
-    }
+						Stock stock = await _stockService.GetByReferenceIdAsync(item.Id, compra.IdCompany, StockType.entry);
+						//deletar para inserir com os novos itens
+						if (stock != null)
+						{
+							await _stockService.DeleteAsync(stock.Id);
+						}
+					}
 
-    public interface IPurchaseService : IBaseService<Purchase>
-    {
-        Task<PagedResult<Purchase>> GetAllPaged(Filters filters);
-        Task<Purchase> GetByIdWithItems(int id);
-        Task<int> SaveWithItems(PurchaseDto purchaseDto);
-        Task<int> UpdateWithItems(PurchaseDto purchaseDto);
-    }
+					foreach (var item in purchaseDto.PurchaseItems)
+					{
+						PurchaseItem purchaseItem = new PurchaseItem
+						{
+							CompraId = compra.Id,
+							ProdutoId = item.ProdutoId,
+							CodigoProduto = item.CodigoProduto,
+							DescricaoProduto = item.DescricaoProduto,
+							Quantidade = item.Quantidade,
+							ValorUnitario = item.ValorUnitario,
+							Desconto = item.Desconto,
+							ValorTotal = item.ValorTotal
+						};
+
+						await _dbContext.Set<PurchaseItem>().AddAsync(purchaseItem);
+						await _dbContext.SaveChangesAsync();
+
+						await _stockService.Create(new Stock
+						{
+							IdCompany = purchaseDto.IdCompany,
+							Quantity = item.Quantidade,
+							Date = purchaseDto.DataEntrada,
+							IdProduct = (int)item.ProdutoId,
+							Reason = $"Compra: dia {purchaseDto.DataEntrada}",
+							Type = StockType.entry,
+							ReferenceId = purchaseItem.Id,
+						});
+					}
+
+					
+					transaction.Commit();
+					return compra.Id;
+				}
+				catch (Exception)
+				{
+					transaction.Rollback();
+					throw;
+				}
+			}
+		}
+	}
+
+	public interface IPurchaseService : IBaseService<Purchase>
+	{
+		Task<PagedResult<Purchase>> GetAllPaged(Filters filters);
+		Task<Purchase> GetByIdWithItems(int id);
+		Task<int> SaveWithItems(PurchaseDto purchaseDto);
+		Task<int> UpdateWithItems(PurchaseDto purchaseDto);
+	}
 }

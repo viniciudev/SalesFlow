@@ -187,7 +187,7 @@ namespace Service
 						if (item.Id > 0)
 							await saleItemsService.DeleteAsync(item.Id);
 						//voltar estoque
-						Stock stock = await _stockService.GetByReferenceIdAsync(item.Id);
+						Stock stock = await _stockService.GetByReferenceIdAsync(item.Id, sale.IdCompany, StockType.exit);
 						//deletar para inserir com os novos itens
 						if (stock != null)
 						{

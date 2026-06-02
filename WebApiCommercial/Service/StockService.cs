@@ -26,15 +26,15 @@ namespace Service
         {
             return await (repository as IStockRepository).GetBalanceByProduct(tenantid,idProduct);
         }
-        public async Task<Stock> GetByReferenceIdAsync(int id)
+        public async Task<Stock> GetByReferenceIdAsync(int id, int idCompany, StockType stockType)
         {
-            return await (repository as IStockRepository).GetByReferenceIdAsync(id);
+            return await (repository as IStockRepository).GetByReferenceIdAsync(id, idCompany, stockType);
         }
     }
     public interface IStockService : IBaseService<Stock>
     {
         Task<StockSummary> GetBalanceByProduct(int tenantid, int idProduct);
         Task<PagedResult<Stock>> GetAllPaged(Filters filters);
-        Task<Stock> GetByReferenceIdAsync(int id);
+        Task<Stock> GetByReferenceIdAsync(int id, int idCompany, StockType stockType);
     }
 }
