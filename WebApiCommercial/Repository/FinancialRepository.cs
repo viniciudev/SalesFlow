@@ -386,6 +386,15 @@ namespace Repository
 					.FirstOrDefaultAsync();
 			return data;
 		}
+		public async Task<List<Financial>> GetByIdPurchaseAsync(int id)
+		{
+			var data = await _dbContext.Set<Financial>()
+				.Include(x => x.FinancialPaymentMethods)
+					.Where(x => x.IdPurchase == id)
+					.AsNoTracking()
+					.ToListAsync();
+			return data;
+		}
 	}
 	public interface IFinancialRepository : IGenericRepository<Financial>
 	{
@@ -397,6 +406,7 @@ namespace Repository
 		Task<PagedResultWithTotals> GetPaged(Filters filters);
 		Task<PagedResult<FinancialResponse>> GetPagedByIdClient(Filters filters);
 		Task<Financial> GetById(int id);
+		Task<List<Financial>> GetByIdPurchaseAsync(int id);
 	}
 	public class PagedResultWithTotals
 	{

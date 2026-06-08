@@ -1,0 +1,18 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Model.DTO
+{
+
+	public class FormPaymentPurchase
+	{
+		public int PaymentMethodId { get; set; }
+		public decimal Value { get; set; }
+		public string PaymentMethodName { get; set; }
+		public int? BankAccountId { get; set; }      // Nullable porque pode não existir
+		public string? BankAccountName { get; set; }
+	}
+}

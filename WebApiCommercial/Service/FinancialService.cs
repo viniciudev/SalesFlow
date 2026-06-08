@@ -250,6 +250,10 @@ namespace Service
 				throw;
 			}
 		}
+		public async Task<List<Financial>> GetByIdPurchaseAsync(int id)
+		{
+			return await (repository as IFinancialRepository).GetByIdPurchaseAsync(id);
+		}
 	}
 	public interface IFinancialService : IBaseService<Financial>
 	{
@@ -265,5 +269,6 @@ namespace Service
 		Task AlterFinancialStatus(Financial financial);
 		Task<PagedResult<FinancialResponse>> GetPagedByIdClient(Filters filters);
 		Task CreateRenegotiationAsync(RenegotiationRequestDto request);
+		Task<List<Financial>> GetByIdPurchaseAsync(int id);
 	}
 }

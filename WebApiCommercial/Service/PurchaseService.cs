@@ -4,6 +4,7 @@ using Model.DTO;
 using Model.Moves;
 using Repository;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -13,11 +14,18 @@ namespace Service
 	{
 		private readonly ContextBase _dbContext;
 		private readonly IStockService _stockService;
-
-		public PurchaseService(IGenericRepository<Purchase> repository, ContextBase dbContext, IStockService stockService) : base(repository)
+		private readonly IFinancialService _financialService;
+		private readonly IBoxRepository _boxRepository;
+		private readonly ICostCenterRepository _costCenterRepository;
+		private readonly IFinancialPaymentMethodRepository _financialPaymentMethodRepository;
+		public PurchaseService(IGenericRepository<Purchase> repository, ContextBase dbContext, IStockService stockService, IFinancialService financialService, IBoxRepository boxRepository, ICostCenterRepository costCenterRepository, IFinancialPaymentMethodRepository financialPaymentMethodRepository) : base(repository)
 		{
 			_dbContext = dbContext;
 			_stockService = stockService;
+			_financialService = financialService;
+			_boxRepository = boxRepository;
+			_costCenterRepository = costCenterRepository;
+			_financialPaymentMethodRepository = financialPaymentMethodRepository;
 		}
 
 		public async Task<PagedResult<Purchase>> GetAllPaged(Filters filters)
@@ -100,8 +108,10 @@ namespace Service
 						});
 
 					}
-
 			
+					 await GenerateFinancial(purchaseDto.FormPayment, compra.Id, purchaseDto.IdCompany, null, purchaseDto.BankAccountId, purchaseDto.Troco);
+
+
 					transaction.Commit();
 					return compra.Id;
 				}
@@ -169,6 +179,16 @@ namespace Service
 							await _stockService.DeleteAsync(stock.Id);
 						}
 					}
+					//deletar financeiros
+					List<Financial> fin = await _financialService.GetByIdPurchaseAsync(purchaseDto.Id);
+					foreach (var item in fin)
+					{
+						foreach (var forms in item.FinancialPaymentMethods)
+						{
+							await _financialPaymentMethodRepository.DeleteAsync(forms.Id);
+						}
+						await _financialService.DeleteAsync(item.Id);
+					}
 
 					foreach (var item in purchaseDto.PurchaseItems)
 					{
@@ -198,8 +218,9 @@ namespace Service
 							ReferenceId = purchaseItem.Id,
 						});
 					}
+					await GenerateFinancial(purchaseDto.FormPayment, compra.Id, purchaseDto.IdCompany, null, purchaseDto.BankAccountId, purchaseDto.Troco);	
 
-					
+
 					transaction.Commit();
 					return compra.Id;
 				}
@@ -208,6 +229,49 @@ namespace Service
 					transaction.Rollback();
 					throw;
 				}
+			}
+		}
+		private async Task GenerateFinancial(
+			ICollection<FormPaymentPurchase> formPayment,
+			int IdPurchase, int IdCompany,
+			int? IdClient = null, int? BankAccountId = null, decimal? troco = null)
+		{
+			if (formPayment != null && formPayment.Count() > 0)
+			{
+				var caixaAberto = await _boxRepository.GetByStatus(CaixaStatus.ABERTO, IdCompany);
+				var listCostCenter = await _costCenterRepository.GetByIdCompany(IdCompany);
+				decimal value = troco != null ? (decimal)(formPayment.Sum(x => x.Value) - troco) : formPayment.Sum(x => x.Value);
+				Financial item = new Financial();
+				item.Id = 0;
+				item.FinancialStatus = FinancialStatus.paid;
+				item.FinancialType = FinancialType.expense;
+				item.Origin = OriginFinancial.financial;
+				item.IdPurchase = IdPurchase;
+				item.CreationDate = DateTime.Now;
+				item.DueDate = DateTime.Now;
+				item.SettlementDate = DateTime.Now.ToString();
+				item.IdCompany = IdCompany;
+				item.BoxId = caixaAberto != null ? caixaAberto.Id : null;
+				item.Description = $"Compra no dia:{DateTime.Now}";
+				item.IdCostCenter = listCostCenter.FirstOrDefault()?.Id;
+				item.IdClient = IdClient;
+				item.Value = value;
+				item.Troco = troco;
+				item.BankAccountId = BankAccountId;
+
+				List<FinancialPaymentMethod> financialPaymentMethod = new();
+				foreach (var m in formPayment)
+				{
+					financialPaymentMethod.Add(new FinancialPaymentMethod
+					{
+						PaymentMethodId = m.PaymentMethodId,
+						FinancialId = item.Id,
+						Amount = m.Value,
+						//      Installments = item.Installments
+					});
+				}
+				item.FinancialPaymentMethods = financialPaymentMethod;
+				await _financialService.Create(item);
 			}
 		}
 	}
