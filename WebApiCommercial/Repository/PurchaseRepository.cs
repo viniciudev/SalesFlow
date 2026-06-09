@@ -49,6 +49,7 @@ namespace Repository
                 .Include(x => x.Fornecedor)
                 .Include(x => x.PurchaseItems)
                     .ThenInclude(x => x.Produto)
+                    .Include(x=>x.Financials).ThenInclude(x=>x.FinancialPaymentMethods)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
