@@ -1,1 +1,0 @@
-export const URL_User = (`${process.env.REACT_APP_HOST}/user`)

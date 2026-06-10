@@ -1,1 +1,0 @@
-export const URL_Sale = (`${process.env.REACT_APP_HOST}/sale`)

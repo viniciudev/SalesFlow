@@ -1,1 +1,0 @@
-export const URL_SearchZipCode = (`${process.env.REACT_APP_HOST}/searchzipcode`)

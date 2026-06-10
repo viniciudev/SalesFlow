@@ -1,1 +1,0 @@
-export const URL_SearchClient = (`${process.env.REACT_APP_HOST}/searchclient`)

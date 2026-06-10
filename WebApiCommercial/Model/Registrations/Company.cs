@@ -39,6 +39,8 @@ namespace Model.Registrations
         public ICollection<NaturezaOperacao> NaturezaOperacoes { get; set; } = new List<NaturezaOperacao>();
         public  FiscalConfiguration FiscalConfiguration { get; set; }
         public ICollection<NFeEmission> NFeEmissions { get; set; }= new List<NFeEmission>();
+        public ICollection<Provider> Providers { get; set; } = new List<Provider>();
+        public ICollection<Purchase> Purchases { get; set; } = new List<Purchase>();
 
     }
 }

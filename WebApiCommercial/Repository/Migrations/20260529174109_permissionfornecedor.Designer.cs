@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Repository;
@@ -11,9 +12,11 @@ using Repository;
 namespace Repository.Migrations
 {
     [DbContext(typeof(ContextBase))]
-    partial class ContextBaseModelSnapshot : ModelSnapshot
+    [Migration("20260529174109_permissionfornecedor")]
+    partial class permissionfornecedor
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -435,9 +438,6 @@ namespace Repository.Migrations
                     b.Property<int?>("IdProduct")
                         .HasColumnType("integer");
 
-                    b.Property<int>("IdPurchase")
-                        .HasColumnType("integer");
-
                     b.Property<int?>("IdSale")
                         .HasColumnType("integer");
 
@@ -458,9 +458,6 @@ namespace Repository.Migrations
 
                     b.Property<decimal>("Percentage")
                         .HasColumnType("numeric");
-
-                    b.Property<int?>("PurchaseId")
-                        .HasColumnType("integer");
 
                     b.Property<decimal>("SettledValue")
                         .HasColumnType("numeric");
@@ -498,8 +495,6 @@ namespace Repository.Migrations
                     b.HasIndex("IdSalesman");
 
                     b.HasIndex("IdService");
-
-                    b.HasIndex("PurchaseId");
 
                     b.ToTable("tb_financial", (string)null);
                 });
@@ -1788,6 +1783,9 @@ namespace Repository.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<int>("id")
+                        .HasColumnType("integer");
+
                     b.Property<int>("idcnae")
                         .HasColumnType("integer");
 
@@ -2112,10 +2110,6 @@ namespace Repository.Migrations
                         .WithMany("Financials")
                         .HasForeignKey("IdService");
 
-                    b.HasOne("Model.Moves.Purchase", "Purchase")
-                        .WithMany()
-                        .HasForeignKey("PurchaseId");
-
                     b.Navigation("BankAccount");
 
                     b.Navigation("Box");
@@ -2127,8 +2121,6 @@ namespace Repository.Migrations
                     b.Navigation("CostCenter");
 
                     b.Navigation("Product");
-
-                    b.Navigation("Purchase");
 
                     b.Navigation("Sale");
 
