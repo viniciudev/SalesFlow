@@ -273,130 +273,6 @@ namespace Service
 			return Convert.ToInt32(ultimaNota.Numero + 1);
 		}
 
-		//     public async Task<ResponseGeneric> Resend(int id)
-		//     {
-		//         NFeEmission nFeEmission = await (repository as INFeRepository).GetByIdAsync(id);
-		//         if (nFeEmission == null)
-		//             return new ResponseGeneric { Success = false, Message = "N�o foi encontrado a nota!" };
-		//         //configura�ao da empresa para nfe
-		//         FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(nFeEmission.CompanyId);
-		//         if (fiscalConfiguration == null)
-		//             return new ResponseGeneric { Success = false, Message = "N�o encontrado as configura��es para emiss�o de nota!" };
-		//         //verifica se existe a venda
-		//         Sale sale = await _saleRepository.GetSaleByCompany(nFeEmission.SaleId, nFeEmission.CompanyId);
-		//         if (sale == null)
-		//             return new ResponseGeneric { Success = false, Message = "Venda n�o encontrada para a empresa." };
-		//         if (sale.Financials == null)
-		//             return new ResponseGeneric { Success = false, Message = "Venda n�o possui financeiro!" };
-
-		//         NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(nFeEmission.NaturezaOperacaoId);
-		//         if (naturezaOperacao == null)
-		//             return new ResponseGeneric { Success = false, Message = "Natureza de opera��o n�o encontrada." };
-
-
-		//         //classes externas para gerar nfe
-		//         var respEmissao = await TransmitirNfe(Convert.ToInt32( nFeEmission.Numero), fiscalConfiguration, sale, naturezaOperacao);
-		//         if (respEmissao is string mensagemErro)
-		//         {
-		//             //mudar status
-		//             //mensagem de erro
-		//             nFeEmission.Sent = true;
-		//             nFeEmission.Numero = nFeEmission.Numero;
-		//             nFeEmission.StatusNfe = StatusNfe.pendente;
-		//             //nFeEmission.ResponseJson = responseJson;
-		//             nFeEmission.ErrorMessage = respEmissao;
-		//             nFeEmission.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
-		//             nFeEmission.TryCount += 1;
-		//             nFeEmission.UpdatedAt = DateTime.Now;
-
-		//         }
-		//         else if (respEmissao is RetornoNFeAutorizacao ret)
-		//         {
-		//             protNFe protNFe = ret.Retorno.protNFe;
-		//             infProt infProt = protNFe?.infProt;
-		//             //mensagem de erro
-		//             nFeEmission.Sent = true;
-		//             nFeEmission.Numero = nFeEmission.Numero;
-		//             nFeEmission.StatusNfe = NfeSituacao.Autorizada(infProt.cStat)? StatusNfe.emitida: StatusNfe.pendente;
-		//             nFeEmission.ResponseJson = JsonConvert.SerializeObject (infProt);
-		//             nFeEmission.ErrorMessage = NfeSituacao.Autorizada(infProt.cStat) ?null: infProt.xMotivo;
-		//             nFeEmission.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
-		//             nFeEmission.TryCount += 1;
-		//             nFeEmission.UpdatedAt = DateTime.Now;
-		//             nFeEmission.ChaveAcesso = infProt.chNFe;
-		//             nFeEmission.XmlCompleto = ret.Xml;
-		//             nFeEmission.Protocolo = infProt.nProt;
-		//         }
-
-		//         await repository.UpdateAsync(nFeEmission.Id, nFeEmission);
-		//         return new ResponseGeneric { Success = true,Data= nFeEmission };
-		//     }
-		//     public async Task<ResponseGeneric> CreateAttemptAsync(NFeEmissionDto attempt)
-		//     {
-		//         //ultima nota emitida com sucesso
-		//         NFeEmission nFeEmission = await (repository as INFeRepository).GetByCompany(attempt.CompanyId);
-
-		//         //configura�ao da empresa para nfe
-		//         FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(attempt.CompanyId);
-		//         if (fiscalConfiguration == null)
-		//             return new ResponseGeneric { Success = false, Message = "N�o encontrado as configura��es para emiss�o de nota!" };
-
-		//         //verifica se existe a venda
-		//         Sale sale = await _saleRepository.GetSaleByCompany(attempt.SaleId, attempt.CompanyId);
-		//         if (sale == null)
-		//             return new ResponseGeneric { Success = false, Message = "Venda n�o encontrada para a empresa." };
-		//         if (sale.Financials == null)
-		//             return new ResponseGeneric { Success = false, Message = "Venda n�o possui financeiro!" };
-		//if (sale.Financials == null)
-		//	return new ResponseGeneric { Success = false, Message = "Venda n�o possui financeiro!" };
-		//NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(attempt.NaturezaOperacaoId);
-		//         if (naturezaOperacao == null)
-		//             return new ResponseGeneric { Success = false, Message = "Natureza de opera��o n�o encontrada." };
-		//         int proximoNumeroNfe = Convert.ToInt32( nFeEmission == null ? fiscalConfiguration.NumeracaoDocumentos.Nfce.NumeroInicial : nFeEmission.Numero + 1);
-		//         //classes externas para gerar nfe
-		//         var respEmissao = await TransmitirNfe(proximoNumeroNfe, fiscalConfiguration, sale, naturezaOperacao);
-
-		//         attempt.TryCount = attempt.TryCount <= 0 ? 1 : attempt.TryCount;
-		//         attempt.CreatedAt = DateTime.Now;
-		//         var entity = new NFeEmission();
-		//         if (respEmissao is string mensagemErro)
-		//         {
-		//             entity.ResponseJson = "";
-		//             entity.ErrorMessage = mensagemErro;
-		//             entity.NaturezaOperacaoId = attempt.NaturezaOperacaoId;
-		//             entity.SaleId = attempt.SaleId;
-		//             entity.TipoDocumento = attempt.TipoDocumento;
-		//             entity.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
-		//             entity.Numero = proximoNumeroNfe;
-		//             entity.StatusNfe = StatusNfe.pendente;
-		//             entity.CreatedAt = DateTime.Now;
-		//             entity.TryCount = attempt.TryCount;
-		//             entity.CompanyId = attempt.CompanyId;
-		//         }
-		//         else if(respEmissao is RetornoNFeAutorizacao ret)
-		//         {
-		//             protNFe protNFe = ret.Retorno.protNFe;
-		//             infProt infProt = protNFe?.infProt;
-		//             entity.ResponseJson = JsonConvert.SerializeObject(infProt);
-		//             entity.ErrorMessage= NfeSituacao.Autorizada(infProt.cStat) ? null : infProt.xMotivo;
-		//             entity.NaturezaOperacaoId = attempt.NaturezaOperacaoId;
-		//             entity.SaleId = attempt.SaleId;
-		//             entity.TipoDocumento = attempt.TipoDocumento;
-		//             entity.Serie = fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie;
-		//             entity.Numero = proximoNumeroNfe;
-		//             entity.StatusNfe = NfeSituacao.Autorizada(infProt.cStat) ? StatusNfe.emitida : StatusNfe.pendente; ;
-		//             entity.CreatedAt = DateTime.Now;
-		//             entity.TryCount = attempt.TryCount;
-		//             entity.CompanyId = attempt.CompanyId;
-		//             entity.XmlCompleto = ret.Xml;
-		//             entity.Protocolo = infProt.nProt;
-		//             entity.ChaveAcesso = infProt.chNFe;
-		//         }
-
-
-		//         await repository.CreateAsync(entity);
-		//         return new ResponseGeneric { Success = true,Data = entity };
-		//     }
 		private X509Certificate2 ValidarCertificado(byte[] certBytes, string senha)
 		{
 			var cert = new X509Certificate2(
@@ -427,11 +303,6 @@ namespace Service
 		{
 			try
 			{
-				//var numero = Funcoes.InpuBox(this, "Criar e Enviar NFe", "N�mero da Nota:");
-				//if (string.IsNullOrEmpty(numero)) throw new Exception("O N�mero deve ser informado!");
-				//byte[] certbyte = await ObterCertificado(fiscalConfiguration.CertificadoDigital.Arquivo);
-
-
 				_currentFiscalConfiguration = fiscalConfiguration;
 				_currentNaturezaOperacao = naturezaOperacao;
 				_currentSale = sale;
@@ -455,31 +326,16 @@ namespace Service
 				Console.WriteLine("=== INICIANDO TRANSMISS�O NFCe ===");
 				Console.WriteLine($"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
 				Console.WriteLine($"Environment: {Environment.GetEnvironmentVariable("RENDER")}");
-				var retornoEnvio = servicoNFe.NFeAutorizacao(int.Parse(fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie), IndicadorSincronizacao.Sincrono, new List<NFe.Classes.NFe> { _nfe }, false/*Envia a mensagem compactada para a SEFAZ*/);
-				/*             var resp=OnSucessoSync(retornoEnvio)*/
-				;
+				var retornoEnvio = servicoNFe.NFeAutorizacao(int.Parse(fiscalConfiguration.NumeracaoDocumentos.Nfce.Serie), 
+					IndicadorSincronizacao.Sincrono, new List<NFe.Classes.NFe> { _nfe }, false/*Envia a mensagem compactada para a SEFAZ*/);
 				Console.WriteLine($"retorno: {retornoEnvio.Retorno.xMotivo}");
 
-				//ExibeNfe();
-
-				//var dlg = new Microsoft.Win32.SaveFileDialog
-				//{
-				//    FileName = _nfe.infNFe.Id.Substring(3),
-				//    DefaultExt = ".xml",
-				//    Filter = "Arquivo XML (.xml)|*.xml"
-				//};
-				//var result = dlg.ShowDialog();
-				//if (result != true) return;
-				//var arquivoXml = dlg.FileName;
-				//_nfe.SalvarArquivoXml(arquivoXml);
 				retornoEnvio.Xml = xml;
 
 				return retornoEnvio;
 			}
 			catch (Exception ex)
 			{
-				//if (!string.IsNullOrEmpty(ex.Message))
-				//    Funcoes.Mensagem(ex.Message, "Erro", MessageBoxButton.OK);
 				return ex.Message;
 			}
 			finally
@@ -507,18 +363,6 @@ namespace Service
 		}
 		private string OnSucessoSync(RetornoBasico e)
 		{
-			//Console.Clear();
-			//if (!string.IsNullOrEmpty(e.EnvioStr))
-			//{
-			//    Console.WriteLine("Xml Envio:");
-			//    Console.WriteLine(FormatXml(e.EnvioStr) + "\n");
-			//}
-
-			//if (!string.IsNullOrEmpty(e.RetornoStr))
-			//{
-			//    Console.WriteLine("Xml Retorno:");
-			//    Console.WriteLine(FormatXml(e.RetornoStr) + "\n");
-			//}
 
 			if (!string.IsNullOrEmpty(e.RetornoCompletoStr))
 			{
@@ -539,51 +383,7 @@ namespace Service
 				return xml;
 			}
 		}
-		//public async Task<byte[]> ObterCertificado(string caminhoRelativo)
-		//{
-		//	try
-		//	{
-
-
-		//	// Extrai apenas o nome do arquivo do caminho salvo no banco
-		//	// Exemplo: "/certs/399ff91c-fe15-43f3-b1cf-0d773e9f49cd.pfx" -> "399ff91c-fe15-43f3-b1cf-0d773e9f49cd.pfx"
-		//	string nomeArquivo = Path.GetFileName(caminhoRelativo.TrimStart('/'));
-		//	Console.WriteLine($"Nome do arquivo extra�do: {nomeArquivo}");
-		//	string caminhoCompleto;
-
-		//	// Verifica se est� no Render
-		//	if (Environment.GetEnvironmentVariable("RENDER") == "true")
-		//	{
-		//		// NO RENDER: usa o caminho ABSOLUTO do Disk mount
-		//		caminhoCompleto = Path.Combine("/app/wwwroot/certs", nomeArquivo);
-		//		Console.WriteLine($"Caminho completo: {caminhoCompleto}");
-
-		//	}
-		//	else
-		//	{
-		//		// LOCAL: usa WebRootPath
-		//		caminhoCompleto = Path.Combine(_environment.WebRootPath, "certs", nomeArquivo);
-		//	}
-
-
-		//		if (!System.IO.File.Exists(caminhoCompleto))
-		//	{
-		//		throw new FileNotFoundException(
-		//				$"Certificado n�o encontrado. Procurado em: {caminhoCompleto}. " +
-		//				$"Nome do arquivo: {nomeArquivo}. " +
-		//				$"Caminho original: {caminhoRelativo}"
-		//		);
-		//	}
-
-		//	return await System.IO.File.ReadAllBytesAsync(caminhoCompleto);
-		//	}
-		//	catch (Exception ex)
-		//	{
-		//		Console.WriteLine($"ERRO ao ler arquivo: {ex.Message}");
-		//		Console.WriteLine($"StackTrace: {ex.StackTrace}");
-		//		return [];
-		//	}
-		//}
+		
 		private ConfiguracaoApp criarConfiguracaoApp(FiscalConfiguration fiscalConfiguration, NaturezaOperacao naturezaOperacao)
 		{
 			try
@@ -733,125 +533,7 @@ namespace Service
 
 			return infNFe;
 		}
-		//protected virtual List<pag> GetPagamento(ICMSTot icmsTot, VersaoServico versao)
-		//{
-		//    var valorPagto = (icmsTot.vNF / 2).Arredondar(2);
-
-		//    if (versao != VersaoServico.Versao400) // difernte de vers�o 4 retorna isso
-		//    {
-		//        var p = new List<pag>
-		//        {
-		//            new pag {tPag = FormaPagamento.fpDinheiro, vPag = valorPagto},
-		//            new pag {tPag = FormaPagamento.fpCheque, vPag = icmsTot.vNF - valorPagto}
-		//        };
-		//        return p;
-		//    }
-
-
-		//    // igual a vers�o 4 retorna isso
-		//    var p4 = new List<pag>
-		//    {
-		//        //new pag {detPag = new detPag {tPag = FormaPagamento.fpDinheiro, vPag = valorPagto}},
-		//        //new pag {detPag = new detPag {tPag = FormaPagamento.fpCheque, vPag = icmsTot.vNF - valorPagto}}
-		//        new pag
-		//        {
-		//            detPag = new List<detPag>
-		//            {
-		//                new detPag {tPag = FormaPagamento.fpDinheiro, vPag = valorPagto},
-		//                new detPag {tPag = FormaPagamento.fpCheque, vPag = icmsTot.vNF - valorPagto}
-		//            }
-		//        }
-		//    };
-
-
-		//    return p4;
-		//}
-		//protected virtual List<pag> GetPagamento(ICMSTot icmsTot, VersaoServico versao)
-		//{
-		//	if (_currentSale.Financials == null || !_currentSale.Financials.Any())
-		//		return null;
-
-		//	var pagamentos = _currentSale.Financials
-		//			.Where(f => f.FinancialType == FinancialType.recipe &&
-		//								 f.FinancialStatus != FinancialStatus.Canceled)
-		//			.ToList();
-
-		//	if (!pagamentos.Any())
-		//		return null;
-
-		//	decimal totalPagamentos = pagamentos.Sum(f => f.Value);
-		//	decimal totalNF = icmsTot.vNF;
-
-		//	// Valida��o: o total dos pagamentos deve ser igual ao total da NF
-		//	if (Math.Abs(totalPagamentos - totalNF) > 0.01m)
-		//	{
-		//		// Log de aviso ou ajuste autom�tico
-		//		// Pode-se ajustar o �ltimo pagamento para igualar
-		//		var ultimoPagamento = pagamentos.Last();
-		//		ultimoPagamento.Value = totalNF - (totalPagamentos - ultimoPagamento.Value);
-		//	}
-
-		//	// Vers�o 3.10 ou inferior
-		//	if (versao != VersaoServico.Versao400)
-		//	{
-		//		return pagamentos.Select(f => new pag
-		//		{
-		//			tPag = ConverterPorNome(f.PaymentMethod.Name),
-		//			vPag = Math.Round(f.Value, 2),
-
-		//			//		 xPag = (ConverterParaFormaPagamento(f.PaymentMethod) == FormaPagamento.fpOutro)
-		//			//? f.PaymentMethod?.Name ?? "Outros"
-		//			//: null
-		//		}).ToList();
-		//	}
-		//	foreach (var item in pagamentos)
-		//	{
-		//		foreach (var item1 in item.FinancialPaymentMethods)
-		//		{
-		//			var nomepagamento = item1.PaymentMethod.Name;
-		//		}
-		//	}
-
-		//	// Vers�o 4.00
-		//	// Vers�o 4.00
-		//	var pagamentosV4 = new pag
-		//	{
-		//		detPag = pagamentos.Select(f =>
-		//		{
-		//			var formaPagamento = ConverterPorNome(f.PaymentMethod.Name);
-		//			var detPagObj = new detPag
-		//			{
-		//				tPag = formaPagamento,
-		//				vPag = Math.Round(f.Value, 2)
-		//			};
-
-		//			// S� adicionar dados do cart�o se for cart�o de cr�dito OU cart�o de d�bito
-		//			if (formaPagamento == FormaPagamento.fpCartaoCredito ||
-		//					formaPagamento == FormaPagamento.fpCartaoDebito)
-		//			{
-		//				detPagObj.card = new card
-		//				{
-		//					tpIntegra = TipoIntegracaoPagamento.TipNaoIntegrado,
-		//					cAut = "NAOINTEGRADO",
-		//					CNPJ = "00000000000000",
-		//					tBand = BandeiraCartao.bcOutros
-		//				};
-		//			}
-
-		//			// Adicionar descri��o se for "Outros" (99)
-		//			if (formaPagamento == FormaPagamento.fpOutro)
-		//			{
-		//				detPagObj.xPag = f.PaymentMethod?.Name ?? "Outros";
-		//			}
-
-		//			// Para PIX, n�o precisa de dados adicionais
-		//			// Para Dinheiro, Cheque, etc., tamb�m n�o precisa
-
-		//			return detPagObj;
-		//		}).ToList()
-		//	};
-		//	return new List<pag> { pagamentosV4 };
-		//}
+		
 		protected virtual List<pag> GetPagamento(ICMSTot icmsTot, VersaoServico versao)
 		{
 			if (_currentSale.Financials == null || !_currentSale.Financials.Any())
@@ -1022,63 +704,7 @@ namespace Service
 
 			return FormaPagamento.fpOutro;
 		}
-		//private FormaPagamento ConverterParaFormaPagamento(PaymentMethod paymentMethod)
-		//      {
-		//          // Mapeamento baseado no nome ou ID do m�todo de pagamento
-		//          switch (paymentMethod.Name?.ToUpper())
-		//          {
-
-		//              case "DINHEIRO":
-		//                  return FormaPagamento.fpDinheiro;
-
-		//              case "CHEQUE":
-		//                  return FormaPagamento.fpCheque;
-
-		//              case "CART�O DE CR�DITO":
-		//              case "CARTAO CREDITO":
-		//              case "CREDITO":
-		//              case "CARTAO":
-		//              case "CART�O":
-		//                  return FormaPagamento.fpCartaoCredito;
-
-		//              case "CART�O DE D�BITO":
-		//              case "CARTAO DEBITO":
-		//              case "DEBITO":
-		//                  return FormaPagamento.fpCartaoDebito;
-
-		//              //case "CR�DITO LOJA":
-		//              //case "CREDITO LOJA":
-		//              //    return FormaPagamento.fpCreditoLoja;
-
-		//              case "VALE ALIMENTA��O":
-		//              case "VALE ALIMENTACAO":
-		//                  return FormaPagamento.fpValeAlimentacao;
-
-		//              case "VALE REFEI��O":
-		//              case "VALE REFEICAO":
-		//                  return FormaPagamento.fpValeRefeicao;
-
-		//              case "VALE PRESENTE":
-		//                  return FormaPagamento.fpValePresente;
-
-		//              case "VALE COMBUST�VEL":
-		//              case "VALE COMBUSTIVEL":
-		//                  return FormaPagamento.fpValeCombustivel;
-
-		//              case "BOLETO":
-		//              case "DUPLICATA":
-		//                  return FormaPagamento.fpBoletoBancario;
-
-		//              case "SEM PAGAMENTO":
-		//                  return FormaPagamento.fpSemPagamento;
-
-		//              case "PIX":
-		//                  return FormaPagamento.fpPagamentoInstantaneoPIXDinamico;
-
-		//              default:
-		//                  return FormaPagamento.fpOutro;
-		//          }
-		//      }
+		
 
 		protected virtual cobr GetCobranca(ICMSTot icmsTot)
 		{
@@ -1132,22 +758,7 @@ namespace Service
 				dup = duplicatas
 			};
 		}
-		//protected virtual cobr GetCobranca(ICMSTot icmsTot)
-		//{
-
-		//    var valorParcela = (icmsTot.vNF / 2).Arredondar(2);
-		//    var c = new cobr
-		//    {
-		//        fat = new fat { nFat = "12345678910", vLiq = icmsTot.vNF, vOrig = icmsTot.vNF, vDesc = 0m },
-		//        dup = new List<dup>
-		//        {
-		//            new dup {nDup = "001", dVenc = DateTime.Now.AddDays(30), vDup = valorParcela},
-		//            new dup {nDup = "002", dVenc = DateTime.Now.AddDays(60), vDup = icmsTot.vNF - valorParcela}
-		//        }
-		//    };
-
-		//    return c;
-		//}
+		
 		private bool ValidarGTIN(string gtin)
 		{
 			if (string.IsNullOrEmpty(gtin))
@@ -1238,127 +849,7 @@ namespace Service
 			};
 			return p;
 		}
-		/*protected virtual det GetDetalhe(int index,SaleItems i, CRT crt, ModeloDocumento modelo)
-		{
-				var produto = GetProduto(i);
-
-				var det = new det
-				{
-						nItem = index,
-						prod = produto,
-						imposto = new imposto
-						{
-								vTotTrib = 0.17m,
-
-								ICMS = new ICMS
-								{
-										//Se voc� j� tem os dados de toda a tributa��o persistida no banco em uma �nica tabela, utilize a linha comentada abaixo para preencher as tags do ICMS
-										//TipoICMS = ObterIcmsBasico(crt),
-
-										//Caso voc� resolva utilizar m�todo ObterIcmsBasico(), comente esta proxima linha
-										TipoICMS =
-												crt == CRT.SimplesNacional || crt == CRT.SimplesNacionalMei
-														? InformarCSOSN(Csosnicms.Csosn102)
-														: InformarICMS(Csticms.Cst00, VersaoServico.Versao310)
-								},
-
-								//ICMSUFDest = new ICMSUFDest()
-								//{
-								//    pFCPUFDest = 0,
-								//    pICMSInter = 12,
-								//    pICMSInterPart = 0,
-								//    pICMSUFDest = 0,
-								//    vBCUFDest = 0,
-								//    vFCPUFDest = 0,
-								//    vICMSUFDest = 0,
-								//    vICMSUFRemet = 0
-								//},
-
-								COFINS = new COFINS
-								{
-										//Se voc� j� tem os dados de toda a tributa��o persistida no banco em uma �nica tabela, utilize a linha comentada abaixo para preencher as tags do COFINS
-										//TipoCOFINS = ObterCofinsBasico(),
-
-										//Caso voc� resolva utilizar m�todo ObterCofinsBasico(), comente esta proxima linha
-
-										TipoCOFINS = !_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarCOFINS ?
-										new COFINSOutr { CST = CSTCOFINS.cofins99,
-												pCOFINS = 0, vBC = 0, vCOFINS = 0 }:
-												new COFINSOutr
-												{
-														CST = (CSTCOFINS) Enum.Parse( typeof(CSTCOFINS), _currentNaturezaOperacao.ConfiguracaoTributaria.CstCOFINS),
-														pCOFINS = _currentNaturezaOperacao.ConfiguracaoTributaria.AliquotaCOFINS,
-														vBC = i.Value * i.Amount,
-														vCOFINS = 0
-												}
-
-								},
-
-								PIS = new PIS
-								{
-										//Se voc� j� tem os dados de toda a tributa��o persistida no banco em uma �nica tabela, utilize a linha comentada abaixo para preencher as tags do PIS
-										//TipoPIS = ObterPisBasico(),
-
-										//Caso voc� resolva utilizar m�todo ObterPisBasico(), comente esta proxima linha
-										TipoPIS = new PISOutr { CST = CSTPIS.pis99, pPIS = 0, vBC = 0, vPIS = 0 }
-								},
-
-								//IS = (modelo == ModeloDocumento.NFe && _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIS == true) ? new IS
-								//{
-								//    cClassTribIS = "000001",
-								//    uTrib = "UN",
-								//    qTrib = 1,
-								//    CSTIS = "000",
-								//    pIS = 0,
-								//    vIS = 0
-								//} : null,
-
-								//IBSCBS =(modelo == ModeloDocumento.NFe && _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIBS == true) ? new IBSCBS
-								//{
-								//    CST = CSTIBSCBS.cst000,
-								//    cClassTrib = "000001",
-								//    gIBSCBS = new gIBSCBS
-								//    {
-								//        vBC = 0,
-								//        gIBSUF = new gIBSUF
-								//        {
-								//            pIBSUF = 0.10m,
-								//            vIBSUF = 0,
-								//        },
-								//        gIBSMun = new gIBSMun
-								//        {
-								//            pIBSMun = 0,
-								//            vIBSMun = 0,
-								//        },
-								//        gCBS = new gCBS
-								//        {
-								//            pCBS = 0.90m,
-								//            vCBS = 0,
-								//        },
-								//        vIBS = 0// opcional
-								//    }
-								//} : null
-						}
-				};
-
-				if (modelo == ModeloDocumento.NFe) //NFCe n�o aceita grupo "IPI"
-				{
-						det.imposto.IPI = new IPI()
-						{
-								cEnq = 999,
-
-								//Se voc� j� tem os dados de toda a tributa��o persistida no banco em uma �nica tabela, utilize a linha comentada abaixo para preencher as tags do IPI
-								//TipoIPI = ObterIPIBasico(),
-
-								//Caso voc� resolva utilizar m�todo ObterIPIBasico(), comente esta proxima linha
-								TipoIPI = new IPITrib() { CST = CSTIPI.ipi00, pIPI = 5, vBC = 1, vIPI = 0.05m }
-						};
-				}
-
-				//det.impostoDevol = new impostoDevol() { IPI = new IPIDevolvido() { vIPIDevol = 10 }, pDevol = 100 };
-
-				return det;
-		}*/
+		
 		protected virtual det GetDetalhe(int index, SaleItems i, CRT crt, ModeloDocumento modelo)
 		{
 			var produto = GetProduto(i);
@@ -1434,11 +925,6 @@ namespace Service
 				det.imposto.IPI = new IPI()
 				{
 					cEnq = 999,
-
-					//Se voc� j� tem os dados de toda a tributa��o persistida no banco em uma �nica tabela, utilize a linha comentada abaixo para preencher as tags do IPI
-					//TipoIPI = ObterIPIBasico(),
-
-					//Caso voc� resolva utilizar m�todo ObterIPIBasico(), comente esta proxima linha
 					TipoIPI = new IPITrib() { CST = CSTIPI.ipi00, pIPI = 5, vBC = 1, vIPI = 0.05m }
 				};
 			}
@@ -1612,7 +1098,7 @@ namespace Service
 					icmsTot.vBC = icmsTot.vBC + ((ICMS20)produto.imposto.ICMS.TipoICMS).vBC;
 					icmsTot.vICMS = icmsTot.vICMS + ((ICMS20)produto.imposto.ICMS.TipoICMS).vICMS;
 				}
-				//Outros Ifs aqui, caso v� usar as classes ICMS00, ICMS10 para totalizar
+		
 			}
 
 			//** Regra de valida��o W16-10 que rege sobre o Total da NF **//
@@ -1732,32 +1218,14 @@ namespace Service
 
 		protected virtual emit GetEmitente()
 		{
-			var emit = _configuracaoApp.Emitente; // new emit
-																						//{
-																						//    //CPF = "12345678912",
-																						//    CNPJ = "12345678000189",
-																						//    xNome = "RAZAO SOCIAL LTDA",
-																						//    xFant = "FANTASIA LTRA",
-																						//    IE = "123456789",
-																						//};
+			var emit = _configuracaoApp.Emitente;
 			emit.enderEmit = GetEnderecoEmitente();
 			return emit;
 		}
 
 		protected virtual enderEmit GetEnderecoEmitente()
 		{
-			var enderEmit = _configuracaoApp.EnderecoEmitente; // new enderEmit
-																												 //{
-																												 //    xLgr = "RUA TESTE DE ENRERE�O",
-																												 //    nro = "123",
-																												 //    xCpl = "1 ANDAR",
-																												 //    xBairro = "CENTRO",
-																												 //    cMun = 2802908,
-																												 //    xMun = "ITABAIANA",
-																												 //    UF = "SE",
-																												 //    CEP = 49500000,
-																												 //    fone = 79123456789
-																												 //};
+			var enderEmit = _configuracaoApp.EnderecoEmitente; 
 			enderEmit.cPais = 1058;
 			enderEmit.xPais = "BRASIL";
 			return enderEmit;
@@ -1858,28 +1326,13 @@ namespace Service
 				xBairro = "CENTRO",
 				cMun = _configuracaoApp.EnderecoEmitente.cMun,  // C�digo gen�rico
 				xMun = "NAO INFORMADO",
-				UF = _configuracaoApp.EnderecoEmitente.UF.ToString(), //(Estado)Enum.Parse(typeof(Estado), fiscalConfiguration.Emitente.EmitenteEndereco.Uf)  // UF padr�o, pode ser configur�vel
+				UF = _configuracaoApp.EnderecoEmitente.UF.ToString(),
 				CEP = "00000000",
 				cPais = 1058,
 				xPais = "BRASIL"
 			};
 		}
-		//protected virtual enderDest GetEnderecoDestinatario()
-		//{
-		//    var enderDest = new enderDest
-		//    {
-		//        xLgr = _currentSale?.Client?.Address?? "RUA ...",
-		//        nro = _currentSale?.Client?.Numero?? "S/N",
-		//        xBairro = _currentSale?.Client?.Bairro ?? "CENTRO",
-		//        cMun =long.Parse( _currentSale?.Client?.InscricaoMunicipal) ,
-		//        xMun = _currentSale?.Client?.Municipio?? "UBERLANDIA",
-		//        UF = _currentSale?.Client?.Uf?? "MG",
-		//        CEP = _currentSale?.Client?.ZipCode ??"49500000",
-		//        cPais = 1058,
-		//        xPais = "BRASIL"
-		//    };
-		//    return enderDest;
-		//}
+
 		protected virtual enderDest GetEnderecoDestinatario()
 		{
 			var endereco = new enderDest();
@@ -1933,8 +1386,6 @@ namespace Service
 		}
 		protected virtual transp GetTransporte()
 		{
-			//var volumes = new List<vol> {GetVolume(), GetVolume()};
-
 			var t = new transp
 			{
 				modFrete = ModalidadeFrete.mfSemFrete //NFCe: N�o pode ter frete
@@ -2066,28 +1517,11 @@ namespace Service
 			if (nFeEmission == null) return new ResponseGeneric { Success = false, Message = "NFe n�o encontrada." };
 			try
 			{
-				//var idlote = Funcoes.InpuBox(this, titulo, "Identificador de controle do Lote de envio:");
-				//if (string.IsNullOrEmpty(idlote)) throw new Exception("A Id do Lote deve ser informada!");
-
-				//var sequenciaEvento = Funcoes.InpuBox(this, titulo, "N�mero sequencial do evento:");
-				//if (string.IsNullOrEmpty(sequenciaEvento))
-				//    throw new Exception("O n�mero sequencial deve ser informado!");
-
-				//var protocolo = Funcoes.InpuBox(this, titulo, "Protocolo de Autoriza��o da NFe:");
-				//if (string.IsNullOrEmpty(protocolo)) throw new Exception("O protocolo deve ser informado!");
-
-				//var chave = Funcoes.InpuBox(this, titulo, "Chave da NFe:");
-				//if (string.IsNullOrEmpty(chave)) throw new Exception("A Chave deve ser informada!");
-				//if (chave.Length != 44) throw new Exception("Chave deve conter 44 caracteres!");
-
-				//var justificativa = Funcoes.InpuBox(this, titulo, "Justificativa do cancelamento");
-				//if (string.IsNullOrEmpty(justificativa)) throw new Exception("A justificativa deve ser informada!");
+				
 				FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(nFeEmission.CompanyId);
 				NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(nFeEmission.NaturezaOperacaoId);
 
-				//byte[] certbyte = await ObterCertificado(fiscalConfiguration.CertificadoDigital.Arquivo);
-				//_currentFiscalConfiguration = fiscalConfiguration;
-				//_currentNaturezaOperacao = naturezaOperacao;
+			
 				_configuracaoApp = criarConfiguracaoApp(fiscalConfiguration, naturezaOperacao);
 				var servicoNFe = new ServicosNFe(_configuracaoApp.CfgServico);
 				var cpfcnpj = string.IsNullOrEmpty(_configuracaoApp.Emitente.CNPJ)
