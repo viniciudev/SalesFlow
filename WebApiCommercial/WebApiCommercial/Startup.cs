@@ -454,6 +454,7 @@ namespace WebAppCommercial
 			ConventionPermissionMiddleware.RegisterControllerPermission("Product", "CADASTRO_PRODUTO");
 			ConventionPermissionMiddleware.RegisterControllerPermission("Company", "CADASTRO_EMPRESA");
 			ConventionPermissionMiddleware.RegisterControllerPermission("PaymentMethod", "FORMA_PAGAMENTO");
+			ConventionPermissionMiddleware.RegisterControllerPermission("ServiceProvided", "CADASTRO_SERVICO");
 
 			// === CONTROLLERS DE USUÁRIOS ===
 			ConventionPermissionMiddleware.RegisterControllerPermission("User", "USUARIO");
