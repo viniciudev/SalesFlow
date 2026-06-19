@@ -28,7 +28,7 @@ namespace Model.Moves
 		public Sale Sale { get; set; }
 		public int? IdSaleItems { get; set; }
 		public Purchase Purchase { get; set; }
-		public int IdPurchase { get; set; }
+		public int ?IdPurchase { get; set; }
 		public SaleItems SaleItems { get; set; }
 		public decimal Percentage { get; set; }
 		public bool commission { get; set; }

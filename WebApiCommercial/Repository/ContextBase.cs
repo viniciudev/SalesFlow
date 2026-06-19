@@ -182,6 +182,8 @@ namespace Repository
 
 		}
 
+//*************************************novas permissões***********************************************
+//****************************************************************************************************
 		private void ConfiguraPermission(ModelBuilder modelBuilder)
 		{
 			modelBuilder.Entity<Permission>(d =>
@@ -593,7 +595,8 @@ namespace Repository
 								.HasOne(dc => dc.Purchase)
 								.WithMany(c => c.Financials)
 								.HasForeignKey(dc => dc.IdPurchase)
-								.OnDelete(DeleteBehavior.Restrict);
+								.OnDelete(DeleteBehavior.Restrict)
+								.IsRequired(false); 
 		}
 		private void ConfiguraPlanCompany(ModelBuilder builder)
 		{

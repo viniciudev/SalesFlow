@@ -50,6 +50,7 @@ public class ConventionPermissionMiddleware
                 // === COMPRA ===
                      { "Compras", "COMPRA" },
       { "Fornecedores", "FORNECEDOR" },
+		{"ServiceProvided", "SERVICO" },
 		};
 
 	// 🔥 Controllers que NÃO exigem permissão (públicos)
@@ -306,6 +307,10 @@ public class ConventionPermissionMiddleware
 			PermissionEnum.FORNECEDOR_EDIT => "Editar fornecedor",
 			PermissionEnum.FORNECEDOR_VIEW => "Visualizar fornecedor",
 			PermissionEnum.FORNECEDOR_DELETE => "Deletar fornecedor",
+			PermissionEnum.CADASTRO_SERVICO_CREATE => "Criar serviço prestado",
+			PermissionEnum.CADASTRO_SERVICO_EDIT => "Editar serviço prestado",
+			PermissionEnum.CADASTRO_SERVICO_VIEW => "Visualizar serviço prestado",
+			PermissionEnum.CADASTRO_SERVICO_DELETE => "Deletar serviço prestado",
 			_ => permission.ToString().Replace("_", " ")
 		};
 	}

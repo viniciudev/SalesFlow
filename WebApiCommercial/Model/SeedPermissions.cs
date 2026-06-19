@@ -371,6 +371,30 @@ namespace Model
                             Code = PermissionEnum.FORNECEDOR_VIEW,
                             Name = "Visualizar Fornecedor",
                             Category = "Fornecedores"
+										},
+                    new Permission {
+                            Id = (int)PermissionEnum.CADASTRO_SERVICO_CREATE,
+                            Code = PermissionEnum.CADASTRO_SERVICO_CREATE,
+                            Name = "Criar Serviço Prestado",
+                            Category = "Serviços"
+                    },
+                    new Permission {
+                            Id = (int)PermissionEnum.CADASTRO_SERVICO_EDIT,
+                            Code = PermissionEnum.CADASTRO_SERVICO_EDIT,
+                            Name = "Editar Serviço Prestado",
+                            Category = "Serviços"
+                    },
+                    new Permission {
+                            Id = (int)PermissionEnum.CADASTRO_SERVICO_DELETE,
+                            Code = PermissionEnum.CADASTRO_SERVICO_DELETE,
+                            Name = "Deletar Serviço Prestado",
+                            Category = "Serviços"
+                    },
+                    new Permission {
+                            Id = (int)PermissionEnum.CADASTRO_SERVICO_VIEW,
+                            Code = PermissionEnum.CADASTRO_SERVICO_VIEW,
+                            Name = "Visualizar Serviço Prestado",
+                            Category = "Serviços"
 										}
 						};
         }
