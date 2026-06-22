@@ -22,6 +22,11 @@ namespace Model.Registrations
 
         // Autorizacao ASO
         public bool AutorizacaoASO { get; set; }
+
+        // NFSe / ServiceInvoice fields
+        public int LastInvoiceNumber { get; set; }
+        public string CodMunIBGE { get; set; }
+
         public Company Company { get; set; }
         public int CompanyId { get; set; }
     }
@@ -40,7 +45,7 @@ namespace Model.Registrations
 
     public class CertificadoDigital
     {
-        // pode armazenar caminho/base64 conforme sua estratégia
+        // pode armazenar caminho/base64 conforme sua estratï¿½gia
         public string? Arquivo { get; set; }
         public string? Senha { get; set; }
     }

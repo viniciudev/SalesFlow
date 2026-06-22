@@ -1,4 +1,4 @@
-Ôªøusing Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Model;
 using Model.Closure;
 using Model.Moves;
@@ -107,6 +107,10 @@ namespace Repository
 			ConfiguraProvider(modelBuilder);
 			ConfiguraPurchase(modelBuilder);
 			ConfiguraPurchaseItem(modelBuilder);
+			ConfiguraServiceOrder(modelBuilder);
+			ConfiguraServiceOrderItem(modelBuilder);
+			ConfiguraServiceInvoice(modelBuilder);
+			ConfiguraServiceInvoiceItem(modelBuilder);
 			var cascadeFKs = modelBuilder.Model.GetEntityTypes()
 .SelectMany(t => t.GetForeignKeys())
 .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
@@ -140,7 +144,7 @@ namespace Repository
 						.HasForeignKey(e => e.PaymentMethodId)
 						.OnDelete(DeleteBehavior.Restrict);
 
-				// √çndice composto para evitar duplicidade
+				// Õndice composto para evitar duplicidade
 				entity.HasIndex(e => new { e.FinancialId, e.PaymentMethodId })
 						.IsUnique();
 			});
@@ -182,7 +186,7 @@ namespace Repository
 
 		}
 
-//*************************************novas permiss√µes***********************************************
+//*************************************novas permissıes***********************************************
 //****************************************************************************************************
 		private void ConfiguraPermission(ModelBuilder modelBuilder)
 		{
@@ -317,7 +321,7 @@ namespace Repository
 				user.HasKey(c => c.Id);
 				user.Property(c => c.Id).ValueGeneratedOnAdd();
 			});
-			builder.Entity<Company>().HasData(new Company { Id = 1, CorporateName = "Empresa Padr√£o" });
+			builder.Entity<Company>().HasData(new Company { Id = 1, CorporateName = "Empresa Padr„o" });
 		}
 		private void ConfiguraFile(ModelBuilder builder)
 		{
@@ -824,6 +828,10 @@ namespace Repository
 					});
 
 				entity.Property(e => e.AutorizacaoASO).HasColumnName("AutorizacaoASO");
+
+					// NFSe fields
+					entity.Property(e => e.LastInvoiceNumber).HasColumnName("LastInvoiceNumber");
+					entity.Property(e => e.CodMunIBGE).HasColumnName("CodMunIBGE").HasMaxLength(7);
 			});
 			builder.Entity<FiscalConfiguration>()
 			 .HasOne(dc => dc.Company)

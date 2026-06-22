@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -50,25 +50,25 @@ namespace WebAppCommercial
 
 			QuestPDF.Settings.License = LicenseType.Community;
 
-			// Força a não dependência de Windows Forms
+			// For�a a n�o depend�ncia de Windows Forms
 			AppContext.SetSwitch("System.Drawing.EnableUnixSupport", true);
-			// ===== FIM DA CONFIGURAÇÃO FASTREPORT =====
+			// ===== FIM DA CONFIGURA��O FASTREPORT =====
 
-			// 🔧 CONFIGURAÇÃO SSL GLOBAL
+			// ?? CONFIGURA��O SSL GLOBAL
 			System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
 			System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, cert, chain, errors) =>
 			{
 				if (errors == System.Net.Security.SslPolicyErrors.None)
 					return true;
 
-				Console.WriteLine($"⚠️ SSL Error: {errors}");
+				Console.WriteLine($"?? SSL Error: {errors}");
 				Console.WriteLine($"Cert: {cert?.Subject}");
-				return true; // Aceita todos para homologação
+				return true; // Aceita todos para homologa��o
 			};
 
-			// Força o uso do handler antigo
+			// For�a o uso do handler antigo
 			AppContext.SetSwitch("System.Net.Http.UseSocketsHttpHandler", false);
-			// ===== FIM CONFIGURAÇÃO SSL =====
+			// ===== FIM CONFIGURA��O SSL =====
 			services.AddControllers().AddNewtonsoftJson(options =>
 						{
 							options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
@@ -105,7 +105,7 @@ namespace WebAppCommercial
 			});
 
 			#region Registions
-			//Usuário
+			//Usu�rio
 			services.AddTransient<IUserService, UserService>();
 			services.AddTransient<IGenericRepository<User>, UserRepository>();
 			services.AddTransient<IUserRepository, UserRepository>();
@@ -323,7 +323,7 @@ namespace WebAppCommercial
 																	"http://localhost:3000",
 																	"http://localhost:9002",
 																	"https://localhost:44365",
-																	"https://studio-to69.onrender.com"// Adicione também o próprio backend
+																	"https://studio-to69.onrender.com"// Adicione tamb�m o pr�prio backend
 															)
 															.AllowAnyHeader()
 															.AllowAnyMethod()
@@ -350,7 +350,7 @@ namespace WebAppCommercial
 				};
 			});
 
-			// CONFIGURAÇÃO DO SWAGGER CORRIGIDA
+			// CONFIGURA��O DO SWAGGER CORRIGIDA
 			services.AddEndpointsApiExplorer();
 			services.AddSwaggerGen(c =>
 			{
@@ -358,7 +358,7 @@ namespace WebAppCommercial
 				{
 					Version = "v1",
 					Title = "Sales flow",
-					Description = "API para gestão comercial",
+					Description = "API para gest�o comercial",
 					TermsOfService = new Uri("https://example.com/terms"),
 					Contact = new OpenApiContact
 					{
@@ -367,7 +367,7 @@ namespace WebAppCommercial
 					},
 					License = new OpenApiLicense
 					{
-						Name = "Licença",
+						Name = "Licen�a",
 						Url = new Uri("https://example.com/license")
 					}
 				});
@@ -412,7 +412,7 @@ namespace WebAppCommercial
 				app.UseDeveloperExceptionPage();
 			}
 
-			// Configuração do Swagger
+			// Configura��o do Swagger
 			app.UseSwagger();
 			app.UseSwaggerUI(c =>
 			{
@@ -456,7 +456,7 @@ namespace WebAppCommercial
 			ConventionPermissionMiddleware.RegisterControllerPermission("PaymentMethod", "FORMA_PAGAMENTO");
 			ConventionPermissionMiddleware.RegisterControllerPermission("ServiceProvided", "CADASTRO_SERVICO");
 
-			// === CONTROLLERS DE USUÁRIOS ===
+			// === CONTROLLERS DE USU�RIOS ===
 			ConventionPermissionMiddleware.RegisterControllerPermission("User", "USUARIO");
 			ConventionPermissionMiddleware.RegisterControllerPermission("UserPermissions", "USUARIO_PERMISSION");
 			ConventionPermissionMiddleware.RegisterControllerPermission("Permission", "USUARIO_PERMISSION");
@@ -471,23 +471,25 @@ namespace WebAppCommercial
 			ConventionPermissionMiddleware.RegisterControllerPermission("Dashboard", "DASHBOARD");
 			ConventionPermissionMiddleware.RegisterControllerPermission("Closures", "FECHAMENTO");
 			ConventionPermissionMiddleware.RegisterControllerPermission("ServicesProvision", "SERVICO");
+				ConventionPermissionMiddleware.RegisterControllerPermission("ServiceOrders", "SERVICO_ORDEM");
+				ConventionPermissionMiddleware.RegisterControllerPermission("ServiceInvoices", "SERVICO_NFSE");
 			ConventionPermissionMiddleware.RegisterControllerPermission("Prospects", "PROSPECCAO");
 			ConventionPermissionMiddleware.RegisterControllerPermission("Salesman", "VENDEDOR");
 
-			// === CONTROLLERS PÚBLICOS ===
+			// === CONTROLLERS P�BLICOS ===
 			ConventionPermissionMiddleware.RegisterPublicController("SearchZipCode");
 			ConventionPermissionMiddleware.RegisterPublicController("Email");
 			ConventionPermissionMiddleware.RegisterPublicController("Home");
 
-			// === AÇÕES PÚBLICAS (endpoints sem autenticação) ===
+			// === A��ES P�BLICAS (endpoints sem autentica��o) ===
 			ConventionPermissionMiddleware.RegisterPublicAction("verify-email");
 			ConventionPermissionMiddleware.RegisterPublicAction("forgot-password");
 			ConventionPermissionMiddleware.RegisterPublicAction("reset-password");
 			ConventionPermissionMiddleware.RegisterPublicAction("authenticate");
 
-			Console.WriteLine("✅ Permission mappings configured successfully!");
+			Console.WriteLine("? Permission mappings configured successfully!");
 		}
-		// 🔧 MÉTODO DE CONFIGURAÇÃO DO SKIASHARP
+		// ?? M�TODO DE CONFIGURA��O DO SKIASHARP
 		private void ConfigureSkiaSharp()
 		{
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -496,14 +498,14 @@ namespace WebAppCommercial
 				{
 					Console.WriteLine("=== CONFIGURANDO SKIASHARP PARA LINUX ===");
 
-					// Pula a verificação de compatibilidade
+					// Pula a verifica��o de compatibilidade
 					Environment.SetEnvironmentVariable("SKIA_SHARP_SKIP_NATIVE_LOADER_CHECK", "true");
 
-					// Força o uso da native lib embutida
+					// For�a o uso da native lib embutida
 					var basePath = AppDomain.CurrentDomain.BaseDirectory;
 					var nativePaths = new List<string>();
 
-					// Procura pelas native libs em várias possíveis localizações
+					// Procura pelas native libs em v�rias poss�veis localiza��es
 					var possiblePaths = new[]
 					{
 								Path.Combine(basePath, "runtimes", "linux-x64", "native"),
@@ -519,7 +521,7 @@ namespace WebAppCommercial
 						if (Directory.Exists(path))
 						{
 							nativePaths.Add(path);
-							Console.WriteLine($"✅ Native library path found: {path}");
+							Console.WriteLine($"? Native library path found: {path}");
 						}
 					}
 
@@ -527,37 +529,37 @@ namespace WebAppCommercial
 					{
 						var ldPath = string.Join(":", nativePaths);
 						Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", ldPath);
-						Console.WriteLine($"✅ LD_LIBRARY_PATH set to: {ldPath}");
+						Console.WriteLine($"? LD_LIBRARY_PATH set to: {ldPath}");
 					}
 					else
 					{
-						Console.WriteLine("⚠️ No native library paths found!");
+						Console.WriteLine("?? No native library paths found!");
 					}
 
 					// Verifica se as native libs existem
 					var skiaLibs = Directory.GetFiles(basePath, "libSkiaSharp*", SearchOption.AllDirectories);
 					if (skiaLibs.Any())
 					{
-						Console.WriteLine($"✅ Found SkiaSharp libs: {string.Join(", ", skiaLibs.Select(p => Path.GetFileName(p)))}");
+						Console.WriteLine($"? Found SkiaSharp libs: {string.Join(", ", skiaLibs.Select(p => Path.GetFileName(p)))}");
 					}
 					else
 					{
-						Console.WriteLine("⚠️ WARNING: No SkiaSharp native libraries found in publish directory!");
+						Console.WriteLine("?? WARNING: No SkiaSharp native libraries found in publish directory!");
 
 						// Tenta encontrar em outros locais
 						var systemSkiaLibs = Directory.GetFiles("/usr/lib", "libSkiaSharp*", SearchOption.AllDirectories);
 						if (systemSkiaLibs.Any())
 						{
-							Console.WriteLine($"⚠️ Found system SkiaSharp libs: {string.Join(", ", systemSkiaLibs.Select(p => Path.GetFileName(p)))}");
-							Console.WriteLine("⚠️ These may be incompatible versions!");
+							Console.WriteLine($"?? Found system SkiaSharp libs: {string.Join(", ", systemSkiaLibs.Select(p => Path.GetFileName(p)))}");
+							Console.WriteLine("?? These may be incompatible versions!");
 						}
 					}
 
-					Console.WriteLine("=== CONFIGURAÇÃO SKIASHARP COMPLETADA ===");
+					Console.WriteLine("=== CONFIGURA��O SKIASHARP COMPLETADA ===");
 				}
 				catch (Exception ex)
 				{
-					Console.WriteLine($"❌ Error configuring SkiaSharp: {ex.Message}");
+					Console.WriteLine($"? Error configuring SkiaSharp: {ex.Message}");
 				}
 			}
 		}
