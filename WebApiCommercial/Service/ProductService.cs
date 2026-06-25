@@ -15,9 +15,15 @@ namespace Service
     public class ProductService : BaseService<Product>, IProductService
     {
         private readonly IStockService _stockService;
-        public ProductService(IGenericRepository<Product> repository, IStockService stockService) : base(repository)
+        private readonly ITributacaoResolverService _tributacaoResolver;
+
+        public ProductService(
+            IGenericRepository<Product> repository,
+            IStockService stockService,
+            ITributacaoResolverService tributacaoResolver) : base(repository)
         {
             _stockService = stockService;
+            _tributacaoResolver = tributacaoResolver;
         }
 
         public async Task<PagedResult<Product>> GetAllPaged(Filters filter)
@@ -30,43 +36,6 @@ namespace Service
         }
         public async Task SaveProduct(ProductCreateModelDto model, int tenantid)
         {
-
-            //byte[] file = null;
-            //if (model.Id > 0)
-            //{
-            //    var existingProduct = await base.GetByIdAsync(model.Id);
-            //    file = existingProduct.Image;
-            //}
-
-            //// Processar a imagem se existir
-            //if (model.Image != null && model.Image.Length > 0)
-            //{
-            //    // Obter array de bytes da imagem
-            //    using (var memoryStream = new MemoryStream())
-            //    {
-            //        await model.Image.CopyToAsync(memoryStream);
-            //        byte[] imageBytes = memoryStream.ToArray();
-
-            //        // Aqui você pode:
-            //        // 1. Salvar o array de bytes no banco de dados (se sua entidade tiver essa propriedade)
-            //        // product.ImageBytes = imageBytes;
-
-            //        // 2. Ou salvar no sistema de arquivos como no exemplo anterior
-            //        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
-            //        if (!Directory.Exists(uploadsFolder))
-            //        {
-            //            Directory.CreateDirectory(uploadsFolder);
-            //        }
-
-            //        var uniqueFileName = Guid.NewGuid().ToString() + "_" + model.Image.FileName;
-            //        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-            //        // Salvar bytes no arquivo
-            //        await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
-            //        file = imageBytes;
-            //        //product.ImageUrl = uniqueFileName; // Ou o caminho completo se preferir
-            //    }
-            //}
             var product = new Product
             {
                 Id = model.Id,
@@ -75,15 +44,31 @@ namespace Service
                 Value = model.Value,
                 Description = model.Description,
                 Quantity = model.Quantity,
-                Image = null,//file
-                Code=model.Code,
-                Reference=model.Reference,
-                CostPrice=model.CostPrice,
-                Observation=model.Observation,
-                Ncm=model.Ncm
+                Image = null,
+                Code = model.Code,
+                Reference = model.Reference,
+                CostPrice = model.CostPrice,
+                Observation = model.Observation,
+                Ncm = model.Ncm,
+
+                // Tributacao por produto
+                UsaTributacaoPropria = model.UsaTributacaoPropria,
+                NaturezaOperacaoOrigemId = model.NaturezaOperacaoOrigemId,
+                DataAtualizacaoTributaria = model.UsaTributacaoPropria ? DateTime.UtcNow : null
             };
+
+            // Mapear DTO de tributacao para entidade se estiver preenchido
+            if (model.UsaTributacaoPropria && model.ConfiguracaoTributaria != null)
+            {
+                product.ConfiguracaoTributaria = MapTributacaoDtoToEntity(model.ConfiguracaoTributaria);
+            }
+
             if (product.Id > 0)
+            {
                 await base.Alter(product);
+                // Invalidar cache apos alteracao
+                _tributacaoResolver.InvalidarCacheProduto(product.Id);
+            }
             else
             {
                 await base.Save(product);
@@ -93,11 +78,76 @@ namespace Service
                     Quantity = product.Quantity,
                     Date = DateTime.UtcNow,
                     IdProduct = product.Id,
-                    Reason = $"Lançamento novo produto: dia {DateTime.UtcNow}",
+                    Reason = $"Lancamento novo produto: dia {DateTime.UtcNow}",
                     Type = StockType.entry
                 });
             }
-                
+        }
+
+        /// <summary>
+        /// Atualiza apenas a configuracao tributaria de um produto existente
+        /// </summary>
+        public async Task AtualizarTributacaoProdutoAsync(int productId, ProductTributacaoDto dto, int? naturezaOrigemId)
+        {
+            var product = await base.GetByIdAsync(productId);
+            if (product == null)
+                throw new InvalidOperationException("Produto nao encontrado.");
+
+            product.UsaTributacaoPropria = true;
+            product.ConfiguracaoTributaria = MapTributacaoDtoToEntity(dto);
+            product.NaturezaOperacaoOrigemId = naturezaOrigemId;
+            product.DataAtualizacaoTributaria = DateTime.UtcNow;
+
+            await base.Alter(product);
+            _tributacaoResolver.InvalidarCacheProduto(productId);
+        }
+
+        /// <summary>
+        /// Remove a tributacao propria do produto (volta a herdar da natureza)
+        /// </summary>
+        public async Task RemoverTributacaoProdutoAsync(int productId)
+        {
+            var product = await base.GetByIdAsync(productId);
+            if (product == null)
+                throw new InvalidOperationException("Produto nao encontrado.");
+
+            product.UsaTributacaoPropria = false;
+            product.ConfiguracaoTributaria = null;
+            product.NaturezaOperacaoOrigemId = null;
+            product.DataAtualizacaoTributaria = DateTime.UtcNow;
+
+            await base.Alter(product);
+            _tributacaoResolver.InvalidarCacheProduto(productId);
+        }
+
+        private static ConfiguracaoTributaria MapTributacaoDtoToEntity(ProductTributacaoDto dto)
+        {
+            return new ConfiguracaoTributaria
+            {
+                AplicarICMS = dto.AplicarICMS,
+                CstICMS = dto.CstICMS,
+                AliquotaICMS = dto.AliquotaICMS,
+                ReduzirBaseICMS = dto.ReduzirBaseICMS,
+                AplicarIPI = dto.AplicarIPI,
+                CstIPI = dto.CstIPI,
+                AliquotaIPI = dto.AliquotaIPI,
+                AplicarPIS = dto.AplicarPIS,
+                CstPIS = dto.CstPIS,
+                AliquotaPIS = dto.AliquotaPIS,
+                AplicarCOFINS = dto.AplicarCOFINS,
+                CstCOFINS = dto.CstCOFINS,
+                AliquotaCOFINS = dto.AliquotaCOFINS,
+                AplicarISSQN = dto.AplicarISSQN,
+                AliquotaISSQN = dto.AliquotaISSQN,
+                AplicarIBS = dto.AplicarIBS,
+                CstIBS = dto.CstIBS,
+                AliquotaIBS = dto.AliquotaIBS,
+                AplicarCBS = dto.AplicarCBS,
+                CstCBS = dto.CstCBS,
+                AliquotaCBS = dto.AliquotaCBS,
+                AplicarIS = dto.AplicarIS,
+                AliquotaIS = dto.AliquotaIS,
+            };
         }
     }
     public interface IProductService : IBaseService<Product>
@@ -105,5 +155,7 @@ namespace Service
         Task<PagedResult<Product>> GetAllPaged(Filters filter);
         Task<List<Product>> GetListByName(Filters filters);
         Task SaveProduct(ProductCreateModelDto model, int tenantid);
+        Task AtualizarTributacaoProdutoAsync(int productId, ProductTributacaoDto dto, int? naturezaOrigemId);
+        Task RemoverTributacaoProdutoAsync(int productId);
     }
 }

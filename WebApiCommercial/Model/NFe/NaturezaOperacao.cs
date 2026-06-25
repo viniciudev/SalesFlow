@@ -27,6 +27,12 @@ namespace Model.Registrations
 
         public bool Ativo { get; set; } = true;
 
+        /// <summary>
+        /// Permite que produtos vinculados a esta natureza tenham tributação própria.
+        /// Quando false, todos os produtos usarão a tributação desta natureza (comportamento padrão).
+        /// </summary>
+        public bool PermiteTributacaoPorProduto { get; set; } = false;
+
         public ConfiguracaoTributaria ConfiguracaoTributaria { get; set; } = new();
         public ICollection<NFeEmission> NFeEmissions { get; set; }= new List<NFeEmission>();
     }

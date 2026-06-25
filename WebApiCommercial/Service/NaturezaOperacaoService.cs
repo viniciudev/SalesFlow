@@ -31,6 +31,7 @@ namespace Service
                 ConsumidorFinal = request.ConsumidorFinal,
                 MovimentaEstoque = request.MovimentaEstoque,
                 Ativo = request.Ativo,
+                PermiteTributacaoPorProduto = request.PermiteTributacaoPorProduto,
                 ConfiguracaoTributaria = request.ConfiguracaoTributaria
             };
 
@@ -53,7 +54,7 @@ namespace Service
         {
             var existing = await base.GetByIdAsync(id);
             if (existing == null)
-                throw new DomainException("Natureza de operação não encontrada.");
+                throw new DomainException("Natureza de operaï¿½ï¿½o nï¿½o encontrada.");
 
             await base.DeleteAsync(id);
         }
@@ -74,10 +75,10 @@ namespace Service
         {
             var existing = await base.GetByIdAsync(id);
             if (existing == null)
-                throw new DomainException("Natureza de operação não encontrada.");
+                throw new DomainException("Natureza de operaï¿½ï¿½o nï¿½o encontrada.");
 
             if (await (repository as INaturezaOperacaoRepository).ExistsCfopAsync(request.Cfop, request.TipoDocumento,id, existing.CompanyId))
-                throw new DomainException("Já existe uma natureza de operação com o mesmo CFOP e Tipo de Documento.");
+                throw new DomainException("Jï¿½ existe uma natureza de operaï¿½ï¿½o com o mesmo CFOP e Tipo de Documento.");
 
             existing.Descricao = request.Descricao;
             existing.Cfop = request.Cfop;
@@ -86,6 +87,7 @@ namespace Service
             existing.ConsumidorFinal = request.ConsumidorFinal;
             existing.MovimentaEstoque = request.MovimentaEstoque;
             existing.Ativo = request.Ativo;
+            existing.PermiteTributacaoPorProduto = request.PermiteTributacaoPorProduto;
             existing.ConfiguracaoTributaria = request.ConfiguracaoTributaria;
 
             ApplyTipoDocumentoRules(existing);
@@ -98,7 +100,7 @@ namespace Service
         {
             var e = await base.GetByIdAsync(id);
             if (e == null)
-                throw new DomainException("Natureza de operação não encontrada.");
+                throw new DomainException("Natureza de operaï¿½ï¿½o nï¿½o encontrada.");
 
             var tributos = new List<object>();
 
@@ -139,6 +141,7 @@ namespace Service
                 ConsumidorFinal = e.ConsumidorFinal,
                 MovimentaEstoque = e.MovimentaEstoque,
                 Ativo = e.Ativo,
+                PermiteTributacaoPorProduto = e.PermiteTributacaoPorProduto,
                 ConfiguracaoTributaria = e.ConfiguracaoTributaria
             };
         }
@@ -147,7 +150,7 @@ namespace Service
         {
             // Unicidade CFOP + TipoDocumento
             if (await (repository as INaturezaOperacaoRepository).ExistsCfopAsync(cfop, tipoDocumento,0, companyId))
-                throw new DomainException("Já existe uma natureza de operação com o mesmo CFOP e Tipo de Documento.");
+                throw new DomainException("Jï¿½ existe uma natureza de operaï¿½ï¿½o com o mesmo CFOP e Tipo de Documento.");
         }
 
         private void ApplyTipoDocumentoRules(NaturezaOperacao entity)

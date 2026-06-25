@@ -14,6 +14,7 @@ namespace Service.Dtos
         public bool ConsumidorFinal { get; set; }
         public bool MovimentaEstoque { get; set; }
         public bool Ativo { get; set; } = true;
+        public bool PermiteTributacaoPorProduto { get; set; } = false;
         public ConfiguracaoTributaria ConfiguracaoTributaria { get; set; } = new();
         public int CompanyId { get; set; }
     }

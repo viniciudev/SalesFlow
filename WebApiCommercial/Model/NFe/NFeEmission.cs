@@ -21,7 +21,7 @@ namespace Model.Registrations
         // Dados de controle / retry
         public TipoDocumentoEnum TipoDocumento { get; set; } = TipoDocumentoEnum.NFE; // NFE ou NFCE
         public string? Serie { get; set; }
-        public long? Numero { get; set; } // número emitido pela SEFAZ quando sucesso
+        public long? Numero { get; set; } // nï¿½mero emitido pela SEFAZ quando sucesso
 
         public bool Sent { get; set; } = false; // true quando emitido com sucesso
         public int TryCount { get; set; } = 0;
@@ -40,6 +40,13 @@ namespace Model.Registrations
         public string? XmlCompleto { get; set; }
         public string? Protocolo { get; set; }
         public string ?MotivoCancelamento { get; set; }
+
+        /// <summary>
+        /// JSON com resumo da origem da tributacao usada por cada item da nota.
+        /// Ex: [{"nItem":1,"origem":"Produto","naturezaOrigemId":5}, {"nItem":2,"origem":"NaturezaOperacao"}]
+        /// </summary>
+        [Column(TypeName = "text")]
+        public string? TributacaoAuditJson { get; set; }
     }
     public enum StatusNfe
     {

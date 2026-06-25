@@ -60,6 +60,7 @@ namespace Service
 		private readonly IFiscalConfigurationRepository _fiscalConfigurationRepository;
 		private readonly INaturezaOperacaoRepository _naturezaOperacaoRepository;
 		private readonly IWebHostEnvironment _environment;
+			private readonly ITributacaoResolverService _tributacaoResolver;
 		private NFe.Classes.NFe _nfe;
 		private ConfiguracaoApp _configuracaoApp;
 		private FiscalConfiguration _currentFiscalConfiguration;
@@ -67,15 +68,17 @@ namespace Service
 		private Sale _currentSale;
 
 		public NFeService(IGenericRepository<NFeEmission> repository,
-				ISaleRepository saleRepository,
+					ISaleRepository saleRepository,
 				IFiscalConfigurationRepository fiscalConfigurationRepository,
 				INaturezaOperacaoRepository naturezaOperacaoRepository,
-				IWebHostEnvironment webHostEnvironment) : base(repository)
+					IWebHostEnvironment webHostEnvironment,
+					ITributacaoResolverService tributacaoResolver) : base(repository)
 		{
 			_saleRepository = saleRepository;
 			_fiscalConfigurationRepository = fiscalConfigurationRepository;
 			_naturezaOperacaoRepository = naturezaOperacaoRepository;
 			_environment = webHostEnvironment;
+				_tributacaoResolver = tributacaoResolver;
 		}
 		public async Task<ResponseGeneric> CreatedFromSale(NFeEmissionDto nfeDto)
 		{
@@ -308,7 +311,7 @@ namespace Service
 				_currentSale = sale;
 				_configuracaoApp = criarConfiguracaoApp(fiscalConfiguration, naturezaOperacao);
 				ModeloDocumento modeloDocumento = _currentNaturezaOperacao.TipoDocumento == TipoDocumentoEnum.NFCE ? ModeloDocumento.NFCe : ModeloDocumento.NFe;
-				_nfe = ObterNfeValidada(VersaoServico.Versao400, modeloDocumento,
+					_nfe = await ObterNfeValidadaAsync(VersaoServico.Versao400, modeloDocumento,
 						numero, new ConfiguracaoCsc
 						{
 							CIdToken = fiscalConfiguration.Csc.Identificador,
@@ -479,10 +482,10 @@ namespace Service
 				throw;
 			}
 		}
-		private NFe.Classes.NFe ObterNfeValidada(VersaoServico versaoServico, ModeloDocumento modelo, int numero,
+			private async Task<NFe.Classes.NFe> ObterNfeValidadaAsync(VersaoServico versaoServico, ModeloDocumento modelo, int numero,
 				ConfiguracaoCsc configuracaoCsc)
 		{
-			var nfe = GetNf(numero, modelo, versaoServico);
+				var nfe = await GetNfAsync(numero, modelo, versaoServico);
 
 			nfe.Assina();
 
@@ -498,40 +501,48 @@ namespace Service
 
 			return nfe;
 		}
-		protected virtual NFe.Classes.NFe GetNf(int numero, ModeloDocumento modelo, VersaoServico versao)
-		{
-			var nf = new NFe.Classes.NFe { infNFe = GetInf(numero, modelo, versao) };
+			protected virtual async Task<NFe.Classes.NFe> GetNfAsync(int numero, ModeloDocumento modelo, VersaoServico versao)
+			{
+				var nf = new NFe.Classes.NFe { infNFe = await GetInfAsync(numero, modelo, versao) };
 			return nf;
 		}
-		protected virtual infNFe GetInf(int numero, ModeloDocumento modelo, VersaoServico versao)
+		protected virtual async Task<infNFe> GetInfAsync(int numero, ModeloDocumento modelo, VersaoServico versao)
 		{
-			var infNFe = new infNFe
 			{
-				versao = versao.VersaoServicoParaString(),
-				ide = GetIdentificacao(numero, modelo, versao),
-				emit = GetEmitente(),
-				dest = GetDestinatario(versao, modelo),
-				transp = GetTransporte()
-			};
+				var infNFe = new infNFe
+				{
+					versao = versao.VersaoServicoParaString(),
+					ide = GetIdentificacao(numero, modelo, versao),
+					emit = GetEmitente(),
+					dest = GetDestinatario(versao, modelo),
+					transp = GetTransporte()
+				};
 
-			int index = 0;
-			foreach (var i in _currentSale.SaleItems)
-			{
-				index++;
-				infNFe.det.Add(GetDetalhe(index, i, infNFe.emit.CRT, modelo));
+				int index = 0;
+				foreach (var i in _currentSale.SaleItems)
+				{
+					index++;
+
+					// Resolve tributacao por produto (prioridade: produto > natureza)
+					var tributacaoResolvida = await _tributacaoResolver.ResolverTributacaoAsync(
+						i.IdProduct,
+						_currentNaturezaOperacao.Id);
+
+					infNFe.det.Add(GetDetalhe(index, i, infNFe.emit.CRT, modelo, tributacaoResolvida));
+				}
+
+				infNFe.total = GetTotal(versao, infNFe.det, modelo);
+
+				if (infNFe.ide.mod == ModeloDocumento.NFe & (versao == VersaoServico.Versao310 || versao == VersaoServico.Versao400))
+					infNFe.cobr = GetCobranca(infNFe.total.ICMSTot);
+				if (infNFe.ide.mod == ModeloDocumento.NFCe || (infNFe.ide.mod == ModeloDocumento.NFe & versao == VersaoServico.Versao400))
+					infNFe.pag = GetPagamento(infNFe.total.ICMSTot, versao);
+
+				if (infNFe.ide.mod == ModeloDocumento.NFCe & versao != VersaoServico.Versao400)
+					infNFe.infAdic = new infAdic() { infCpl = "" };
+
+				return infNFe;
 			}
-
-			infNFe.total = GetTotal(versao, infNFe.det, modelo);
-
-			if (infNFe.ide.mod == ModeloDocumento.NFe & (versao == VersaoServico.Versao310 || versao == VersaoServico.Versao400))
-				infNFe.cobr = GetCobranca(infNFe.total.ICMSTot); //V3.00 e 4.00 Somente
-			if (infNFe.ide.mod == ModeloDocumento.NFCe || (infNFe.ide.mod == ModeloDocumento.NFe & versao == VersaoServico.Versao400))
-				infNFe.pag = GetPagamento(infNFe.total.ICMSTot, versao); //NFCe Somente  
-
-			if (infNFe.ide.mod == ModeloDocumento.NFCe & versao != VersaoServico.Versao400)
-				infNFe.infAdic = new infAdic() { infCpl = "" }; //Susgest�o para impress�o do troco em NFCe
-
-			return infNFe;
 		}
 		
 		protected virtual List<pag> GetPagamento(ICMSTot icmsTot, VersaoServico versao)
@@ -850,14 +861,14 @@ namespace Service
 			return p;
 		}
 		
-		protected virtual det GetDetalhe(int index, SaleItems i, CRT crt, ModeloDocumento modelo)
+			protected virtual det GetDetalhe(int index, SaleItems i, CRT crt, ModeloDocumento modelo, TributacaoResolvida tributacao)
 		{
 			var produto = GetProduto(i);
 			decimal valorTotalItem = i.Value * i.Amount;
-			decimal aliquotaCOFINS = _currentNaturezaOperacao.ConfiguracaoTributaria.AliquotaCOFINS;
-			decimal aliquotaPIS = _currentNaturezaOperacao.ConfiguracaoTributaria.AliquotaPIS;
-			decimal aliquotaIPI = _currentNaturezaOperacao.ConfiguracaoTributaria.AliquotaIPI;
-			//string cstPIS = _currentNaturezaOperacao.ConfiguracaoTributaria.CstPIS;
+			decimal aliquotaCOFINS = tributacao.Configuracao.AliquotaCOFINS;
+			decimal aliquotaPIS = tributacao.Configuracao.AliquotaPIS;
+			decimal aliquotaIPI = tributacao.Configuracao.AliquotaIPI;
+			//string cstPIS = tributacao.Configuracao.CstPIS;
 
 			//// Validar se o CST � v�lido, se n�o for, usar 99
 			//if (!Enum.IsDefined(typeof(CSTPIS),int.Parse( cstPIS)))
@@ -870,7 +881,7 @@ namespace Service
 				prod = produto,
 				imposto = new imposto
 				{
-					vTotTrib = CalcularTotalTributos(i, aliquotaCOFINS, aliquotaPIS, aliquotaIPI),
+					vTotTrib = CalcularTotalTributos(i, tributacao.Configuracao),
 
 					ICMS = new ICMS
 					{
@@ -882,7 +893,7 @@ namespace Service
 
 					COFINS = new COFINS
 					{
-						TipoCOFINS = !_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarCOFINS ?
+						TipoCOFINS = !tributacao.Configuracao.AplicarCOFINS ?
 														new COFINSOutr
 														{
 															CST = CSTCOFINS.cofins99,
@@ -892,16 +903,16 @@ namespace Service
 														} :
 														new COFINSOutr
 														{
-															CST = (CSTCOFINS)Enum.Parse(typeof(CSTCOFINS), _currentNaturezaOperacao.ConfiguracaoTributaria.CstCOFINS),
+															CST = (CSTCOFINS)Enum.Parse(typeof(CSTCOFINS), tributacao.Configuracao.CstCOFINS),
 															pCOFINS = aliquotaCOFINS,
 															vBC = valorTotalItem,
-															vCOFINS = CalcularValorCOFINS(valorTotalItem, aliquotaCOFINS)
+															vCOFINS = CalcularValorCOFINS(valorTotalItem, aliquotaCOFINS, tributacao.Configuracao)
 														}
 					},
 
 					PIS = new PIS
 					{
-						TipoPIS = !_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarPIS ?
+						TipoPIS = !tributacao.Configuracao.AplicarPIS ?
 														new PISOutr
 														{
 															CST = CSTPIS.pis99,
@@ -911,10 +922,10 @@ namespace Service
 														} :
 														new PISOutr
 														{
-															CST = (CSTPIS)Enum.Parse(typeof(CSTPIS), _currentNaturezaOperacao.ConfiguracaoTributaria.CstPIS),
+															CST = (CSTPIS)Enum.Parse(typeof(CSTPIS), tributacao.Configuracao.CstPIS),
 															pPIS = aliquotaPIS,
 															vBC = valorTotalItem,
-															vPIS = CalcularValorPIS(valorTotalItem, aliquotaPIS)
+															vPIS = CalcularValorPIS(valorTotalItem, aliquotaPIS, tributacao.Configuracao)
 														}
 					}
 				}
@@ -933,31 +944,31 @@ namespace Service
 		}
 
 		// M�todos auxiliares
-		private decimal CalcularTotalTributos(SaleItems item, decimal aliquotaCOFINS, decimal aliquotaPIS, decimal aliquotaIPI)
+			private decimal CalcularTotalTributos(SaleItems item, ConfiguracaoTributaria config)
 		{
 			decimal valorTotalItem = item.Value * item.Amount;
 			decimal totalTributos = 0;
 
 			// Adicionar COFINS se aplic�vel
-			if (_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarCOFINS && aliquotaCOFINS > 0)
+			if (config.AplicarCOFINS && config.AliquotaCOFINS > 0)
 			{
-				totalTributos += valorTotalItem * aliquotaCOFINS / 100;
+				totalTributos += valorTotalItem * config.AliquotaCOFINS / 100;
 			}
 
 			// Adicionar PIS se aplic�vel
-			if (_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarPIS && aliquotaPIS > 0)
+			if (config.AplicarPIS && config.AliquotaPIS > 0)
 			{
-				totalTributos += valorTotalItem * aliquotaPIS / 100;
+				totalTributos += valorTotalItem * config.AliquotaPIS / 100;
 			}
 
 			// Adicionar IPI se aplic�vel (apenas para NFe)
-			if (_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIPI && aliquotaIPI > 0)
+			if (config.AplicarIPI && config.AliquotaIPI > 0)
 			{
-				totalTributos += valorTotalItem * aliquotaIPI / 100;
+				totalTributos += valorTotalItem * config.AliquotaIPI / 100;
 			}
 
 			// Adicionar ICMS aproximado se dispon�vel
-			var icms = CalcularICMSAproximado(item);
+			var icms = CalcularICMSAproximado(item, config);
 			if (icms > 0)
 			{
 				totalTributos += icms;
@@ -966,31 +977,31 @@ namespace Service
 			return Math.Round(totalTributos, 2);
 		}
 
-		private decimal CalcularValorCOFINS(decimal valorTotalItem, decimal aliquota)
+			private decimal CalcularValorCOFINS(decimal valorTotalItem, decimal aliquota, ConfiguracaoTributaria config)
 		{
-			if (!_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarCOFINS || aliquota <= 0)
+			if (!config.AplicarCOFINS || aliquota <= 0)
 				return 0;
 
 			return Math.Round(valorTotalItem * aliquota / 100, 2);
 		}
 
-		private decimal CalcularValorPIS(decimal valorTotalItem, decimal aliquota)
+			private decimal CalcularValorPIS(decimal valorTotalItem, decimal aliquota, ConfiguracaoTributaria config)
 		{
-			if (!_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarPIS || aliquota <= 0)
+			if (!config.AplicarPIS || aliquota <= 0)
 				return 0;
 
 			return Math.Round(valorTotalItem * aliquota / 100, 2);
 		}
 
-		private decimal CalcularValorIPI(decimal valorTotalItem, decimal aliquota)
+			private decimal CalcularValorIPI(decimal valorTotalItem, decimal aliquota, ConfiguracaoTributaria config)
 		{
-			if (!_currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIPI || aliquota <= 0)
+			if (!config.AplicarIPI || aliquota <= 0)
 				return 0;
 
 			return Math.Round(valorTotalItem * aliquota / 100, 2);
 		}
 
-		private decimal CalcularICMSAproximado(SaleItems item)
+			private decimal CalcularICMSAproximado(SaleItems item, ConfiguracaoTributaria config)
 		{
 			// Implementar c�lculo do ICMS aproximado baseado na configura��o
 			// Este � um valor aproximado para o vTotTrib

@@ -144,7 +144,7 @@ namespace Repository
 						.HasForeignKey(e => e.PaymentMethodId)
 						.OnDelete(DeleteBehavior.Restrict);
 
-				// Índice composto para evitar duplicidade
+				// ï¿½ndice composto para evitar duplicidade
 				entity.HasIndex(e => new { e.FinancialId, e.PaymentMethodId })
 						.IsUnique();
 			});
@@ -186,7 +186,7 @@ namespace Repository
 
 		}
 
-//*************************************novas permissões***********************************************
+//*************************************novas permissï¿½es***********************************************
 //****************************************************************************************************
 		private void ConfiguraPermission(ModelBuilder modelBuilder)
 		{
@@ -321,7 +321,7 @@ namespace Repository
 				user.HasKey(c => c.Id);
 				user.Property(c => c.Id).ValueGeneratedOnAdd();
 			});
-			builder.Entity<Company>().HasData(new Company { Id = 1, CorporateName = "Empresa Padrão" });
+			builder.Entity<Company>().HasData(new Company { Id = 1, CorporateName = "Empresa Padrï¿½o" });
 		}
 		private void ConfiguraFile(ModelBuilder builder)
 		{
@@ -352,21 +352,59 @@ namespace Repository
 	 .HasForeignKey(dc => dc.idCompany);
 		}
 
-		private void ConfiguraProduct(ModelBuilder builder)
+				private void ConfiguraProduct(ModelBuilder builder)
 		{
-			builder.Entity<Product>(user =>
+			builder.Entity<Product>(entity =>
 			{
-				user.ToTable("tb_product");
-				user.HasKey(c => c.Id);
-				user.Property(c => c.Id).ValueGeneratedOnAdd();
+				entity.ToTable("tb_product");
+				entity.HasKey(c => c.Id);
+				entity.Property(c => c.Id).ValueGeneratedOnAdd();
 
+				// Tributacao por produto
+				entity.Property(c => c.UsaTributacaoPropria).HasColumnName("UsaTributacaoPropria").IsRequired().HasDefaultValue(false);
+				entity.Property(c => c.NaturezaOperacaoOrigemId).HasColumnName("NaturezaOperacaoOrigemId").IsRequired(false);
+				entity.Property(c => c.DataAtualizacaoTributaria).HasColumnName("DataAtualizacaoTributaria").IsRequired(false);
+
+				// Owned type ConfiguracaoTributaria
+				entity.OwnsOne(e => e.ConfiguracaoTributaria, tb =>
+				{
+					tb.Property(p => p.AplicarICMS).HasColumnName("Prod_AplicarICMS");
+					tb.Property(p => p.CstICMS).HasColumnName("Prod_CstICMS").HasMaxLength(50);
+					tb.Property(p => p.AliquotaICMS).HasColumnName("Prod_AliquotaICMS").HasColumnType("decimal(18,4)");
+					tb.Property(p => p.ReduzirBaseICMS).HasColumnName("Prod_ReduzirBaseICMS");
+
+					tb.Property(p => p.AplicarIPI).HasColumnName("Prod_AplicarIPI");
+					tb.Property(p => p.CstIPI).HasColumnName("Prod_CstIPI").HasMaxLength(50);
+					tb.Property(p => p.AliquotaIPI).HasColumnName("Prod_AliquotaIPI").HasColumnType("decimal(18,4)");
+
+					tb.Property(p => p.AplicarPIS).HasColumnName("Prod_AplicarPIS");
+					tb.Property(p => p.CstPIS).HasColumnName("Prod_CstPIS").HasMaxLength(50);
+					tb.Property(p => p.AliquotaPIS).HasColumnName("Prod_AliquotaPIS").HasColumnType("decimal(18,4)");
+
+					tb.Property(p => p.AplicarCOFINS).HasColumnName("Prod_AplicarCOFINS");
+					tb.Property(p => p.CstCOFINS).HasColumnName("Prod_CstCOFINS").HasMaxLength(50);
+					tb.Property(p => p.AliquotaCOFINS).HasColumnName("Prod_AliquotaCOFINS").HasColumnType("decimal(18,4)");
+
+					tb.Property(p => p.AplicarISSQN).HasColumnName("Prod_AplicarISSQN");
+					tb.Property(p => p.AliquotaISSQN).HasColumnName("Prod_AliquotaISSQN").HasColumnType("decimal(18,4)");
+
+					tb.Property(p => p.AplicarIBS).HasColumnName("Prod_AplicarIBS");
+					tb.Property(p => p.CstIBS).HasColumnName("Prod_CstIBS").HasMaxLength(50);
+					tb.Property(p => p.AliquotaIBS).HasColumnName("Prod_AliquotaIBS").HasColumnType("decimal(18,4)");
+
+					tb.Property(p => p.AplicarCBS).HasColumnName("Prod_AplicarCBS");
+					tb.Property(p => p.CstCBS).HasColumnName("Prod_CstCBS").HasMaxLength(50);
+					tb.Property(p => p.AliquotaCBS).HasColumnName("Prod_AliquotaCBS").HasColumnType("decimal(18,4)");
+
+					tb.Property(p => p.AplicarIS).HasColumnName("Prod_AplicarIS");
+					tb.Property(p => p.AliquotaIS).HasColumnName("Prod_AliquotaIS").HasColumnType("decimal(18,4)");
+				});
 			});
 			builder.Entity<Product>()
 		.HasOne(dc => dc.Company)
 		.WithMany(c => c.Products)
 		.HasForeignKey(dc => dc.IdCompany);
-		}
-		private void ConfiguraService(ModelBuilder builder)
+		}private void ConfiguraService(ModelBuilder builder)
 		{
 			builder.Entity<ServiceProvided>(user =>
 			{
@@ -710,6 +748,7 @@ namespace Repository
 				entity.Property(e => e.ConsumidorFinal).IsRequired();
 				entity.Property(e => e.MovimentaEstoque).IsRequired();
 				entity.Property(e => e.Ativo).IsRequired();
+				entity.Property(e => e.PermiteTributacaoPorProduto).HasColumnName("PermiteTributacaoPorProduto").IsRequired().HasDefaultValue(false);
 
 				// Owned type configuracaoTributaria (colunas na mesma tabela)
 				entity.OwnsOne(e => e.ConfiguracaoTributaria, tb =>
