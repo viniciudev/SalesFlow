@@ -43,11 +43,11 @@ namespace Repository
                       UsaTributacaoPropria = p.UsaTributacaoPropria,
                       NaturezaOperacaoOrigemId = p.NaturezaOperacaoOrigemId,
                       DataAtualizacaoTributaria = p.DataAtualizacaoTributaria,
-                      ConfiguracaoTributaria = p.UsaTributacaoPropria ? p.ConfiguracaoTributaria : null
+                      ConfiguracaoTributaria = p.ConfiguracaoTributaria
 
                    })
                    .WithCaseInsensitive()
-                 
+                 .AsNoTracking()
 
               .GetPagedAsync<Product>(filter.PageNumber, filter.PageSize);
             //busca saldo

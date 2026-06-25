@@ -107,10 +107,10 @@ namespace Repository
 			ConfiguraProvider(modelBuilder);
 			ConfiguraPurchase(modelBuilder);
 			ConfiguraPurchaseItem(modelBuilder);
-			ConfiguraServiceOrder(modelBuilder);
-			ConfiguraServiceOrderItem(modelBuilder);
-			ConfiguraServiceInvoice(modelBuilder);
-			ConfiguraServiceInvoiceItem(modelBuilder);
+			//ConfiguraServiceOrder(modelBuilder);
+			//ConfiguraServiceOrderItem(modelBuilder);
+			//ConfiguraServiceInvoice(modelBuilder);
+			//ConfiguraServiceInvoiceItem(modelBuilder);
 			var cascadeFKs = modelBuilder.Model.GetEntityTypes()
 .SelectMany(t => t.GetForeignKeys())
 .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);

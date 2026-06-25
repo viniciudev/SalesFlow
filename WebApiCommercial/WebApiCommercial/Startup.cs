@@ -289,7 +289,7 @@ namespace WebAppCommercial
 			services.AddTransient<IBaseService<NFeEmission>, NFeService>();
 				//TributacaoResolver (cache de configuracoes tributarias)
 				services.AddMemoryCache();
-				services.AddSingleton<ITributacaoResolverService, TributacaoResolverService>();
+				services.AddTransient<ITributacaoResolverService, TributacaoResolverService>();
 			//FinancialPaymentMethod
 			services.AddTransient<IGenericRepository<FinancialPaymentMethod>, FinancialPaymentMethodRepository>();
 			services.AddTransient<IFinancialPaymentMethodRepository, FinancialPaymentMethodRepository>();
