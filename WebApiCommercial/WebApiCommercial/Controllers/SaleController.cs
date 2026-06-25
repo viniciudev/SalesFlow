@@ -75,6 +75,7 @@ namespace WebApiCommercial.Controllers
             await saleService.Alter(sale);
             return Ok(true);
         }
+
         //[RequirePermission(PermissionEnum.VENDA_ALTER)]
         [HttpPut("PutWithItems")]
         public async Task<ActionResult<dynamic>> PutWithItems([FromBody] SaleDto sale,
@@ -85,11 +86,11 @@ namespace WebApiCommercial.Controllers
             return Ok(true);
         }
 
-
         // DELETE api/<SaleController>/5
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
+
         }
     }
 }
