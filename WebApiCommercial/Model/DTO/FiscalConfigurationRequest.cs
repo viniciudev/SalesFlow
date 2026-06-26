@@ -22,23 +22,7 @@ namespace WebApiCommercial.Dtos
         public bool AutorizacaoASO { get; set; }
 
         // Converte DTO para entidade do Model
-        public Model.Registrations.FiscalConfiguration ToEntity()
-        {
-            return new Model.Registrations.FiscalConfiguration
-            {
-                // Id será atribuído pelo controller / service quando necessário
-                NumeracaoDocumentos = NumeracaoDocumentos ?? new NumeracaoDocumentos(),
-                CertificadoDigital = new CertificadoDigital
-                {
-                    Arquivo = CertificadoDigital?.Arquivo,
-                    Senha = CertificadoDigital?.Senha
-                },
-                Csc = Csc ?? new Csc(),
-                Ambiente = Ambiente,
-                Emitente = Emitente ?? new Emitente(),
-                AutorizacaoASO = AutorizacaoASO
-            };
-        }
+     
     }
 
     public class CertificadoDigitalRequest

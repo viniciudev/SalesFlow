@@ -26,6 +26,7 @@ using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -45,7 +46,7 @@ namespace WebAppCommercial
 
 		public void ConfigureServices(IServiceCollection services)
 		{
-
+	
 			ConfigureSkiaSharp();
 
 			QuestPDF.Settings.License = LicenseType.Community;
@@ -55,7 +56,8 @@ namespace WebAppCommercial
 			// ===== FIM DA CONFIGURA��O FASTREPORT =====
 
 			// ?? CONFIGURA��O SSL GLOBAL
-			System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+			// Configuração para resolver problemas de SSL no Windows
+			ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
 			System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, cert, chain, errors) =>
 			{
 				if (errors == System.Net.Security.SslPolicyErrors.None)

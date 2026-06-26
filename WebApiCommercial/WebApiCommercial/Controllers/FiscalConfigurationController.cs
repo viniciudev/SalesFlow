@@ -1,124 +1,116 @@
 
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Model.DTO;
-using Model.Registrations;
 using Service;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading.Tasks;
 using WebApiCommercial.Dtos;
 
 namespace WebApiCommercial.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class FiscalConfigurationController : ControllerBase
-    {
-        private readonly IFiscalConfigurationService _service;
-        private readonly IWebHostEnvironment _env;
+	[ApiController]
+	[Route("api/[controller]")]
+	public class FiscalConfigurationController : ControllerBase
+	{
+		private readonly IFiscalConfigurationService _service;
+		private readonly IWebHostEnvironment _env;
 
-        public FiscalConfigurationController(IFiscalConfigurationService service, IWebHostEnvironment env)
-        {
-            _service = service;
-            _env = env;
-        }
+		public FiscalConfigurationController(IFiscalConfigurationService service, IWebHostEnvironment env)
+		{
+			_service = service;
+			_env = env;
+		}
 
-        [HttpPost]
-        public async Task<IActionResult> Post([FromHeader]int tenantid,
-            [FromForm] FiscalConfigurationRequest request)
-        {
-            // salva arquivo se enviado (IFormFile) ou se vier base64
-            if (request.CertificadoDigital != null)
-            {
-                var caminho = await SaveCertificadoAsync(request.CertificadoDigital);
-                request.CertificadoDigital.Arquivo = caminho;
-            }
+		[HttpPost]
+		public async Task<IActionResult> Post([FromHeader] int tenantid,
+				[FromForm] FiscalConfigurationRequest request)
+		{
+			// salva arquivo se enviado (IFormFile) ou se vier base64
+			if (request.CertificadoDigital != null)
+			{
+				var caminho = await SaveCertificadoAsync(request.CertificadoDigital);
+				request.CertificadoDigital.Arquivo = caminho;
+			}
 
-            // mapear DTO para entidade
-            var model = request.ToEntity();
-            model.CompanyId = tenantid;
-            await _service.Create(model);
-            return Ok(new ResponseGeneric { Success = true, Data = model});
-        }
+			// mapear DTO para entidade
+			var model = await _service.CreateEntityFromRequest(request);
+			await _service.Create(model);
+			return Ok(new ResponseGeneric { Success = true, Data = model });
+		}
 
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> Put(int id,  [FromForm] FiscalConfigurationRequest request)
-        {
-            var existing = await _service.GetByIdAsync(id);
-            if (existing == null) return NotFound();
+		[HttpPut("{id:int}")]
+		public async Task<IActionResult> Put(int id, [FromForm] FiscalConfigurationRequest request)
+		{
+			var existing = await _service.GetByIdAsync(id);
+			if (existing == null) return NotFound();
 
-            if (request.CertificadoDigital.ArquivoFile != null)
-            {
-                var caminho = await SaveCertificadoAsync(request.CertificadoDigital);
-                request.CertificadoDigital.Arquivo = caminho;
-            }
-            else
-            {
-                // se não enviou novo arquivo, manter o caminho existente
-                request.CertificadoDigital.Arquivo = existing.CertificadoDigital?.Arquivo;
-            }
-                var model = request.ToEntity();
-            model.Id = id;
-            model.CompanyId = existing.CompanyId;
-            await _service.Alter(model);
-            return Ok(new ResponseGeneric{Success=true });
-        }
+			if (request.CertificadoDigital.ArquivoFile != null)
+			{
+				var caminho = await SaveCertificadoAsync(request.CertificadoDigital);
+				request.CertificadoDigital.Arquivo = caminho;
+			}
+			else
+			{
+				// se não enviou novo arquivo, manter o caminho existente
+				request.CertificadoDigital.Arquivo = existing.CertificadoDigital?.Arquivo;
+			}
+			var model=await _service.UpdateEntityManually(existing, request);
+			await _service.Alter(existing);
+			return Ok(new ResponseGeneric { Success = true });
+		}
 
-        [HttpGet]
-        public async Task<IActionResult> Get()
-        {
-            var list = await _service.GetAll();
-            return Ok(list);
-        }
+		[HttpGet]
+		public async Task<IActionResult> Get()
+		{
+			var list = await _service.GetAll();
+			return Ok(list);
+		}
 
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById(int id)
-        {
-            var item = await _service.GetByIdAsync(id);
-            if (item == null) return NotFound();
-            return Ok(item);
-        }
+		[HttpGet("{id:int}")]
+		public async Task<IActionResult> GetById(int id)
+		{
+			var item = await _service.GetByIdAsync(id);
+			if (item == null) return NotFound();
+			return Ok(item);
+		}
 
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            await _service.DeleteAsync(id);
-            return NoContent();
-        }
+		[HttpDelete("{id:int}")]
+		public async Task<IActionResult> Delete(int id)
+		{
+			await _service.DeleteAsync(id);
+			return NoContent();
+		}
 
-        [HttpGet("active")]
-        public async Task<IActionResult> GetActive([FromHeader]int tenantid)
-        {
-            var cfg = await _service.GetActiveAsync(tenantid);
-            if (cfg == null) return NotFound();
-            return Ok(cfg);
-        }
+		[HttpGet("active")]
+		public async Task<IActionResult> GetActive([FromHeader] int tenantid)
+		{
+			var cfg = await _service.GetActiveAsync(tenantid);
+			if (cfg == null) return NotFound();
+			return Ok(cfg);
+		}
 		[AllowAnonymous]
 		[HttpGet("debug/check-db-path")]
-		public async Task<IActionResult> CheckDbPath([FromQuery] int  id)
+		public async Task<IActionResult> CheckDbPath([FromQuery] int id)
 		{
 			try
 			{
-				var config = await _service .GetByIdAsync(id);
+				var config = await _service.GetByIdAsync(id);
 				var cert = new DFe.Utils.ConfiguracaoCertificado
 				{
-					Arquivo= config.CertificadoDigital.Arquivo,
-					Senha= config.CertificadoDigital.Senha,
-					TipoCertificado=DFe.Utils.TipoCertificado.A1Arquivo,
-					KeyStorageFlags= X509KeyStorageFlags.MachineKeySet |
+					Arquivo = config.CertificadoDigital.Arquivo,
+					Senha = config.CertificadoDigital.Senha,
+					TipoCertificado = DFe.Utils.TipoCertificado.A1Arquivo,
+					KeyStorageFlags = X509KeyStorageFlags.MachineKeySet |
 						X509KeyStorageFlags.PersistKeySet |
 						X509KeyStorageFlags.Exportable
 				};
-			
-				
+
+
 				var certificado = DFe.Utils.Assinatura.CertificadoDigital.ObterCertificado(cert);
 
 				//var certificado = new X509Certificate2(
