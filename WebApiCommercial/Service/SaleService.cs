@@ -1,4 +1,5 @@
 ﻿
+using Microsoft.AspNetCore.Components;
 using Model;
 using Model.DTO;
 using Model.Moves;
@@ -280,7 +281,67 @@ namespace Service
 		{
 			return await (repository as ISaleRepository).GetSalesmanByWeek(idCompany);
 		}
+		public async Task<bool> Cancel(int saleId)
+		{
+			using (var transaction = await repository.CreateTransactionAsync())
+			{
+				try
+				{
+					// Buscar venda
+					var sale = await GetByIdSale(saleId);
+					if (sale == null)
+						throw new Exception("Venda não encontrada");
 
+					// Buscar itens
+					var saleItems = await saleItemsService.GetByIdSaleAsync(saleId);
+
+					// Reverter estoque
+					foreach (var item in saleItems)
+					{
+						var stock = await _stockService.GetByReferenceIdAsync(item.Id, sale.IdCompany, StockType.exit);
+						if (stock != null)
+						{
+							await _stockService.Create(new Stock
+							{
+								IdCompany = sale.IdCompany,
+								Quantity = item.Amount,
+								Date = DateTime.Now,
+								IdProduct = (int)item.IdProduct,
+								Reason = $"Cancelamento de venda: {sale.Id}",
+								Type = StockType.entry,
+								ReferenceId = item.Id
+							});
+						}
+					}
+
+					// Excluir financeiros
+					var financials = await _financialService.GetByIdSaleAsync(saleId);
+					foreach (var financial in financials)
+					{
+						if (financial.FinancialPaymentMethods != null)
+						{
+							foreach (var paymentMethod in financial.FinancialPaymentMethods)
+							{
+								await _financialPaymentMethodRepository.DeleteAsync(paymentMethod.Id);
+							}
+						}
+						await _financialService.DeleteAsync(financial.Id);
+					}
+
+					// Cancelar venda
+					sale.Status = SaleStatus.canceled;
+					await base.Alter(sale);
+
+					transaction.Commit();
+					return true;
+				}
+				catch
+				{
+					transaction.Rollback();
+					throw;
+				}
+			}
+		}
 	}
 	public interface ISaleService : IBaseService<Sale>
 	{
@@ -292,5 +353,6 @@ namespace Service
 		Task<List<SalesmanInfo>> GetSalesmanByWeek(int idCompany);
 
 		Task<int> PutWithItems(SaleDto sale);
+		Task<bool> Cancel(int saleId);
 	}
 }
