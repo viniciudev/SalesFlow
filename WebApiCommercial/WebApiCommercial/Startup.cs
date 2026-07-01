@@ -76,6 +76,8 @@ namespace WebAppCommercial
 							options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
 							options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
 							options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+							// Garante serialização consistente de DateTime entre Windows e Linux/Docker
+							options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
 						});
 
 			services.AddDbContext<ContextBase>(options =>

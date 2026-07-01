@@ -14,7 +14,7 @@ namespace NFe.Wsdl.Autorizacao
     {
         private DFeSoapConfig SoapConfig { get; set; }
 
-        public NFeAutorizacao4(string url, X509Certificate certificado, int timeOut, bool compactarMensagem, DFe.Classes.Flags.VersaoServico versaoNfeAutorizacao, Estado estado)
+        public NFeAutorizacao4(string url, X509Certificate2 certificado, int timeOut, bool compactarMensagem, DFe.Classes.Flags.VersaoServico versaoNfeAutorizacao, Estado estado)
         {
             SoapConfig = new DFeSoapConfig
             {
@@ -23,7 +23,7 @@ namespace NFe.Wsdl.Autorizacao
                 Metodo = compactarMensagem ? "http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4/nfeAutorizacaoLoteZIP"
                         : "http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4/nfeAutorizacaoLote",
                 Url = url,
-                Certificado = new X509Certificate2(certificado),
+                Certificado = certificado,
                 TimeOut = timeOut
             };
         }

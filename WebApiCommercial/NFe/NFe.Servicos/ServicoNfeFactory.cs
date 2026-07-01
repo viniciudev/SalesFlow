@@ -41,6 +41,17 @@ namespace NFe.Servicos
         /// <returns></returns>
         public static INfeServicoAutorizacao CriaWsdlAutorizacao(ConfiguracaoServico cfg, X509Certificate2 certificado, bool compactarMensagem)
         {
+            // DIAGNOSTICO: Log do certificado na entrada da factory
+            Console.WriteLine("================================================");
+            Console.WriteLine("DIAGNOSTICO [ServicoNfeFactory]: Certificado recebido na factory");
+            Console.WriteLine("  HasPrivateKey: " + certificado.HasPrivateKey);
+            Console.WriteLine("  Thumbprint:    " + certificado.Thumbprint);
+            Console.WriteLine("  Handle:        " + certificado.Handle);
+            Console.WriteLine("  HashCode:      " + certificado.GetHashCode());
+            Console.WriteLine("  Subject:       " + certificado.Subject);
+            Console.WriteLine("  RSA Key:       " + (certificado.GetRSAPrivateKey()?.GetType().FullName ?? "NULL"));
+            Console.WriteLine("================================================");
+
             string url = Enderecador.ObterUrlServico(ServicoNFe.NFeAutorizacao, cfg);
 
             if (cfg.UsaSvanNFe4(cfg.VersaoNFeAutorizacao))

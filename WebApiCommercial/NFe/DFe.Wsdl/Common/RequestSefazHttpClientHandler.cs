@@ -312,6 +312,54 @@ namespace DFe.Wsdl.Common
 			Console.WriteLine("=== ENVIO SEFAZ ===");
 			Console.WriteLine(certificadoDigital.Subject);
 
+			// DIAGNOSTICO: Log detalhado do certificado que chega ao HttpClient
+			Console.WriteLine("================================================");
+			Console.WriteLine("DIAGNOSTICO [RequestSefazHttpClientHandler]: Certificado recebido");
+			Console.WriteLine("  HasPrivateKey: " + certificadoDigital.HasPrivateKey);
+			Console.WriteLine("  Thumbprint:    " + certificadoDigital.Thumbprint);
+			Console.WriteLine("  Handle:        " + certificadoDigital.Handle);
+			Console.WriteLine("  HashCode:      " + certificadoDigital.GetHashCode());
+			Console.WriteLine("  Subject:       " + certificadoDigital.Subject);
+			Console.WriteLine("  Issuer:        " + certificadoDigital.Issuer);
+			try
+			{
+				var rsa = certificadoDigital.GetRSAPrivateKey();
+				Console.WriteLine("  RSA Key:       " + (rsa != null ? rsa.GetType().FullName + " (" + rsa.KeySize + " bits)" : "NULL"));
+				if (rsa != null)
+				{
+					var testData = System.Text.Encoding.UTF8.GetBytes("TESTE_ASSINATURA");
+					var sig = rsa.SignData(testData, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pkcs1);
+					Console.WriteLine("  SignData:      OK (" + sig.Length + " bytes)");
+				}
+			}
+			catch (Exception rsaEx)
+			{
+				Console.WriteLine("  RSA Key:       ERRO: " + rsaEx.Message);
+			}
+			Console.WriteLine("================================================");
+
+
+			// CORRECAO: Instalar o certificado no Windows Certificate Store (CurrentUser\My)
+			// para que o SCHANNEL (CAPI) consiga acessar a chave privada RSACng/CNG.
+			// Sem isso, AcquireCredentialsHandle falha com 0x8009030D.
+			X509Store userStore = null;
+			bool certAdicionadoAoStore = false;
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			{
+				try
+				{
+					userStore = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+					userStore.Open(OpenFlags.ReadWrite);
+					userStore.Add(certificadoDigital);
+					certAdicionadoAoStore = true;
+					Console.WriteLine("DIAGNOSTICO: Certificado instalado no CurrentUser\\My para SCHANNEL");
+				}
+				catch (Exception storeEx)
+				{
+					Console.WriteLine("AVISO: Nao foi possivel instalar certificado no store: " + storeEx.Message);
+				}
+			}
+
 			HttpClientHandler handler = new HttpClientHandler();
 
 			handler.ClientCertificates.Add(certificadoDigital);
@@ -355,18 +403,33 @@ namespace DFe.Wsdl.Common
 					);
 				}
 
-				Console.WriteLine("✅ OK: " + result.Length + " bytes");
+				Console.WriteLine("OK: " + result.Length + " bytes");
 
 				return result;
 			}
 			catch (Exception ex)
 			{
 				var exee = ex.ToString();
-				Console.WriteLine("❌ Erro: " + ex.ToString());
+				Console.WriteLine("Erro: " + ex.ToString());
 				throw;
 			}
 			finally
 			{
+				// Remove o certificado do store apos o uso
+				if (certAdicionadoAoStore && userStore != null)
+				{
+					try
+					{
+						userStore.Remove(certificadoDigital);
+						Console.WriteLine("DIAGNOSTICO: Certificado removido do CurrentUser\\My");
+					}
+					catch (Exception remEx)
+					{
+						Console.WriteLine("AVISO: Nao foi possivel remover certificado do store: " + remEx.Message);
+					}
+				}
+				userStore?.Close();
+				userStore?.Dispose();
 				client.Dispose();
 				handler.Dispose();
 			}

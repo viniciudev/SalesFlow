@@ -1,4 +1,4 @@
-using DFe.Classes.Entidades;
+﻿using DFe.Classes.Entidades;
 using DFe.Classes.Flags;
 using Microsoft.AspNetCore.Hosting;
 using Model;
@@ -326,6 +326,114 @@ namespace Service
 						SecurityProtocolType.Tls;
 
 				var servicoNFe = new ServicosNFe(_configuracaoApp.CfgServico);
+
+					// ============================================================
+					// DIAGNOSTICO: Teste de copia do certificado
+					// Simula o que as classes NFe.Wsdl.Standard fazem:
+					//   new X509Certificate2(certificado)
+					// ============================================================
+					try
+					{
+						var certOriginal = DFe.Utils.Assinatura.CertificadoDigital.ObterCertificado(_configuracaoApp.CfgServico.Certificado);
+						Console.WriteLine("================================================");
+						Console.WriteLine("DIAGNOSTICO: COMPARACAO CERTIFICADO ORIGINAL vs COPIA");
+						Console.WriteLine("================================================");
+
+						Console.WriteLine("--- ORIGINAL ---");
+						Console.WriteLine("  HasPrivateKey: " + certOriginal.HasPrivateKey);
+						Console.WriteLine("  Thumbprint:   " + certOriginal.Thumbprint);
+						Console.WriteLine("  Handle:       " + certOriginal.Handle);
+						Console.WriteLine("  Subject:      " + certOriginal.Subject);
+						Console.WriteLine("  HashCode:     " + certOriginal.GetHashCode());
+						try
+						{
+							var rsaOrig = certOriginal.GetRSAPrivateKey();
+							Console.WriteLine("  RSA Key:      " + (rsaOrig != null ? rsaOrig.GetType().FullName + " (" + rsaOrig.KeySize + " bits)" : "NULL !"));
+							if (rsaOrig != null)
+							{
+								var testData = System.Text.Encoding.UTF8.GetBytes("TESTE_ASSINATURA_DIAGNOSTICO");
+								var sig = rsaOrig.SignData(testData, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pkcs1);
+								Console.WriteLine("  SignData:     OK (" + sig.Length + " bytes)");
+							}
+						}
+						catch (Exception rsaEx)
+						{
+							Console.WriteLine("  RSA Key:      ERRO: " + rsaEx.Message);
+						}
+
+						// Simula o que as classes Standard fazem: new X509Certificate2(certificado)
+						X509Certificate2 certCopia = null;
+						try
+						{
+							certCopia = new X509Certificate2(certOriginal);
+							Console.WriteLine("");
+							Console.WriteLine("--- COPIA (new X509Certificate2(original)) ---");
+							Console.WriteLine("  HasPrivateKey: " + certCopia.HasPrivateKey);
+							Console.WriteLine("  Thumbprint:   " + certCopia.Thumbprint);
+							Console.WriteLine("  Handle:       " + certCopia.Handle);
+							Console.WriteLine("  Subject:      " + certCopia.Subject);
+							Console.WriteLine("  HashCode:     " + certCopia.GetHashCode());
+							try
+							{
+								var rsaCopia = certCopia.GetRSAPrivateKey();
+								Console.WriteLine("  RSA Key:      " + (rsaCopia != null ? rsaCopia.GetType().FullName + " (" + rsaCopia.KeySize + " bits)" : "NULL !"));
+								if (rsaCopia != null)
+								{
+									var testData = System.Text.Encoding.UTF8.GetBytes("TESTE_ASSINATURA_DIAGNOSTICO");
+									var sig = rsaCopia.SignData(testData, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pkcs1);
+									Console.WriteLine("  SignData:     OK (" + sig.Length + " bytes)");
+								}
+							}
+							catch (Exception rsaEx)
+							{
+								Console.WriteLine("  RSA Key:      ERRO: " + rsaEx.Message);
+							}
+
+							// Teste de export Pkcs12
+							try
+							{
+								var exported = certCopia.Export(X509ContentType.Pkcs12);
+								Console.WriteLine("  Export Pkcs12: OK (" + exported.Length + " bytes)");
+							}
+							catch (Exception expEx)
+							{
+								Console.WriteLine("  Export Pkcs12: FALHOU: " + expEx.Message);
+							}
+						}
+						catch (Exception copiaEx)
+						{
+							Console.WriteLine("  ERRO ao criar copia: " + copiaEx.Message);
+						}
+
+						// Conclusao
+						Console.WriteLine("");
+						Console.WriteLine("--- CONCLUSAO ---");
+						if (certCopia != null)
+						{
+							bool mesmaInstancia = object.ReferenceEquals(certOriginal, certCopia);
+							bool mesmoHandle = certOriginal.Handle == certCopia.Handle;
+							bool mesmoThumb = certOriginal.Thumbprint == certCopia.Thumbprint;
+							bool copiaTemChave = certCopia.HasPrivateKey;
+							bool copiaTemRSA = certCopia.GetRSAPrivateKey() != null;
+
+							Console.WriteLine("  Mesma instancia (ReferenceEquals): " + mesmaInstancia);
+							Console.WriteLine("  Mesmo Handle:                       " + mesmoHandle);
+							Console.WriteLine("  Mesmo Thumbprint:                   " + mesmoThumb);
+							Console.WriteLine("  Copia HasPrivateKey:                " + copiaTemChave);
+							Console.WriteLine("  Copia GetRSAPrivateKey() != null:   " + copiaTemRSA);
+
+							if (!copiaTemChave || !copiaTemRSA)
+								Console.WriteLine("  ALERTA: A COPIA PERDEU A CHAVE PRIVADA!");
+							else
+								Console.WriteLine("  Copia preservou a chave privada");
+						}
+						Console.WriteLine("================================================");
+					}
+					catch (Exception diagEx)
+					{
+						Console.WriteLine("Erro no diagnostico: " + diagEx.Message);
+					}
+					// ============================================================
 				Console.WriteLine("=== INICIANDO TRANSMISS�O NFCe ===");
 				Console.WriteLine($"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
 				Console.WriteLine($"Environment: {Environment.GetEnvironmentVariable("RENDER")}");
@@ -406,8 +514,9 @@ namespace Service
 					Senha = fiscalConfiguration.CertificadoDigital.Senha,
 					ManterDadosEmCache = false,
 					KeyStorageFlags =
-								X509KeyStorageFlags.MachineKeySet |
-								X509KeyStorageFlags.PersistKeySet
+								X509KeyStorageFlags.UserKeySet |
+								X509KeyStorageFlags.PersistKeySet |
+								X509KeyStorageFlags.Exportable
 				};
 				var ConfiguracaoEmail = new ConfiguracaoEmail();
 				var ConfiguracaoCsc = new ConfiguracaoCsc
@@ -1260,7 +1369,7 @@ namespace Service
 				dest.indIEDest = indIEDest.NaoContribuinte;
 				//dest.IE = null;
 				// Endere�o padr�o
-				dest.enderDest = null;//GetEnderecoDestinatarioPadrao();
+				dest.enderDest = GetEnderecoDestinatarioPadrao();
 
 				return dest;
 

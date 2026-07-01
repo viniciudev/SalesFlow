@@ -31,9 +31,12 @@ namespace DFe.Utils
 
 		public ConfiguracaoCertificado()
 		{
-			KeyStorageFlags = X509KeyStorageFlags.MachineKeySet |
-	X509KeyStorageFlags.PersistKeySet |
-			X509KeyStorageFlags.Exportable;
+			//		KeyStorageFlags = X509KeyStorageFlags.MachineKeySet |
+			//X509KeyStorageFlags.PersistKeySet |
+			//		X509KeyStorageFlags.Exportable;
+			KeyStorageFlags =
+					 X509KeyStorageFlags.UserKeySet |
+					 X509KeyStorageFlags.Exportable;
 			SignatureMethodSignedXml = "http://www.w3.org/2000/09/xmldsig#rsa-sha1";
 			DigestMethodReference = "http://www.w3.org/2000/09/xmldsig#sha1";
 		}

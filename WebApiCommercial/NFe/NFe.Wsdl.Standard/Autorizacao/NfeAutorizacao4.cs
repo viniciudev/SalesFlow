@@ -18,10 +18,30 @@ namespace NFe.Wsdl.Autorizacao
 
         public NFeAutorizacao4(string url, X509Certificate certificado, int timeOut, bool compactarMensagem, DFe.Classes.Flags.VersaoServico versaoNfeAutorizacao, Estado estado)
         {
+            // DIAGNOSTICO: Log da copia do certificado
+            Console.WriteLine("================================================");
+            Console.WriteLine("DIAGNOSTICO [NFeAutorizacao4 Standard]: Criando copia do certificado");
+            Console.WriteLine("  Original (X509Certificate):");
+            Console.WriteLine("    HasPrivateKey: " + (certificado is X509Certificate2 c2 ? c2.HasPrivateKey.ToString() : "N/A (nao eh X509Certificate2)"));
+            Console.WriteLine("    Subject:       " + certificado.Subject);
+            Console.WriteLine("    Handle:        " + certificado.Handle);
+            Console.WriteLine("    HashCode:      " + certificado.GetHashCode());
+
+            var copia = new X509Certificate2(certificado);
+            Console.WriteLine("  Copia (new X509Certificate2(original)):");
+            Console.WriteLine("    HasPrivateKey: " + copia.HasPrivateKey);
+            Console.WriteLine("    Subject:       " + copia.Subject);
+            Console.WriteLine("    Handle:        " + copia.Handle);
+            Console.WriteLine("    HashCode:      " + copia.GetHashCode());
+            Console.WriteLine("    Thumbprint:    " + copia.Thumbprint);
+            Console.WriteLine("    RSA Key:       " + (copia.GetRSAPrivateKey()?.GetType().FullName ?? "NULL"));
+            Console.WriteLine("  Mesma instancia (ReferenceEquals): " + object.ReferenceEquals(certificado, copia));
+            Console.WriteLine("================================================");
+
             configuracao = new WsdlConfiguracao()
             {
                 Url = url,
-                CertificadoDigital = new X509Certificate2(certificado),
+                CertificadoDigital = copia,
                 TimeOut = timeOut
             };
         }
