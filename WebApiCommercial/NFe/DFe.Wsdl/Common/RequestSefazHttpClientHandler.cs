@@ -361,7 +361,8 @@ namespace DFe.Wsdl.Common
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine("❌ Erro: " + ex.Message);
+				var exee = ex.ToString();
+				Console.WriteLine("❌ Erro: " + ex.ToString());
 				throw;
 			}
 			finally
