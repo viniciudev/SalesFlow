@@ -973,81 +973,31 @@ namespace Service
 			protected virtual det GetDetalhe(int index, SaleItems i, CRT crt, ModeloDocumento modelo, TributacaoResolvida tributacao)
 		{
 			var produto = GetProduto(i);
-			decimal valorTotalItem = i.Value * i.Amount;
-			decimal aliquotaCOFINS = tributacao.Configuracao.AliquotaCOFINS;
-			decimal aliquotaPIS = tributacao.Configuracao.AliquotaPIS;
-			decimal aliquotaIPI = tributacao.Configuracao.AliquotaIPI;
-			//string cstPIS = tributacao.Configuracao.CstPIS;
+			var config = tributacao.Configuracao ?? new ConfiguracaoTributaria();
 
-			//// Validar se o CST � v�lido, se n�o for, usar 99
-			//if (!Enum.IsDefined(typeof(CSTPIS),int.Parse( cstPIS)))
-			//{
-			//	cstPIS = "99"; // Default para outras opera��es
-			//}
+			// Usa CalculadorImpostos para centralizar toda a lógica de cálculo
+			var calculador = new CalculadorImpostos(config, i, crt);
+
+			// Determina o tipo de ICMS (regime normal vs Simples Nacional)
+			var tipoICMS = calculador.IsSimplesNacional()
+				? InformarCSOSN(config, i)
+				: InformarICMS(config, i);
+
 			var det = new det
 			{
 				nItem = index,
 				prod = produto,
 				imposto = new imposto
 				{
-					vTotTrib = CalcularTotalTributos(i, tributacao.Configuracao),
-
-					ICMS = new ICMS
-					{
-						TipoICMS =
-														crt == CRT.SimplesNacional || crt == CRT.SimplesNacionalMei
-																? InformarCSOSN(Csosnicms.Csosn102)
-																: InformarICMS(Csticms.Cst00, VersaoServico.Versao310)
-					},
-
-					COFINS = new COFINS
-					{
-						TipoCOFINS = !tributacao.Configuracao.AplicarCOFINS ?
-														new COFINSOutr
-														{
-															CST = CSTCOFINS.cofins99,
-															pCOFINS = 0,
-															vBC = valorTotalItem,
-															vCOFINS = 0
-														} :
-														new COFINSOutr
-														{
-															CST = (CSTCOFINS)Enum.Parse(typeof(CSTCOFINS), tributacao.Configuracao.CstCOFINS),
-															pCOFINS = aliquotaCOFINS,
-															vBC = valorTotalItem,
-															vCOFINS = CalcularValorCOFINS(valorTotalItem, aliquotaCOFINS, tributacao.Configuracao)
-														}
-					},
-
-					PIS = new PIS
-					{
-						TipoPIS = !tributacao.Configuracao.AplicarPIS ?
-														new PISOutr
-														{
-															CST = CSTPIS.pis99,
-															pPIS = 0,
-															vBC = valorTotalItem,
-															vPIS = 0
-														} :
-														new PISOutr
-														{
-															CST = (CSTPIS)Enum.Parse(typeof(CSTPIS), tributacao.Configuracao.CstPIS),
-															pPIS = aliquotaPIS,
-															vBC = valorTotalItem,
-															vPIS = CalcularValorPIS(valorTotalItem, aliquotaPIS, tributacao.Configuracao)
-														}
-					}
+					vTotTrib = calculador.CalcularTotalTributos(),
+					ICMS = new ICMS { TipoICMS = tipoICMS },
+					COFINS = calculador.CalcularCOFINS(),
+					PIS = calculador.CalcularPIS()
 				}
 			};
 
-			if (modelo == ModeloDocumento.NFe) //NFCe n�o aceita grupo "IPI"
-			{
-				det.imposto.IPI = new IPI()
-				{
-					cEnq = 999,
-					TipoIPI = new IPITrib() { CST = CSTIPI.ipi00, pIPI = 5, vBC = 1, vIPI = 0.05m }
-				};
-			}
+			// IPI apenas para NFe (NFCe não aceita grupo IPI)
+			det.imposto.IPI = calculador.CalcularIPI(modelo);
 
 			return det;
 		}
@@ -1126,59 +1076,267 @@ namespace Service
 
 			return Math.Round(valorTotalItem * aliquotaICMS / 100, 2);
 		}
-		protected virtual ICMSBasico InformarICMS(Csticms CST, VersaoServico versao)
+		/// <summary>
+		/// Retorna o ICMSBasico adequado para o CST configurado, com valores calculados dinamicamente.
+		/// </summary>
+		protected virtual ICMSBasico InformarICMS(ConfiguracaoTributaria config, SaleItems item)
 		{
-			var icms20 = new ICMS20
-			{
-				orig = OrigemMercadoria.OmNacional,
-				CST = Csticms.Cst20,
-				modBC = DeterminacaoBaseIcms.DbiValorOperacao,
-				vBC = 1.1m,
-				pICMS = 18,
-				vICMS = 0.20m,
-				motDesICMS = MotivoDesoneracaoIcms.MdiTaxi
-			};
-			if (versao == VersaoServico.Versao310)
-				icms20.vICMSDeson = 0.10m; //V3.00 ou maior Somente
+			var cst = CalculadorImpostos.ObterCSTICMS(config.CstICMS);
+			var calculador = new CalculadorImpostos(config, item, _configuracaoApp?.Emitente?.CRT ?? CRT.SimplesNacional);
+			var (baseCalculo, valorICMS, aliquota) = calculador.CalcularICMSNormal();
+			var valorTotalItem = calculador.ValorTotalItem;
 
-			switch (CST)
+			switch (cst)
 			{
 				case Csticms.Cst00:
 					return new ICMS00
 					{
+						orig = OrigemMercadoria.OmNacional,
 						CST = Csticms.Cst00,
 						modBC = DeterminacaoBaseIcms.DbiValorOperacao,
-						orig = OrigemMercadoria.OmNacional,
-						pICMS = 18,
-						vBC = 1.1m,
-						vICMS = 0.20m
+						vBC = baseCalculo,
+						pICMS = aliquota,
+						vICMS = valorICMS
 					};
-				case Csticms.Cst20:
-					return icms20;
-					//Outros casos aqui
-			}
 
-			return new ICMS10();
+				case Csticms.Cst10:
+					return new ICMS10
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CST = Csticms.Cst10,
+						modBC = DeterminacaoBaseIcms.DbiValorOperacao,
+						vBC = baseCalculo,
+						pICMS = aliquota,
+						vICMS = valorICMS,
+						modBCST = DeterminacaoBaseIcmsSt.DbisMargemValorAgregado,
+						vBCST = valorTotalItem,
+						pICMSST = 0,
+						vICMSST = 0
+					};
+
+				case Csticms.Cst20:
+					return new ICMS20
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CST = Csticms.Cst20,
+						modBC = DeterminacaoBaseIcms.DbiValorOperacao,
+						pRedBC = config.ReduzirBaseICMS ? aliquota : 0,
+						vBC = baseCalculo,
+						pICMS = aliquota,
+						vICMS = valorICMS
+					};
+
+				case Csticms.Cst30:
+					return new ICMS30
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CST = Csticms.Cst30,
+						modBCST = DeterminacaoBaseIcmsSt.DbisMargemValorAgregado,
+						vBCST = 0,
+						pICMSST = 0,
+						vICMSST = 0
+					};
+
+				case Csticms.Cst40:
+					return new ICMS40
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CST = Csticms.Cst40
+					};
+
+				case Csticms.Cst41:
+					return new ICMS40
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CST = Csticms.Cst41
+					};
+
+				case Csticms.Cst50:
+					return new ICMS40
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CST = Csticms.Cst50
+					};
+
+				case Csticms.Cst51:
+					return new ICMS51
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CST = Csticms.Cst51,
+						modBC = DeterminacaoBaseIcms.DbiValorOperacao,
+						vBC = valorTotalItem,
+						pICMS = aliquota,
+						vICMS = valorICMS
+					};
+
+				case Csticms.Cst60:
+					return new ICMS60
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CST = Csticms.Cst60,
+						vBCSTRet = 0,
+						vICMSSTRet = 0
+					};
+
+				case Csticms.Cst70:
+					return new ICMS70
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CST = Csticms.Cst70,
+						modBC = DeterminacaoBaseIcms.DbiValorOperacao,
+						pRedBC = config.ReduzirBaseICMS ? aliquota : 0,
+						vBC = baseCalculo,
+						pICMS = aliquota,
+						vICMS = valorICMS,
+						modBCST = DeterminacaoBaseIcmsSt.DbisMargemValorAgregado,
+						vBCST = 0,
+						pICMSST = 0,
+						vICMSST = 0
+					};
+
+				case Csticms.Cst90:
+					return new ICMS90
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CST = Csticms.Cst90,
+						modBC = DeterminacaoBaseIcms.DbiValorOperacao,
+						vBC = baseCalculo,
+						pICMS = aliquota,
+						vICMS = valorICMS,
+						modBCST = DeterminacaoBaseIcmsSt.DbisMargemValorAgregado,
+						vBCST = 0,
+						pICMSST = 0,
+						vICMSST = 0
+					};
+
+				default:
+					// Fallback: CST 00 – tributação integral
+					return new ICMS00
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CST = Csticms.Cst00,
+						modBC = DeterminacaoBaseIcms.DbiValorOperacao,
+						vBC = baseCalculo,
+						pICMS = aliquota,
+						vICMS = valorICMS
+					};
+			}
 		}
-		protected virtual ICMSBasico InformarCSOSN(Csosnicms CST)
+		/// <summary>
+		/// Retorna o ICMSBasico adequado para o CSOSN configurado (Simples Nacional).
+		/// </summary>
+		protected virtual ICMSBasico InformarCSOSN(ConfiguracaoTributaria config, SaleItems item)
 		{
-			switch (CST)
+			var csosn = CalculadorImpostos.ObterCSOSN(config.CstICMS); // Usa CstICMS para armazenar CSOSN no SN
+
+			switch (csosn)
 			{
 				case Csosnicms.Csosn101:
 					return new ICMSSN101
 					{
+						orig = OrigemMercadoria.OmNacional,
 						CSOSN = Csosnicms.Csosn101,
-						orig = OrigemMercadoria.OmNacional
+						pCredSN = config.AliquotaICMS > 0 ? config.AliquotaICMS : 0m,
+						vCredICMSSN = config.AliquotaICMS > 0
+							? Math.Round(item.Value * item.Amount * config.AliquotaICMS / 100, 2)
+							: 0m
 					};
+
 				case Csosnicms.Csosn102:
 					return new ICMSSN102
 					{
-						CSOSN = Csosnicms.Csosn102,
-						orig = OrigemMercadoria.OmNacional
+						orig = OrigemMercadoria.OmNacional,
+						CSOSN = Csosnicms.Csosn102
 					};
-				//Outros casos aqui
+
+				case Csosnicms.Csosn103:
+					return new ICMSSN102
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CSOSN = Csosnicms.Csosn103
+					};
+
+				case Csosnicms.Csosn201:
+					return new ICMSSN201
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CSOSN = Csosnicms.Csosn201,
+						modBCST = DeterminacaoBaseIcmsSt.DbisMargemValorAgregado,
+						vBCST = 0,
+						pICMSST = 0,
+						vICMSST = 0,
+						pCredSN = config.AliquotaICMS > 0 ? config.AliquotaICMS : 0m,
+						vCredICMSSN = config.AliquotaICMS > 0
+							? Math.Round(item.Value * item.Amount * config.AliquotaICMS / 100, 2)
+							: 0m
+					};
+
+				case Csosnicms.Csosn202:
+					return new ICMSSN202
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CSOSN = Csosnicms.Csosn202,
+						modBCST = DeterminacaoBaseIcmsSt.DbisMargemValorAgregado,
+						vBCST = 0,
+						pICMSST = 0,
+						vICMSST = 0
+					};
+
+				case Csosnicms.Csosn203:
+					return new ICMSSN202
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CSOSN = Csosnicms.Csosn203,
+						modBCST = DeterminacaoBaseIcmsSt.DbisMargemValorAgregado,
+						vBCST = 0,
+						pICMSST = 0,
+						vICMSST = 0
+					};
+
+				case Csosnicms.Csosn300:
+					return new ICMSSN102
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CSOSN = Csosnicms.Csosn300
+					};
+
+				case Csosnicms.Csosn400:
+					return new ICMSSN102
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CSOSN = Csosnicms.Csosn400
+					};
+
+				case Csosnicms.Csosn500:
+					return new ICMSSN500
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CSOSN = Csosnicms.Csosn500
+					};
+
+				case Csosnicms.Csosn900:
+					return new ICMSSN900
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CSOSN = Csosnicms.Csosn900,
+						modBC = DeterminacaoBaseIcms.DbiValorOperacao,
+						vBC = item.Value * item.Amount,
+						pICMS = config.AliquotaICMS > 0 ? config.AliquotaICMS : null,
+						vICMS = config.AliquotaICMS > 0
+							? Math.Round(item.Value * item.Amount * config.AliquotaICMS / 100, 2)
+							: null,
+						pCredSN = config.AliquotaICMS > 0 ? config.AliquotaICMS : null,
+						vCredICMSSN = config.AliquotaICMS > 0
+							? Math.Round(item.Value * item.Amount * config.AliquotaICMS / 100, 2)
+							: null
+					};
+
 				default:
-					return new ICMSSN201();
+					return new ICMSSN102
+					{
+						orig = OrigemMercadoria.OmNacional,
+						CSOSN = Csosnicms.Csosn102
+					};
 			}
 		}
 		protected virtual total GetTotal(VersaoServico versao, List<det> produtos, ModeloDocumento modeloDocumento)
@@ -1206,22 +1364,125 @@ namespace Service
 
 			foreach (var produto in produtos)
 			{
-				if (produto.imposto.IPI != null && produto.imposto.IPI.TipoIPI.GetType() == typeof(IPITrib))
-					icmsTot.vIPI = icmsTot.vIPI + ((IPITrib)produto.imposto.IPI.TipoIPI).vIPI ?? 0;
-				if (produto.imposto.ICMS.TipoICMS.GetType() == typeof(ICMS00))
+				var tipoIcms = produto.imposto.ICMS?.TipoICMS;
+				if (tipoIcms != null)
 				{
-					icmsTot.vBC = icmsTot.vBC + ((ICMS00)produto.imposto.ICMS.TipoICMS).vBC;
-					icmsTot.vICMS = icmsTot.vICMS + ((ICMS00)produto.imposto.ICMS.TipoICMS).vICMS;
+					// ── Acumula BC e ICMS por tipo ──
+					switch (tipoIcms)
+					{
+						case ICMS00 icms00:
+							icmsTot.vBC += icms00.vBC;
+							icmsTot.vICMS += icms00.vICMS;
+							icmsTot.vFCP = (icmsTot.vFCP ?? 0) + (icms00.vFCP ?? 0);
+							break;
+
+						case ICMS10 icms10:
+							icmsTot.vBC += icms10.vBC;
+							icmsTot.vICMS += icms10.vICMS;
+							icmsTot.vBCST += icms10.vBCST;
+							icmsTot.vST += icms10.vICMSST;
+							icmsTot.vFCP = (icmsTot.vFCP ?? 0) + (icms10.vFCP ?? 0);
+							icmsTot.vFCPST = (icmsTot.vFCPST ?? 0) + (icms10.vFCPST ?? 0);
+							break;
+
+						case ICMS20 icms20:
+							icmsTot.vBC += icms20.vBC;
+							icmsTot.vICMS += icms20.vICMS;
+							icmsTot.vICMSDeson = (icmsTot.vICMSDeson ?? 0) + (icms20.vICMSDeson ?? 0);
+							icmsTot.vFCP = (icmsTot.vFCP ?? 0) + (icms20.vFCP ?? 0);
+							break;
+
+						case ICMS30 icms30:
+							icmsTot.vBCST += icms30.vBCST;
+							icmsTot.vST += icms30.vICMSST;
+							icmsTot.vICMSDeson = (icmsTot.vICMSDeson ?? 0) + (icms30.vICMSDeson ?? 0);
+							icmsTot.vFCPST = (icmsTot.vFCPST ?? 0) + (icms30.vFCPST ?? 0);
+							break;
+
+						case ICMS40 icms40:
+							icmsTot.vICMSDeson = (icmsTot.vICMSDeson ?? 0) + (icms40.vICMSDeson ?? 0);
+							break;
+
+						case ICMS51 icms51:
+							icmsTot.vBC += icms51.vBC ?? 0;
+							icmsTot.vICMS += icms51.vICMS ?? 0;
+							icmsTot.vFCP = (icmsTot.vFCP ?? 0) + (icms51.vFCP ?? 0);
+							break;
+
+						case ICMS60 icms60:
+							// ICMS60: ST retido anteriormente — acumula como vST
+							icmsTot.vST += icms60.vICMSSTRet ?? 0;
+							icmsTot.vFCPSTRet = (icmsTot.vFCPSTRet ?? 0) + (icms60.vFCPSTRet ?? 0);
+							break;
+
+						case ICMS70 icms70:
+							icmsTot.vBC += icms70.vBC;
+							icmsTot.vICMS += icms70.vICMS;
+							icmsTot.vBCST += icms70.vBCST;
+							icmsTot.vST += icms70.vICMSST;
+							icmsTot.vICMSDeson = (icmsTot.vICMSDeson ?? 0) + (icms70.vICMSDeson ?? 0);
+							icmsTot.vFCP = (icmsTot.vFCP ?? 0) + (icms70.vFCP ?? 0);
+							icmsTot.vFCPST = (icmsTot.vFCPST ?? 0) + (icms70.vFCPST ?? 0);
+							break;
+
+						case ICMS90 icms90:
+							icmsTot.vBC += icms90.vBC ?? 0;
+							icmsTot.vICMS += icms90.vICMS ?? 0;
+							icmsTot.vBCST += icms90.vBCST ?? 0;
+							icmsTot.vST += icms90.vICMSST ?? 0;
+							icmsTot.vICMSDeson = (icmsTot.vICMSDeson ?? 0) + (icms90.vICMSDeson ?? 0);
+							icmsTot.vFCP = (icmsTot.vFCP ?? 0) + (icms90.vFCP ?? 0);
+							icmsTot.vFCPST = (icmsTot.vFCPST ?? 0) + (icms90.vFCPST ?? 0);
+							break;
+
+						case ICMSSN101:
+							// CSOSN 101: apenas crédito SN, sem BC/ICMS próprios
+							break;
+
+						case ICMSSN102:
+							// CSOSN 102: sem valores a acumular (sem crédito)
+							break;
+
+						case ICMSSN201 sn201:
+							icmsTot.vBCST += sn201.vBCST;
+							icmsTot.vST += sn201.vICMSST;
+							break;
+
+						case ICMSSN202 sn202:
+							icmsTot.vBCST += sn202.vBCST;
+							icmsTot.vST += sn202.vICMSST;
+							break;
+
+						case ICMSSN500 sn500:
+							// SN 500: ST retido anteriormente — acumula como vST
+							icmsTot.vST += sn500.vICMSSTRet ?? 0;
+							icmsTot.vFCPSTRet = (icmsTot.vFCPSTRet ?? 0) + (sn500.vFCPSTRet ?? 0);
+							break;
+
+						case ICMSSN900 sn900:
+							icmsTot.vBC += sn900.vBC ?? 0;
+							icmsTot.vICMS += sn900.vICMS ?? 0;
+							icmsTot.vBCST += sn900.vBCST ?? 0;
+							icmsTot.vST += sn900.vICMSST ?? 0;
+							icmsTot.vFCPST = (icmsTot.vFCPST ?? 0) + (sn900.vFCPST ?? 0);
+							break;
+					}
 				}
-				if (produto.imposto.ICMS.TipoICMS.GetType() == typeof(ICMS20))
+
+				// ── Acumula IPI ──
+				if (produto.imposto.IPI?.TipoIPI is IPITrib ipiTrib)
 				{
-					icmsTot.vBC = icmsTot.vBC + ((ICMS20)produto.imposto.ICMS.TipoICMS).vBC;
-					icmsTot.vICMS = icmsTot.vICMS + ((ICMS20)produto.imposto.ICMS.TipoICMS).vICMS;
+					icmsTot.vIPI += ipiTrib.vIPI ?? 0;
 				}
-		
+
+				// ── Acumula II ──
+				if (produto.imposto.II != null)
+				{
+					icmsTot.vII += produto.imposto.II.vBC > 0 ? produto.imposto.II.vII : 0;
+				}
 			}
 
-			//** Regra de valida��o W16-10 que rege sobre o Total da NF **//
+			// ** Cálculo do vNF conforme regra de validação W16-10 **
 			icmsTot.vNF =
 					icmsTot.vProd
 					- icmsTot.vDesc
@@ -1238,33 +1499,51 @@ namespace Service
 			var t = new total
 			{
 				ICMSTot = icmsTot,
-				ISTot = (modeloDocumento == ModeloDocumento.NFe && _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIS == true) ? new ISTot() { vIS = 0 } : null
+				ISTot = (modeloDocumento == ModeloDocumento.NFe
+					&& _currentNaturezaOperacao.ConfiguracaoTributaria?.AplicarIS == true)
+					? new ISTot { vIS = produtos.Sum(p =>
+					{
+						var cfg = _currentNaturezaOperacao.ConfiguracaoTributaria;
+						if (cfg == null || !cfg.AplicarIS || cfg.AliquotaIS <= 0) return 0m;
+						return Math.Round(p.prod.vProd * cfg.AliquotaIS / 100, 2);
+					}) }
+					: null
 			};
 
-			// S� adiciona IBSCBSTot se for NFe E IBS ativo E ambiente de produ��o espec�fico
-			// Geralmente n�o usado para NFCe
-			var deveEnviarIBSCBS = modeloDocumento == ModeloDocumento.NFe &&
-														 _currentNaturezaOperacao.ConfiguracaoTributaria.AplicarIBS == true;
-
-			if (deveEnviarIBSCBS)
+			// ── IBS/CBS Tot (apenas NFe com IBS ativo) ──
+			var configTrib = _currentNaturezaOperacao.ConfiguracaoTributaria;
+			if (modeloDocumento == ModeloDocumento.NFe && configTrib?.AplicarIBS == true)
 			{
+				decimal totalIBS = produtos.Sum(p =>
+				{
+					if (configTrib.AplicarIBS && configTrib.AliquotaIBS > 0)
+						return Math.Round(p.prod.vProd * configTrib.AliquotaIBS / 100, 2);
+					return 0;
+				});
+
+				decimal totalCBS = produtos.Sum(p =>
+				{
+					if (configTrib.AplicarCBS && configTrib.AliquotaCBS > 0)
+						return Math.Round(p.prod.vProd * configTrib.AliquotaCBS / 100, 2);
+					return 0;
+				});
 
 				t.IBSCBSTot = new IBSCBSTot
 				{
-					vBCIBSCBS = 0,
+					vBCIBSCBS = icmsTot.vProd,
 					gIBS = new gIBSTotal
 					{
-						gIBSUF = new gIBSUFTotal { vDif = 0, vDevTrib = 0, vIBSUF = 0 },
-						gIBSMun = new gIBSMunTotal { vDif = 0, vDevTrib = 0, vIBSMun = 0 },
-						vIBS = 0,
+						vIBS = totalIBS,
+						gIBSUF = new gIBSUFTotal { vIBSUF = totalIBS, vDif = 0, vDevTrib = 0 },
+						gIBSMun = new gIBSMunTotal { vIBSMun = 0, vDif = 0, vDevTrib = 0 },
 						vCredPres = 0,
 						vCredPresCondSus = 0
 					},
 					gCBS = new gCBSTotal
 					{
+						vCBS = totalCBS,
 						vDif = 0,
 						vDevTrib = 0,
-						vCBS = 0,
 						vCredPres = 0,
 						vCredPresCondSus = 0
 					}
