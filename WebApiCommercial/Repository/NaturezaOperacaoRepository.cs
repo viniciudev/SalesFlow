@@ -9,63 +9,71 @@ using System.Threading.Tasks;
 
 namespace Repository
 {
-    public class NaturezaOperacaoRepository : GenericRepository<NaturezaOperacao>, INaturezaOperacaoRepository
-    {
-        public NaturezaOperacaoRepository(ContextBase dbContext) : base(dbContext)
-        {
+	public class NaturezaOperacaoRepository : GenericRepository<NaturezaOperacao>, INaturezaOperacaoRepository
+	{
+		public NaturezaOperacaoRepository(ContextBase dbContext) : base(dbContext)
+		{
 
-        }
+		}
 
 
 
-        public async Task<List<NaturezaOperacao>> GetAllAsync(int tenantid)
-        {
-            return await _dbContext.Set<NaturezaOperacao>()
-                .Where(x=>x.CompanyId==tenantid)
-                .AsNoTracking()
-                .ToListAsync();
-        }
+		public async Task<List<NaturezaOperacao>> GetAllAsync(int tenantid)
+		{
+			return await _dbContext.Set<NaturezaOperacao>()
+					.Where(x => x.CompanyId == tenantid)
+					.AsNoTracking()
+					.ToListAsync();
+		}
 
-        //public async Task<NaturezaOperacao?> GetByIdAsync(Guid id)
-        //{
-        //    return await _dbContext.Set<NaturezaOperacao>()
-        //        .AsNoTracking()
-        //        .FirstOrDefaultAsync(x => x.Id == id);
-        //}
+		//public async Task<NaturezaOperacao?> GetByIdAsync(Guid id)
+		//{
+		//    return await _dbContext.Set<NaturezaOperacao>()
+		//        .AsNoTracking()
+		//        .FirstOrDefaultAsync(x => x.Id == id);
+		//}
 
-        public async Task<bool> ExistsCfopAsync(string cfop, TipoDocumentoEnum tipoDocumento, int id,int idComapny)
-        {
-            if (id == 0)
-            {
-                return await _dbContext.Set<NaturezaOperacao>()
-                                    .AsNoTracking()
-                                    .Where(x => x.Cfop == cfop
-                                    && x.CompanyId==idComapny
-                                    && x.TipoDocumento == tipoDocumento)
-                                    .AnyAsync();
-            }
-            else
-            {
-                return await _dbContext.Set<NaturezaOperacao>()
-                    .AsNoTracking()
-                    .Where(x => x.Cfop == cfop
-                    && x.TipoDocumento == tipoDocumento
-										 && x.CompanyId == idComapny
-										&& x.Id != id).AnyAsync();
-            }
-        }
+		public async Task<bool> ExistsCfopAsync(string cfop, TipoDocumentoEnum tipoDocumento, int id, int idComapny)
+		{
+			if (id == 0)
+			{
+				return await _dbContext.Set<NaturezaOperacao>()
+														.AsNoTracking()
+														.Where(x => x.Cfop == cfop
+														&& x.CompanyId == idComapny
+														&& x.TipoDocumento == tipoDocumento)
+														.AnyAsync();
+			}
+			else
+			{
+				return await _dbContext.Set<NaturezaOperacao>()
+						.AsNoTracking()
+						.Where(x => x.Cfop == cfop
+						&& x.TipoDocumento == tipoDocumento
+						 && x.CompanyId == idComapny
+						&& x.Id != id).AnyAsync();
+			}
+		}
 
-        public async Task UpdateAsync(NaturezaOperacao entity)
-        {
-            _dbContext.Set<NaturezaOperacao>().Update(entity);
-            await _dbContext.SaveChangesAsync();
-        }
-    }
-    public interface INaturezaOperacaoRepository : IGenericRepository<NaturezaOperacao>
-    {
-        //Task<NaturezaOperacao?> GetByIdAsync(Guid id);
-        Task<List<NaturezaOperacao>> GetAllAsync(int tenantid);
+		public async Task UpdateAsync(NaturezaOperacao entity)
+		{
+			_dbContext.Set<NaturezaOperacao>().Update(entity);
+			await _dbContext.SaveChangesAsync();
+		}
+		public async Task<NaturezaOperacao?> GetById(int naturezaId)
+		{
+			return await _dbContext.Set<NaturezaOperacao>()
+					.AsNoTracking()
+					.FirstOrDefaultAsync(x => x.Id == naturezaId);
 
-        Task<bool> ExistsCfopAsync(string cfop, TipoDocumentoEnum tipoDocumento, int id,int idComapny);
-    }
+		}
+	}
+	public interface INaturezaOperacaoRepository : IGenericRepository<NaturezaOperacao>
+	{
+		//Task<NaturezaOperacao?> GetByIdAsync(Guid id);
+		Task<List<NaturezaOperacao>> GetAllAsync(int tenantid);
+
+		Task<bool> ExistsCfopAsync(string cfop, TipoDocumentoEnum tipoDocumento, int id, int idComapny);
+		Task<NaturezaOperacao?> GetById(int naturezaId);
+	}
 }

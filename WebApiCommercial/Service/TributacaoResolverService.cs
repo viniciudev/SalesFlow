@@ -136,7 +136,7 @@ namespace Service
             var cacheKey = $"natop_trib_{naturezaId}";
             if (_cache.TryGetValue(cacheKey, out NaturezaOperacao? cached))
                 return cached;
-            var natureza = await _naturezaOperacaoRepository.GetByIdAsync(naturezaId);
+            var natureza = await _naturezaOperacaoRepository.GetById(naturezaId);
             if (natureza != null)
                 _cache.Set(cacheKey, natureza, _cacheOptions);
             return natureza;
