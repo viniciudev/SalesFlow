@@ -1,9 +1,11 @@
 ﻿using DFe.Classes.Flags;
 using Model.Moves;
 using Model.Registrations;
+using NFe.Classes.Informacoes.Detalhe.Tributacao;
 using NFe.Classes.Informacoes.Detalhe.Tributacao.Estadual.Tipos;
 using NFe.Classes.Informacoes.Detalhe.Tributacao.Federal;
 using NFe.Classes.Informacoes.Detalhe.Tributacao.Federal.Tipos;
+using NFe.Classes.Informacoes.Detalhe.Tributacao.Municipal;
 using NFe.Classes.Informacoes.Emitente;
 using System;
 
@@ -118,6 +120,8 @@ namespace Service
 				total += Math.Round(_valorTotalItem * _config.AliquotaCBS / 100, 2);
 			if (_config.AplicarISSQN && _config.AliquotaISSQN > 0)
 				total += Math.Round(_valorTotalItem * _config.AliquotaISSQN / 100, 2);
+			if (_config.AplicarIS && _config.AliquotaIS > 0)
+				total += Math.Round(_valorTotalItem * _config.AliquotaIS / 100, 2);
 			return Math.Round(total, 2);
 		}
 
@@ -314,9 +318,184 @@ namespace Service
 			return CSTIPI.ipi50;
 		}
 
+		public IBSCBS CalcularIBSCBS()
+		{
+			// A partir de 2026 (NT 2025.002), o grupo IBSCBS é OBRIGATÓRIO em todos os itens.
+			// Sempre envia ao menos CST + cClassTrib. gIBSCBS só se houver IBS/CBS aplicado.
+			bool temIBS = _config.AplicarIBS && _config.AliquotaIBS > 0;
+			bool temCBS = _config.AplicarCBS && _config.AliquotaCBS > 0;
+
+			// CST: usa o configurado ou padrão "010" (tributação uniforme integral)
+			string? cstCode = null;
+			if (temIBS && !string.IsNullOrWhiteSpace(_config.CstIBS))
+				cstCode = _config.CstIBS;
+			else if (temCBS && !string.IsNullOrWhiteSpace(_config.CstCBS))
+				cstCode = _config.CstCBS;
+
+			// cClassTrib derivado do CST: preenche com 6 dígitos (ex: CST "010" → "010000")
+			// Para CSTs que exigem modificador específico, usa um código válido da tabela oficial
+			string cClassTrib = !string.IsNullOrWhiteSpace(cstCode)
+				? ObtercClassTribPadrao(cstCode)
+				: "010011";
+
+			var ibsCbs = new IBSCBS
+			{
+				CST = ObterCSTIBSCBS(cstCode),
+				cClassTrib = cClassTrib
+			};
+
+			// Só popula gIBSCBS (valores financeiros) se houver tributo efetivamente aplicado
+			if (temIBS || temCBS)
+			{
+				decimal vBC = _valorTotalItem;
+				decimal vIBS = temIBS ? Math.Round(vBC * _config.AliquotaIBS / 100, 2) : 0m;
+				decimal vCBS = temCBS ? Math.Round(vBC * _config.AliquotaCBS / 100, 2) : 0m;
+
+				ibsCbs.gIBSCBS = new gIBSCBS
+				{
+					vBC = vBC,
+					gIBSUF = new gIBSUF
+					{
+						pIBSUF = temIBS ? _config.AliquotaIBS : 0m,
+						vIBSUF = vIBS
+					},
+					gIBSMun = new gIBSMun
+					{
+						pIBSMun = 0m,
+						vIBSMun = 0
+					},
+					vIBS = vIBS,
+					gCBS = new gCBS
+					{
+						pCBS = temCBS ? _config.AliquotaCBS : 0m,
+						vCBS = vCBS
+					}
+				};
+			}
+
+			return ibsCbs;
+		}
+
+		public IS? MontarIS()
+		{
+			if (!_config.AplicarIS || _config.AliquotaIS <= 0)
+				return null;
+
+			decimal vIS = Math.Round(_valorTotalItem * _config.AliquotaIS / 100, 2);
+			return new IS
+			{
+				CSTIS = "010",
+				cClassTribIS = "010000",
+				vBCIS = _valorTotalItem,
+				pIS = _config.AliquotaIS,
+				vIS = vIS
+			};
+		}
+
+		public ISSQN? CalcularISSQN()
+		{
+			if (!_config.AplicarISSQN || _config.AliquotaISSQN <= 0)
+				return null;
+
+			decimal vISSQN = Math.Round(_valorTotalItem * _config.AliquotaISSQN / 100, 2);
+			return new ISSQN
+			{
+				vBC = _valorTotalItem,
+				vAliq = _config.AliquotaISSQN,
+				vISSQN = vISSQN,
+				cMunFG = 0
+			};
+		}
+
+		/// <summary>
+		/// Retorna o cClassTrib padrão (6 dígitos) para um código CST de IBS/CBS,
+		/// conforme Informe Técnico 2025.002.
+		/// Para a maioria dos CSTs: preenche com zeros à direita (ex: "010" → "010000").
+		/// Para CSTs que exigem modificador específico (ex: 430 = isenção), usa código válido.
+		/// </summary>
+		public static string ObtercClassTribPadrao(string cst)
+		{
+			if (string.IsNullOrWhiteSpace(cst))
+				return "010011"; // Padrão NF-e Geral
+
+			string cstPad = cst.PadLeft(3, '0');
+
+			return cstPad switch
+			{
+				// Códigos atualizados e autorizados para NF-e Comercial (Modelo 55)
+				"010" => "010011", // CORRIGIDO: Tributação uniforme geral para mercadorias
+				"020" => "020011", // CORRIGIDO: Redução de alíquota para mercadorias
+				"030" => "030011",
+				"040" => "040011",
+				"090" => "090099",
+
+				// Alíquota zero comercial
+				"210" => "210011", // CORRIGIDO: Alíquota zero mercadorias gerais
+				"220" => "220011",
+				"230" => "230011",
+				"290" => "290099",
+
+				// Imunidades e Isenções comerciais
+				"410" => "410011", // CORRIGIDO: Imunidade Geral NF-e
+				"420" => "420011", // CORRIGIDO: Isenção Geral NF-e
+				"430" => "430011", // CORRIGIDO: Isenção específica para mercadorias (ex: Cesta Básica)
+				"490" => "490099",
+
+				// Diferimento / Suspensão
+				"510" => "510011", // CORRIGIDO
+				"520" => "520011", // CORRIGIDO
+				"590" => "590099",
+
+				// Ajustes
+				"810" => "810011",
+				"820" => "820011",
+				"830" => "830011",
+				"890" => "890099",
+
+				// Fallback Seguro para NF-e Comercial (Sufixo 11)
+				_ => cstPad.Length == 3 ? cstPad + "0011" : "010011"
+			};
+		}
+
+
+
+		public static CSTIBSCBS ObterCSTIBSCBS(string? cst)
+		{
+			if (string.IsNullOrWhiteSpace(cst)) return CSTIBSCBS.cst010;
+			if (int.TryParse(cst, out int valor))
+			{
+				return valor switch
+				{
+					000 => CSTIBSCBS.cst000,
+					010 => CSTIBSCBS.cst010,
+					011 => CSTIBSCBS.cst011,
+					200 => CSTIBSCBS.cst200,
+					220 => CSTIBSCBS.cst220,
+					221 => CSTIBSCBS.cst221,
+					222 => CSTIBSCBS.cst222,
+					400 => CSTIBSCBS.cst400,
+					410 => CSTIBSCBS.cst410,
+					510 => CSTIBSCBS.cst510,
+					515 => CSTIBSCBS.cst515,
+					550 => CSTIBSCBS.cst550,
+					620 => CSTIBSCBS.cst620,
+					800 => CSTIBSCBS.cst800,
+					810 => CSTIBSCBS.cst810,
+					811 => CSTIBSCBS.cst811,
+					820 => CSTIBSCBS.cst820,
+					830 => CSTIBSCBS.cst830,
+					_ => CSTIBSCBS.cst010
+				};
+			}
+			if (Enum.TryParse<CSTIBSCBS>(cst, true, out var result)) return result;
+			return CSTIBSCBS.cst010;
+		}
+
 		public bool IsSimplesNacional()
 		{
-			return _crt == CRT.SimplesNacional || _crt == CRT.SimplesNacionalMei;
+			return _crt == CRT.SimplesNacional
+				|| _crt == CRT.SimplesNacionalExcessoSublimite
+				|| _crt == CRT.SimplesNacionalMei;
 		}
 
 		public decimal ValorTotalItem => _valorTotalItem;

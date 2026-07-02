@@ -1,4 +1,4 @@
-﻿using DFe.Classes.Entidades;
+using DFe.Classes.Entidades;
 using DFe.Classes.Flags;
 using Microsoft.AspNetCore.Hosting;
 using Model;
@@ -20,6 +20,7 @@ using NFe.Classes.Informacoes.Detalhe.Tributacao.Estadual;
 using NFe.Classes.Informacoes.Detalhe.Tributacao.Estadual.Tipos;
 using NFe.Classes.Informacoes.Detalhe.Tributacao.Federal;
 using NFe.Classes.Informacoes.Detalhe.Tributacao.Federal.Tipos;
+using NFe.Classes.Informacoes.Detalhe.Tributacao.Municipal;
 using NFe.Classes.Informacoes.Emitente;
 using NFe.Classes.Informacoes.Identificacao;
 using NFe.Classes.Informacoes.Identificacao.Tipos;
@@ -456,6 +457,20 @@ namespace Service
 				_currentSale = null;
 			}
 		}
+		/// <summary>
+		/// Converte o CRT (Codigo de Regime Tributario) do cadastro para o enum do DFe.
+		/// 1 = Simples Nacional, 2 = Simples Nacional - MEI, 3 = Regime Normal
+		/// </summary>
+		private static CRT ObterCRT(string? crt)
+		{
+			return crt switch
+			{
+				"1" => CRT.SimplesNacional,
+				"2" => CRT.SimplesNacionalMei,
+				_ => CRT.RegimeNormal
+			};
+		}
+
 		public static string LimparString(string texto, bool manterEspacos = false)
 		{
 			if (string.IsNullOrEmpty(texto))
@@ -559,7 +574,7 @@ namespace Service
 						IE = LimparString(fiscalConfiguration.Emitente.InscricaoEstadual),
 						xNome = fiscalConfiguration.Emitente.RazaoSocial,
 						xFant = fiscalConfiguration.Emitente.Fantasia,
-						CRT = CRT.SimplesNacional,
+						CRT = ObterCRT(fiscalConfiguration.Emitente.RegimeTributario.Crt),
 
 					},
 
@@ -577,7 +592,7 @@ namespace Service
 					},
 					ConfiguracaoCsc = ConfiguracaoCsc,
 					ConfiguracaoDanfeNfce = ConfiguracaoDanfeNfce,
-					EnviarTributacaoIbsCbs = false,
+					EnviarTributacaoIbsCbs = true,
 					EnviarTributacaoIS = false,
 					ConfiguracaoEmail = ConfiguracaoEmail
 
@@ -628,6 +643,7 @@ namespace Service
 				};
 
 				int index = 0;
+					TributacaoResolvida? ultimaTributacao = null;
 				foreach (var i in _currentSale.SaleItems)
 				{
 					index++;
@@ -638,9 +654,10 @@ namespace Service
 						_currentNaturezaOperacao.Id);
 
 					infNFe.det.Add(GetDetalhe(index, i, infNFe.emit.CRT, modelo, tributacaoResolvida));
+						ultimaTributacao = tributacaoResolvida;
 				}
 
-				infNFe.total = GetTotal(versao, infNFe.det, modelo);
+				infNFe.total = GetTotal(versao, infNFe.det, modelo, ultimaTributacao ?? new TributacaoResolvida());
 
 				if (infNFe.ide.mod == ModeloDocumento.NFe & (versao == VersaoServico.Versao310 || versao == VersaoServico.Versao400))
 					infNFe.cobr = GetCobranca(infNFe.total.ICMSTot);
@@ -992,12 +1009,20 @@ namespace Service
 					vTotTrib = calculador.CalcularTotalTributos(),
 					ICMS = new ICMS { TipoICMS = tipoICMS },
 					COFINS = calculador.CalcularCOFINS(),
-					PIS = calculador.CalcularPIS()
+					PIS = calculador.CalcularPIS(),
+					IBSCBS = calculador.CalcularIBSCBS()
 				}
 			};
 
 			// IPI apenas para NFe (NFCe não aceita grupo IPI)
 			det.imposto.IPI = calculador.CalcularIPI(modelo);
+
+			// IS apenas para NFe
+			if (modelo == ModeloDocumento.NFe)
+			{
+				det.imposto.IS = calculador.MontarIS();
+				det.imposto.ISSQN = calculador.CalcularISSQN();
+			}
 
 			return det;
 		}
@@ -1227,7 +1252,9 @@ namespace Service
 		/// </summary>
 		protected virtual ICMSBasico InformarCSOSN(ConfiguracaoTributaria config, SaleItems item)
 		{
-			var csosn = CalculadorImpostos.ObterCSOSN(config.CstICMS); // Usa CstICMS para armazenar CSOSN no SN
+			// Prioridade: CsosnICMS (campo especifico) > CstICMS (compatibilidade)
+			var csosnCode = !string.IsNullOrWhiteSpace(config.CsosnICMS) ? config.CsosnICMS : config.CstICMS;
+			var csosn = CalculadorImpostos.ObterCSOSN(csosnCode);
 
 			switch (csosn)
 			{
@@ -1339,7 +1366,7 @@ namespace Service
 					};
 			}
 		}
-		protected virtual total GetTotal(VersaoServico versao, List<det> produtos, ModeloDocumento modeloDocumento)
+		protected virtual total GetTotal(VersaoServico versao, List<det> produtos, ModeloDocumento modeloDocumento, TributacaoResolvida tributacao)
 		{
 			var icmsTot = new ICMSTot
 			{
@@ -1364,7 +1391,7 @@ namespace Service
 
 			foreach (var produto in produtos)
 			{
-				var tipoIcms = produto.imposto.ICMS?.TipoICMS;
+				var tipoIcms =  produto.imposto.ICMS?.TipoICMS;
 				if (tipoIcms != null)
 				{
 					// ── Acumula BC e ICMS por tipo ──
@@ -1498,50 +1525,78 @@ namespace Service
 
 			var t = new total
 			{
-				ICMSTot = icmsTot,
-				ISTot = (modeloDocumento == ModeloDocumento.NFe
-					&& _currentNaturezaOperacao.ConfiguracaoTributaria?.AplicarIS == true)
-					? new ISTot { vIS = produtos.Sum(p =>
-					{
-						var cfg = _currentNaturezaOperacao.ConfiguracaoTributaria;
-						if (cfg == null || !cfg.AplicarIS || cfg.AliquotaIS <= 0) return 0m;
-						return Math.Round(p.prod.vProd * cfg.AliquotaIS / 100, 2);
-					}) }
-					: null
+				ICMSTot = icmsTot
 			};
 
-			// ── IBS/CBS Tot (apenas NFe com IBS ativo) ──
-			var configTrib = _currentNaturezaOperacao.ConfiguracaoTributaria;
-			if (modeloDocumento == ModeloDocumento.NFe && configTrib?.AplicarIBS == true)
+			// ── IS Tot (apenas NFe, soma dos IS dos itens) ──
+			if (modeloDocumento == ModeloDocumento.NFe)
 			{
-				decimal totalIBS = produtos.Sum(p =>
+				decimal totalIS = produtos.Sum(p =>
 				{
-					if (configTrib.AplicarIBS && configTrib.AliquotaIBS > 0)
-						return Math.Round(p.prod.vProd * configTrib.AliquotaIBS / 100, 2);
-					return 0;
+					if (p.imposto.IS != null)
+						return p.imposto.IS.vIS;
+					return 0m;
 				});
 
-				decimal totalCBS = produtos.Sum(p =>
+				if (totalIS > 0)
 				{
-					if (configTrib.AplicarCBS && configTrib.AliquotaCBS > 0)
-						return Math.Round(p.prod.vProd * configTrib.AliquotaCBS / 100, 2);
-					return 0;
+					t.ISTot = new ISTot { vIS = totalIS };
+				}
+
+				// ── ISSQN Tot (apenas NFe) ──
+				decimal totalISSQN = produtos.Sum(p =>
+				{
+					if (p.imposto.ISSQN != null)
+						return p.imposto.ISSQN.vISSQN;
+					return 0m;
 				});
+
+				if (totalISSQN > 0)
+				{
+					t.ISSQNtot = new ISSQNtot
+					{
+						vBC = icmsTot.vProd,
+						vISS = Math.Round(totalISSQN, 2)
+					};
+				}
+			}
+
+			// ── IBS/CBS Tot (obrigatório para NFe e NFCe a partir de 2026 - NT 2025.002) ──
+			{
+				decimal totalBCIBSCBS = icmsTot.vProd;
+				decimal totalIBS = produtos.Sum(p =>
+					p.imposto?.IBSCBS?.gIBSCBS?.vIBS ?? 0);
+				decimal totalIBSUF = produtos.Sum(p =>
+					p.imposto?.IBSCBS?.gIBSCBS?.gIBSUF?.vIBSUF ?? 0);
+				decimal totalIBSMun = produtos.Sum(p =>
+					p.imposto?.IBSCBS?.gIBSCBS?.gIBSMun?.vIBSMun ?? 0);
+				decimal totalCBS = produtos.Sum(p =>
+					p.imposto?.IBSCBS?.gIBSCBS?.gCBS?.vCBS ?? 0);
 
 				t.IBSCBSTot = new IBSCBSTot
 				{
-					vBCIBSCBS = icmsTot.vProd,
+					vBCIBSCBS = totalBCIBSCBS,
 					gIBS = new gIBSTotal
 					{
-						vIBS = totalIBS,
-						gIBSUF = new gIBSUFTotal { vIBSUF = totalIBS, vDif = 0, vDevTrib = 0 },
-						gIBSMun = new gIBSMunTotal { vIBSMun = 0, vDif = 0, vDevTrib = 0 },
+						vIBS = Math.Round(totalIBS, 2),
+						gIBSUF = new gIBSUFTotal
+						{
+							vIBSUF = Math.Round(totalIBSUF, 2),
+							vDif = 0,
+							vDevTrib = 0
+						},
+						gIBSMun = new gIBSMunTotal
+						{
+							vIBSMun = Math.Round(totalIBSMun, 2),
+							vDif = 0,
+							vDevTrib = 0
+						},
 						vCredPres = 0,
 						vCredPresCondSus = 0
 					},
 					gCBS = new gCBSTotal
 					{
-						vCBS = totalCBS,
+						vCBS = Math.Round(totalCBS, 2),
 						vDif = 0,
 						vDevTrib = 0,
 						vCredPres = 0,

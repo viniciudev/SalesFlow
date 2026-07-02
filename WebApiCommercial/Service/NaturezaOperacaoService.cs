@@ -111,7 +111,7 @@ namespace Service
 
             var cfg = e.ConfiguracaoTributaria;
 
-            AddTributo("ICMS", cfg.AplicarICMS, cfg.CstICMS, cfg.AliquotaICMS);
+            AddTributo("ICMS", cfg.AplicarICMS, !string.IsNullOrEmpty(cfg.CsosnICMS) ? cfg.CsosnICMS : cfg.CstICMS, cfg.AliquotaICMS);
             AddTributo("IPI", cfg.AplicarIPI, cfg.CstIPI, cfg.AliquotaIPI);
             AddTributo("PIS", cfg.AplicarPIS, cfg.CstPIS, cfg.AliquotaPIS);
             AddTributo("COFINS", cfg.AplicarCOFINS, cfg.CstCOFINS, cfg.AliquotaCOFINS);
@@ -168,19 +168,23 @@ namespace Service
         {
             var c = entity.ConfiguracaoTributaria;
 
-            // If aplicar == false => zero aliquota
-            if (!c.AplicarICMS) c.AliquotaICMS = 0m;
-            if (!c.AplicarIPI) c.AliquotaIPI = 0m;
-            if (!c.AplicarPIS) c.AliquotaPIS = 0m;
-            if (!c.AplicarCOFINS) c.AliquotaCOFINS = 0m;
-            if (!c.AplicarISSQN) c.AliquotaISSQN = 0m;
-            if (!c.AplicarIBS) c.AliquotaIBS = 0m;
-            if (!c.AplicarCBS) c.AliquotaCBS = 0m;
-            if (!c.AplicarIS) c.AliquotaIS = 0m;
+            // If aplicar == false => zero aliquota and clear CST
+            if (!c.AplicarICMS) { c.AliquotaICMS = 0m; c.CstICMS = null; c.CsosnICMS = null; }
+            if (!c.AplicarIPI)  { c.AliquotaIPI = 0m;  c.CstIPI = null; }
+            if (!c.AplicarPIS)  { c.AliquotaPIS = 0m;  c.CstPIS = null; }
+            if (!c.AplicarCOFINS) { c.AliquotaCOFINS = 0m; c.CstCOFINS = null; }
+            if (!c.AplicarISSQN) { c.AliquotaISSQN = 0m; }
+            if (!c.AplicarIBS)  { c.AliquotaIBS = 0m;  c.CstIBS = null; }
+            if (!c.AplicarCBS)  { c.AliquotaCBS = 0m;  c.CstCBS = null; }
+            if (!c.AplicarIS)   { c.AliquotaIS = 0m; }
 
             // Validate aliquotas > 0 when aplicar == true
             if (c.AplicarICMS && c.AliquotaICMS <= 0m)
                 throw new DomainException("Aliquota ICMS deve ser maior que zero quando ICMS estiver aplicado.");
+
+            // Validate CST or CSOSN is provided when ICMS is active
+            if (c.AplicarICMS && string.IsNullOrEmpty(c.CstICMS) && string.IsNullOrEmpty(c.CsosnICMS))
+                throw new DomainException("CST ou CSOSN ICMS deve ser informado quando ICMS estiver aplicado.");
             if (c.AplicarIPI && c.AliquotaIPI <= 0m)
                 throw new DomainException("Aliquota IPI deve ser maior que zero quando IPI estiver aplicado.");
             if (c.AplicarPIS && c.AliquotaPIS <= 0m)

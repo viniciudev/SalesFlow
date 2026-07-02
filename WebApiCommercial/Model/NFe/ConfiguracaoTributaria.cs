@@ -5,7 +5,8 @@ namespace Model.Registrations
     {
         // ICMS
         public bool AplicarICMS { get; set; }
-        public string? CstICMS { get; set; }
+        public string? CstICMS { get; set; }        // CST para Regime Normal
+        public string? CsosnICMS { get; set; }      // CSOSN para Simples Nacional/MEI
         public decimal AliquotaICMS { get; set; }
         public bool ReduzirBaseICMS { get; set; }
 

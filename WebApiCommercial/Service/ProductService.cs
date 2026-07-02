@@ -126,6 +126,7 @@ namespace Service
             {
                 AplicarICMS = dto.AplicarICMS,
                 CstICMS = dto.CstICMS,
+                CsosnICMS = dto.CsosnICMS,
                 AliquotaICMS = dto.AliquotaICMS,
                 ReduzirBaseICMS = dto.ReduzirBaseICMS,
                 AplicarIPI = dto.AplicarIPI,

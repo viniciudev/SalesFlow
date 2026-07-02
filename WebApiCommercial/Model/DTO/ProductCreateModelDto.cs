@@ -24,6 +24,7 @@
     {
         public bool AplicarICMS { get; set; }
         public string? CstICMS { get; set; }
+        public string? CsosnICMS { get; set; }
         public decimal AliquotaICMS { get; set; }
         public bool ReduzirBaseICMS { get; set; }
 

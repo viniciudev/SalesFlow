@@ -96,6 +96,7 @@ namespace Service
             {
                 AplicarICMS = origem.AplicarICMS,
                 CstICMS = origem.CstICMS,
+                CsosnICMS = origem.CsosnICMS,
                 AliquotaICMS = origem.AliquotaICMS,
                 ReduzirBaseICMS = origem.ReduzirBaseICMS,
                 AplicarIPI = origem.AplicarIPI,
