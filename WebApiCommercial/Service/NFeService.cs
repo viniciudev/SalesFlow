@@ -1248,6 +1248,7 @@ namespace Service
 
 			if (deveEnviarIBSCBS)
 			{
+
 				t.IBSCBSTot = new IBSCBSTot
 				{
 					vBCIBSCBS = 0,
