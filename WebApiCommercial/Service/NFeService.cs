@@ -648,10 +648,17 @@ namespace Service
 				{
 					index++;
 
-					// Resolve tributacao por produto (prioridade: produto > natureza)
-					var tributacaoResolvida = await _tributacaoResolver.ResolverTributacaoAsync(
-						i.IdProduct,
-						_currentNaturezaOperacao.Id);
+						// Resolve tributacao pela matriz (NaturezaOperacao + SituacaoTributaria + Destino)
+						var empresaUf = _currentFiscalConfiguration?.Emitente?.EmitenteEndereco?.Uf ?? "";
+						var clienteUf = _currentSale?.Client?.Uf ?? "";
+						var clienteCodPais = _currentSale?.Client?.CodPais ?? "1058";
+
+						var tributacaoResolvida = await _tributacaoResolver.ResolverTributacaoAsync(
+							i.IdProduct,
+							_currentNaturezaOperacao.Id,
+							empresaUf,
+							clienteUf,
+							clienteCodPais);
 
 					infNFe.det.Add(GetDetalhe(index, i, infNFe.emit.CRT, modelo, tributacaoResolvida));
 						ultimaTributacao = tributacaoResolvida;
@@ -950,7 +957,7 @@ namespace Service
 
 			return digitoCalculado == digitoVerificador;
 		}
-		protected virtual prod GetProduto(SaleItems i)
+		protected virtual prod GetProduto(SaleItems i, string cfop)
 		{
 			string gtin = i.Product.Code ?? "";
 			bool isGtinValido = ValidarGTIN(gtin);
@@ -962,7 +969,7 @@ namespace Service
 						? "NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"  // Texto padr�o para produto
 						: i.Product.Name,
 				NCM = i.Product.Ncm,
-				CFOP = int.Parse(_currentNaturezaOperacao.Cfop),
+				CFOP = int.Parse(cfop),
 				uCom = "UNID",
 				qCom = i.Amount,
 				vUnCom = i.Value,
@@ -989,7 +996,7 @@ namespace Service
 		
 			protected virtual det GetDetalhe(int index, SaleItems i, CRT crt, ModeloDocumento modelo, TributacaoResolvida tributacao)
 		{
-			var produto = GetProduto(i);
+			var produto = GetProduto(i, tributacao.Cfop);
 			var config = tributacao.Configuracao ?? new ConfiguracaoTributaria();
 
 			// Usa CalculadorImpostos para centralizar toda a lógica de cálculo

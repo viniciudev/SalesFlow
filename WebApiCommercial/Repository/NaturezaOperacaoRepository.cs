@@ -1,5 +1,3 @@
-
-
 using Microsoft.EntityFrameworkCore;
 using Model.Enums;
 using Model.Registrations;
@@ -16,41 +14,43 @@ namespace Repository
 
 		}
 
-
-
 		public async Task<List<NaturezaOperacao>> GetAllAsync(int tenantid)
 		{
 			return await _dbContext.Set<NaturezaOperacao>()
-					.Where(x => x.CompanyId == tenantid)
-					.AsNoTracking()
-					.ToListAsync();
+				.Where(x => x.CompanyId == tenantid)
+				.AsNoTracking()
+				.ToListAsync();
 		}
 
-		//public async Task<NaturezaOperacao?> GetByIdAsync(Guid id)
-		//{
-		//    return await _dbContext.Set<NaturezaOperacao>()
-		//        .AsNoTracking()
-		//        .FirstOrDefaultAsync(x => x.Id == id);
-		//}
+		/// <summary>
+		/// Busca natureza de operacao com todas as regras fiscais (matriz) incluidas.
+		/// </summary>
+		public async Task<NaturezaOperacao?> GetByIdWithRegrasAsync(int naturezaId)
+		{
+			return await _dbContext.Set<NaturezaOperacao>()
+				.Include(n => n.RegrasFiscais)
+				.AsNoTracking()
+				.FirstOrDefaultAsync(x => x.Id == naturezaId);
+		}
 
 		public async Task<bool> ExistsCfopAsync(string cfop, TipoDocumentoEnum tipoDocumento, int id, int idComapny)
 		{
 			if (id == 0)
 			{
 				return await _dbContext.Set<NaturezaOperacao>()
-														.AsNoTracking()
-														.Where(x => x.Cfop == cfop
-														&& x.CompanyId == idComapny
-														&& x.TipoDocumento == tipoDocumento)
-														.AnyAsync();
+					.AsNoTracking()
+					.Where(x => x.Cfop == cfop
+						&& x.CompanyId == idComapny
+						&& x.TipoDocumento == tipoDocumento)
+					.AnyAsync();
 			}
 			else
 			{
 				return await _dbContext.Set<NaturezaOperacao>()
-						.AsNoTracking()
-						.Where(x => x.Cfop == cfop
+					.AsNoTracking()
+					.Where(x => x.Cfop == cfop
 						&& x.TipoDocumento == tipoDocumento
-						 && x.CompanyId == idComapny
+						&& x.CompanyId == idComapny
 						&& x.Id != id).AnyAsync();
 			}
 		}
@@ -60,20 +60,20 @@ namespace Repository
 			_dbContext.Set<NaturezaOperacao>().Update(entity);
 			await _dbContext.SaveChangesAsync();
 		}
+
 		public async Task<NaturezaOperacao?> GetById(int naturezaId)
 		{
 			return await _dbContext.Set<NaturezaOperacao>()
-					.AsNoTracking()
-					.FirstOrDefaultAsync(x => x.Id == naturezaId);
-
+				.AsNoTracking()
+				.FirstOrDefaultAsync(x => x.Id == naturezaId);
 		}
 	}
+
 	public interface INaturezaOperacaoRepository : IGenericRepository<NaturezaOperacao>
 	{
-		//Task<NaturezaOperacao?> GetByIdAsync(Guid id);
 		Task<List<NaturezaOperacao>> GetAllAsync(int tenantid);
-
 		Task<bool> ExistsCfopAsync(string cfop, TipoDocumentoEnum tipoDocumento, int id, int idComapny);
 		Task<NaturezaOperacao?> GetById(int naturezaId);
+		Task<NaturezaOperacao?> GetByIdWithRegrasAsync(int naturezaId);
 	}
 }

@@ -59,6 +59,8 @@ namespace Repository
             _dbContext.Set<TEntity>().Update(entity);
             await _dbContext.SaveChangesAsync();
         }
+        public DbContext GetDbContext() => _dbContext;
+
         public async Task<IDbContextTransaction> CreateTransactionAsync()
         {
             return await _dbContext.Database.BeginTransactionAsync();
@@ -77,6 +79,7 @@ namespace Repository
         Task DeleteAsync(int id);
         Task<bool> Exists(int id);
         Task<IDbContextTransaction> CreateTransactionAsync();
+        DbContext GetDbContext();
        
     }
 }

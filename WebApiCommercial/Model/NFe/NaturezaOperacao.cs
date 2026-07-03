@@ -1,5 +1,3 @@
-
-
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
@@ -13,6 +11,10 @@ namespace Model.Registrations
         [MaxLength(150)]
         public string Descricao { get; set; } = null!;
 
+        /// <summary>
+        /// CFOP padrao (fallback). Mantido para compatibilidade com registros existentes.
+        /// Quando existirem RegrasFiscais configuradas, o CFOP sera resolvido pela matriz.
+        /// </summary>
         [Required]
         [MaxLength(10)]
         public string Cfop { get; set; } = null!;
@@ -29,11 +31,24 @@ namespace Model.Registrations
 
         /// <summary>
         /// Permite que produtos vinculados a esta natureza tenham tributação própria.
-        /// Quando false, todos os produtos usarão a tributação desta natureza (comportamento padrão).
+        /// Deprecated: Substituido pela matriz tributaria (RegraFiscal).
+        /// Mantido para compatibilidade com registros existentes.
         /// </summary>
         public bool PermiteTributacaoPorProduto { get; set; } = false;
 
+        /// <summary>
+        /// Configuracao tributaria padrao (fallback).
+        /// Mantida para compatibilidade com registros existentes.
+        /// Quando existirem RegrasFiscais, a matriz tem prioridade.
+        /// </summary>
         public ConfiguracaoTributaria ConfiguracaoTributaria { get; set; } = new();
+
+        /// <summary>
+        /// Matriz tributaria: conjunto de regras fiscais que combinam
+        /// SituacaoTributaria + Destino para determinar CFOP e tributos por item.
+        /// </summary>
+        public ICollection<RegraFiscal> RegrasFiscais { get; set; } = new List<RegraFiscal>();
+
         public ICollection<NFeEmission> NFeEmissions { get; set; }= new List<NFeEmission>();
     }
 }

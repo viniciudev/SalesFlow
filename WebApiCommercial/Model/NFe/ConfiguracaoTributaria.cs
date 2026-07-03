@@ -42,5 +42,12 @@ namespace Model.Registrations
         // IS
         public bool AplicarIS { get; set; }
         public decimal AliquotaIS { get; set; }
+
+        // Reforma Tributaria: classificacao tributaria (cClassTrib) para IBS/CBS/IS
+        /// <summary>
+        /// Codigo de classificacao tributaria (6 digitos) conforme NT 2025.002.
+        /// Ex: "010011" para tributacao uniforme geral.
+        /// </summary>
+        public string? cClassTrib { get; set; }
     }
 }

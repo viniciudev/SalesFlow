@@ -485,6 +485,7 @@ namespace WebAppCommercial
 
 			// === CONTROLLERS P�BLICOS ===
 			ConventionPermissionMiddleware.RegisterPublicController("SearchZipCode");
+                                ConventionPermissionMiddleware.RegisterPublicController("SituacaoTributaria");
 			ConventionPermissionMiddleware.RegisterPublicController("Email");
 			ConventionPermissionMiddleware.RegisterPublicController("Home");
 

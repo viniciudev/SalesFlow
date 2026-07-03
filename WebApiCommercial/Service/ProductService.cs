@@ -54,7 +54,10 @@ namespace Service
                 // Tributacao por produto
                 UsaTributacaoPropria = model.UsaTributacaoPropria,
                 NaturezaOperacaoOrigemId = model.NaturezaOperacaoOrigemId,
-                DataAtualizacaoTributaria = model.UsaTributacaoPropria ? DateTime.UtcNow : null
+                DataAtualizacaoTributaria = model.UsaTributacaoPropria ? DateTime.UtcNow : null,
+
+                // Matriz tributaria
+                SituacaoTributariaId = model.SituacaoTributariaId,
             };
 
             // Mapear DTO de tributacao para entidade se estiver preenchido
@@ -148,6 +151,7 @@ namespace Service
                 AliquotaCBS = dto.AliquotaCBS,
                 AplicarIS = dto.AplicarIS,
                 AliquotaIS = dto.AliquotaIS,
+                cClassTrib = dto.cClassTrib,
             };
         }
     }

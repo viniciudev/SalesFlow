@@ -1,7 +1,6 @@
-
-
 using Model.Enums;
 using Model.Registrations;
+using System.Collections.Generic;
 
 namespace Service.Dtos
 {
@@ -17,5 +16,10 @@ namespace Service.Dtos
         public bool Ativo { get; set; }
         public bool PermiteTributacaoPorProduto { get; set; }
         public ConfiguracaoTributaria ConfiguracaoTributaria { get; set; } = new();
+
+        /// <summary>
+        /// Matriz tributaria: regras fiscais por SituacaoTributaria + Destino.
+        /// </summary>
+        public List<RegraFiscalDto> RegrasFiscais { get; set; } = new List<RegraFiscalDto>();
     }
 }

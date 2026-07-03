@@ -43,6 +43,7 @@ namespace Repository
                       UsaTributacaoPropria = p.UsaTributacaoPropria,
                       NaturezaOperacaoOrigemId = p.NaturezaOperacaoOrigemId,
                       DataAtualizacaoTributaria = p.DataAtualizacaoTributaria,
+                      SituacaoTributariaId = p.SituacaoTributariaId,
                       ConfiguracaoTributaria = p.ConfiguracaoTributaria
 
                    })

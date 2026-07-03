@@ -14,6 +14,9 @@
         public string ?Observation { get; set; }
         public string Ncm { get; set; }
 
+        // ===== MATRIZ TRIBUTARIA =====
+        public int? SituacaoTributariaId { get; set; }
+
         // ===== TRIBUTACAO POR PRODUTO =====
         public bool UsaTributacaoPropria { get; set; } = false;
         public ProductTributacaoDto? ConfiguracaoTributaria { get; set; }
@@ -53,5 +56,7 @@
 
         public bool AplicarIS { get; set; }
         public decimal AliquotaIS { get; set; }
+
+        public string? cClassTrib { get; set; }
     }
 }

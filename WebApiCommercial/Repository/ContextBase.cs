@@ -23,6 +23,8 @@ namespace Repository
 		public virtual DbSet<User> User { get; set; }
 		public virtual DbSet<Provider> Provider { get; set; }
 		public virtual DbSet<Purchase> Purchase { get; set; }
+            public virtual DbSet<SituacaoTributaria> SituacaoTributaria { get; set; }
+            public virtual DbSet<RegraFiscal> RegraFiscal { get; set; }
 		public virtual DbSet<PurchaseItem> PurchaseItem { get; set; }
 
 		public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -106,7 +108,9 @@ namespace Repository
 			ConfiguraFinancialPaymentMethod(modelBuilder);
 			ConfiguraProvider(modelBuilder);
 			ConfiguraPurchase(modelBuilder);
-			ConfiguraPurchaseItem(modelBuilder);
+                ConfiguraPurchaseItem(modelBuilder);
+                ConfiguraSituacaoTributaria(modelBuilder);
+                ConfiguraRegraFiscal(modelBuilder);
 			//ConfiguraServiceOrder(modelBuilder);
 			//ConfiguraServiceOrderItem(modelBuilder);
 			//ConfiguraServiceInvoice(modelBuilder);
@@ -364,6 +368,7 @@ namespace Repository
 				entity.Property(c => c.UsaTributacaoPropria).HasColumnName("UsaTributacaoPropria").IsRequired().HasDefaultValue(false);
 				entity.Property(c => c.NaturezaOperacaoOrigemId).HasColumnName("NaturezaOperacaoOrigemId").IsRequired(false);
 				entity.Property(c => c.DataAtualizacaoTributaria).HasColumnName("DataAtualizacaoTributaria").IsRequired(false);
+                        entity.Property(c => c.SituacaoTributariaId).HasColumnName("SituacaoTributariaId").IsRequired(false);
 
 				// Owned type ConfiguracaoTributaria
 				entity.OwnsOne(e => e.ConfiguracaoTributaria, tb =>
@@ -398,12 +403,20 @@ namespace Repository
 
 					tb.Property(p => p.AplicarIS).HasColumnName("Prod_AplicarIS");
 					tb.Property(p => p.AliquotaIS).HasColumnName("Prod_AliquotaIS").HasColumnType("decimal(18,4)");
+
+                                        tb.Property(p => p.cClassTrib).HasColumnName("Prod_cClassTrib").HasMaxLength(10);
 				});
 			});
 			builder.Entity<Product>()
 		.HasOne(dc => dc.Company)
 		.WithMany(c => c.Products)
 		.HasForeignKey(dc => dc.IdCompany);
+                builder.Entity<Product>()
+                        .HasOne(dc => dc.SituacaoTributaria)
+                        .WithMany(c => c.Products)
+                        .HasForeignKey(dc => dc.SituacaoTributariaId)
+                        .IsRequired(false)
+                        .OnDelete(DeleteBehavior.Restrict);
 		}private void ConfiguraService(ModelBuilder builder)
 		{
 			builder.Entity<ServiceProvided>(user =>
@@ -783,6 +796,8 @@ namespace Repository
 
 						tb.Property(p => p.AplicarIS).HasColumnName("AplicarIS");
 						tb.Property(p => p.AliquotaIS).HasColumnName("AliquotaIS").HasColumnType("decimal(18,4)");
+
+                                        tb.Property(p => p.cClassTrib).HasColumnName("cClassTrib").HasMaxLength(10);
 					});
 
 				//entity.HasIndex(e => new { e.Cfop, e.TipoDocumento }).IsUnique();
@@ -984,8 +999,94 @@ namespace Repository
 			builder.Entity<PurchaseItem>()
 					.HasOne(dc => dc.Produto)
 					.WithMany(c => c.PurchaseItems)
-					.HasForeignKey(dc => dc.ProdutoId)
-					.OnDelete(DeleteBehavior.Restrict);
-		}
-	}
-}
+					.HasForeignKey(dc => dc.ProdutoId);
+            }
+
+            private void ConfiguraSituacaoTributaria(ModelBuilder builder)
+            {
+                builder.Entity<SituacaoTributaria>(entity =>
+                {
+                    entity.ToTable("tb_situacaoTributaria");
+                    entity.HasKey(e => e.Id);
+                    entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                    entity.Property(e => e.Codigo).HasMaxLength(30).IsRequired();
+                    entity.Property(e => e.Descricao).HasMaxLength(150).IsRequired();
+
+                    entity.HasIndex(e => new { e.CompanyId, e.Codigo }).IsUnique();
+                });
+                builder.Entity<SituacaoTributaria>()
+                    .HasOne(dc => dc.Company)
+                    .WithMany()
+                    .HasForeignKey(dc => dc.CompanyId);
+            }
+
+            private void ConfiguraRegraFiscal(ModelBuilder builder)
+            {
+                builder.Entity<RegraFiscal>(entity =>
+                {
+                    entity.ToTable("tb_regraFiscal");
+                    entity.HasKey(e => e.Id);
+                    entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                    entity.Property(e => e.Cfop).HasMaxLength(10).IsRequired();
+
+                    entity.Property(e => e.Destino)
+                        .HasConversion<string>()
+                        .HasMaxLength(30)
+                        .IsRequired();
+
+                    entity.OwnsOne(e => e.ConfiguracaoTributaria, tb =>
+                    {
+                        tb.Property(p => p.AplicarICMS).HasColumnName("RF_AplicarICMS");
+                        tb.Property(p => p.CstICMS).HasColumnName("RF_CstICMS").HasMaxLength(50);
+                        tb.Property(p => p.CsosnICMS).HasColumnName("RF_CsosnICMS").HasMaxLength(50);
+                        tb.Property(p => p.AliquotaICMS).HasColumnName("RF_AliquotaICMS").HasColumnType("decimal(18,4)");
+                        tb.Property(p => p.ReduzirBaseICMS).HasColumnName("RF_ReduzirBaseICMS");
+
+                        tb.Property(p => p.AplicarIPI).HasColumnName("RF_AplicarIPI");
+                        tb.Property(p => p.CstIPI).HasColumnName("RF_CstIPI").HasMaxLength(50);
+                        tb.Property(p => p.AliquotaIPI).HasColumnName("RF_AliquotaIPI").HasColumnType("decimal(18,4)");
+
+                        tb.Property(p => p.AplicarPIS).HasColumnName("RF_AplicarPIS");
+                        tb.Property(p => p.CstPIS).HasColumnName("RF_CstPIS").HasMaxLength(50);
+                        tb.Property(p => p.AliquotaPIS).HasColumnName("RF_AliquotaPIS").HasColumnType("decimal(18,4)");
+
+                        tb.Property(p => p.AplicarCOFINS).HasColumnName("RF_AplicarCOFINS");
+                        tb.Property(p => p.CstCOFINS).HasColumnName("RF_CstCOFINS").HasMaxLength(50);
+                        tb.Property(p => p.AliquotaCOFINS).HasColumnName("RF_AliquotaCOFINS").HasColumnType("decimal(18,4)");
+
+                        tb.Property(p => p.AplicarISSQN).HasColumnName("RF_AplicarISSQN");
+                        tb.Property(p => p.AliquotaISSQN).HasColumnName("RF_AliquotaISSQN").HasColumnType("decimal(18,4)");
+
+                        tb.Property(p => p.AplicarIBS).HasColumnName("RF_AplicarIBS");
+                        tb.Property(p => p.CstIBS).HasColumnName("RF_CstIBS").HasMaxLength(50);
+                        tb.Property(p => p.AliquotaIBS).HasColumnName("RF_AliquotaIBS").HasColumnType("decimal(18,4)");
+
+                        tb.Property(p => p.AplicarCBS).HasColumnName("RF_AplicarCBS");
+                        tb.Property(p => p.CstCBS).HasColumnName("RF_CstCBS").HasMaxLength(50);
+                        tb.Property(p => p.AliquotaCBS).HasColumnName("RF_AliquotaCBS").HasColumnType("decimal(18,4)");
+
+                        tb.Property(p => p.AplicarIS).HasColumnName("RF_AplicarIS");
+                        tb.Property(p => p.AliquotaIS).HasColumnName("RF_AliquotaIS").HasColumnType("decimal(18,4)");
+
+                        tb.Property(p => p.cClassTrib).HasColumnName("RF_cClassTrib").HasMaxLength(10);
+                    });
+
+                    entity.HasIndex(e => new { e.NaturezaOperacaoId, e.SituacaoTributariaId, e.Destino }).IsUnique();
+                });
+
+                builder.Entity<RegraFiscal>()
+                    .HasOne(e => e.NaturezaOperacao)
+                    .WithMany(n => n.RegrasFiscais)
+                    .HasForeignKey(e => e.NaturezaOperacaoId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                builder.Entity<RegraFiscal>()
+                    .HasOne(e => e.SituacaoTributaria)
+                    .WithMany(s => s.RegrasFiscais)
+                    .HasForeignKey(e => e.SituacaoTributariaId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            }
+        }
+    }

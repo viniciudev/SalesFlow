@@ -1,9 +1,12 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Memory;
+using Model.Enums;
 using Model.Registrations;
 using Repository;
 using Service.Exceptions;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace Service
 {
@@ -28,46 +31,111 @@ namespace Service
                 .SetSize(1);
         }
 
-        public async Task<TributacaoResolvida> ResolverTributacaoAsync(int? productId, int naturezaOperacaoId)
+        public Destino ResolverDestino(string empresaUf, string clienteUf, string? clienteCodPais)
         {
-            if (!productId.HasValue || productId.Value <= 0)
-            {
-                var naturezaFallback = await GetNaturezaOperacaoCachedAsync(naturezaOperacaoId);
-                return new TributacaoResolvida
-                {
-                    Configuracao = naturezaFallback.ConfiguracaoTributaria,
-                    Origem = "NaturezaOperacao",
-                    NaturezaOperacaoOrigemId = naturezaOperacaoId
-                };
-            }
+            if (!string.IsNullOrEmpty(clienteCodPais) && clienteCodPais != "1058")
+                return Destino.Exterior;
 
-            var productTask = GetProductCachedAsync(productId.Value);
+            if (string.IsNullOrWhiteSpace(empresaUf) || string.IsNullOrWhiteSpace(clienteUf))
+                return Destino.Interno;
+
+            if (string.Equals(empresaUf.Trim(), clienteUf.Trim(), StringComparison.OrdinalIgnoreCase))
+                return Destino.Interno;
+
+            return Destino.Interestadual;
+        }
+
+        public async Task<RegraFiscal?> ResolverRegraFiscalAsync(
+            int naturezaOperacaoId,
+            int? situacaoTributariaId,
+            Destino destino)
+        {
+            if (!situacaoTributariaId.HasValue || situacaoTributariaId.Value <= 0)
+                return null;
+
+            var natureza = await GetNaturezaOperacaoCachedAsync(naturezaOperacaoId);
+            if (natureza == null)
+                return null;
+
+            var regra = natureza.RegrasFiscais?
+                .FirstOrDefault(r =>
+                    r.SituacaoTributariaId == situacaoTributariaId.Value &&
+                    r.Destino == destino);
+
+            return regra;
+        }
+
+        public async Task<TributacaoResolvida> ResolverTributacaoAsync(
+            int? productId,
+            int naturezaOperacaoId,
+            string? empresaUf = null,
+            string? clienteUf = null,
+            string? clienteCodPais = null)
+        {
             var naturezaTask = GetNaturezaOperacaoCachedAsync(naturezaOperacaoId);
-            await Task.WhenAll(productTask, naturezaTask);
+            Task<Product?>? productTask = productId.HasValue && productId.Value > 0
+                ? GetProductCachedAsync(productId.Value) : null;
 
-            var product = productTask.Result;
+            await Task.WhenAll(
+                naturezaTask,
+                productTask ?? Task.CompletedTask);
+
             var natureza = naturezaTask.Result;
+            var product = productTask?.Result;
 
             if (natureza == null)
-                throw new DomainException($"Natureza de operacao {naturezaOperacaoId} nao encontrada.");
+                throw new DomainException("Natureza de operacao nao encontrada.");
 
-            if (product == null)
+            if (product != null && product.SituacaoTributariaId.HasValue && product.SituacaoTributariaId > 0
+                && !string.IsNullOrWhiteSpace(empresaUf) && !string.IsNullOrWhiteSpace(clienteUf))
             {
-                return new TributacaoResolvida
+                var destino = ResolverDestino(empresaUf, clienteUf, clienteCodPais ?? "1058");
+                var regraFiscal = natureza.RegrasFiscais?
+                    .FirstOrDefault(r =>
+                        r.SituacaoTributariaId == product.SituacaoTributariaId.Value &&
+                        r.Destino == destino);
+
+                if (regraFiscal != null)
                 {
-                    Configuracao = natureza.ConfiguracaoTributaria,
-                    Origem = "NaturezaOperacao",
-                    NaturezaOperacaoOrigemId = naturezaOperacaoId
-                };
+                    return new TributacaoResolvida
+                    {
+                        Configuracao = regraFiscal.ConfiguracaoTributaria ?? new ConfiguracaoTributaria(),
+                        Cfop = regraFiscal.Cfop,
+                        Origem = "MatrizTributaria",
+                        NaturezaOperacaoOrigemId = natureza.Id,
+                        RegraFiscalId = regraFiscal.Id,
+                        Destino = destino
+                    };
+                }
+
+                regraFiscal = natureza.RegrasFiscais?
+                    .FirstOrDefault(r =>
+                        r.SituacaoTributariaId == product.SituacaoTributariaId.Value &&
+                        r.Destino == Destino.Interno);
+
+                if (regraFiscal != null)
+                {
+                    return new TributacaoResolvida
+                    {
+                        Configuracao = regraFiscal.ConfiguracaoTributaria ?? new ConfiguracaoTributaria(),
+                        Cfop = regraFiscal.Cfop,
+                        Origem = "MatrizTributaria",
+                        NaturezaOperacaoOrigemId = natureza.Id,
+                        RegraFiscalId = regraFiscal.Id,
+                        Destino = destino
+                    };
+                }
             }
 
-            if (product.UsaTributacaoPropria
+            if (product != null
+                && product.UsaTributacaoPropria
                 && natureza.PermiteTributacaoPorProduto
                 && product.ConfiguracaoTributaria != null)
             {
                 return new TributacaoResolvida
                 {
                     Configuracao = product.ConfiguracaoTributaria,
+                    Cfop = natureza.Cfop,
                     Origem = "Produto",
                     NaturezaOperacaoOrigemId = product.NaturezaOperacaoOrigemId
                 };
@@ -75,17 +143,23 @@ namespace Service
 
             return new TributacaoResolvida
             {
-                Configuracao = natureza.ConfiguracaoTributaria,
+                Configuracao = natureza.ConfiguracaoTributaria ?? new ConfiguracaoTributaria(),
+                Cfop = natureza.Cfop,
                 Origem = "NaturezaOperacao",
                 NaturezaOperacaoOrigemId = naturezaOperacaoId
             };
+        }
+
+        public async Task<TributacaoResolvida> ResolverTributacaoAsync(int? productId, int naturezaOperacaoId)
+        {
+            return await ResolverTributacaoAsync(productId, naturezaOperacaoId, null, null, null);
         }
 
         public async Task<ConfiguracaoTributaria> ClonarDeNaturezaAsync(int naturezaOperacaoId)
         {
             var natureza = await GetNaturezaOperacaoCachedAsync(naturezaOperacaoId);
             if (natureza == null)
-                throw new DomainException($"Natureza de operacao {naturezaOperacaoId} nao encontrada.");
+                throw new DomainException("Natureza de operacao nao encontrada.");
             return CloneConfiguracao(natureza.ConfiguracaoTributaria);
         }
 
@@ -118,12 +192,13 @@ namespace Service
                 AliquotaCBS = origem.AliquotaCBS,
                 AplicarIS = origem.AplicarIS,
                 AliquotaIS = origem.AliquotaIS,
+                cClassTrib = origem.cClassTrib,
             };
         }
 
         private async Task<Product?> GetProductCachedAsync(int productId)
         {
-            var cacheKey = $"product_trib_{productId}";
+            var cacheKey = "product_trib_" + productId;
             if (_cache.TryGetValue(cacheKey, out Product? cached))
                 return cached;
             var product = await _productRepository.GetByIdAsync(productId);
@@ -134,10 +209,10 @@ namespace Service
 
         private async Task<NaturezaOperacao?> GetNaturezaOperacaoCachedAsync(int naturezaId)
         {
-            var cacheKey = $"natop_trib_{naturezaId}";
+            var cacheKey = "natop_trib_" + naturezaId;
             if (_cache.TryGetValue(cacheKey, out NaturezaOperacao? cached))
                 return cached;
-            var natureza = await _naturezaOperacaoRepository.GetById(naturezaId);
+            var natureza = await _naturezaOperacaoRepository.GetByIdWithRegrasAsync(naturezaId);
             if (natureza != null)
                 _cache.Set(cacheKey, natureza, _cacheOptions);
             return natureza;
@@ -145,25 +220,32 @@ namespace Service
 
         public void InvalidarCacheProduto(int productId)
         {
-            _cache.Remove($"product_trib_{productId}");
+            _cache.Remove("product_trib_" + productId);
         }
 
         public void InvalidarCacheNatureza(int naturezaId)
         {
-            _cache.Remove($"natop_trib_{naturezaId}");
+            _cache.Remove("natop_trib_" + naturezaId);
         }
     }
 
     public class TributacaoResolvida
     {
         public ConfiguracaoTributaria Configuracao { get; set; } = new();
+        public string Cfop { get; set; } = string.Empty;
         public string Origem { get; set; } = "NaturezaOperacao";
         public int? NaturezaOperacaoOrigemId { get; set; }
+        public int? RegraFiscalId { get; set; }
+        public Destino? Destino { get; set; }
     }
 
     public interface ITributacaoResolverService
     {
         Task<TributacaoResolvida> ResolverTributacaoAsync(int? productId, int naturezaOperacaoId);
+        Task<TributacaoResolvida> ResolverTributacaoAsync(int? productId, int naturezaOperacaoId,
+            string? empresaUf, string? clienteUf, string? clienteCodPais);
+        Destino ResolverDestino(string empresaUf, string clienteUf, string? clienteCodPais);
+        Task<RegraFiscal?> ResolverRegraFiscalAsync(int naturezaOperacaoId, int? situacaoTributariaId, Destino destino);
         Task<ConfiguracaoTributaria> ClonarDeNaturezaAsync(int naturezaOperacaoId);
         ConfiguracaoTributaria CloneConfiguracao(ConfiguracaoTributaria origem);
         void InvalidarCacheProduto(int productId);

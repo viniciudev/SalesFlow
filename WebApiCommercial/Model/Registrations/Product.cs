@@ -1,4 +1,4 @@
-﻿using Model.Moves;
+using Model.Moves;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -28,28 +28,43 @@ namespace Model.Registrations
         public string Ncm { get; set; }
         public ICollection<PurchaseItem> PurchaseItems { get; set; }
 
-        // ========== TRIBUTAÇÃO POR PRODUTO ==========
+        // ========== MATRIZ TRIBUTARIA ==========
 
         /// <summary>
-        /// Quando true, este produto usa sua própria ConfiguracaoTributaria.
-        /// Quando false, herda da NaturezaOperacao da venda (default).
+        /// Situacao tributaria do produto (ex: NORMAL, ST_RETIDA).
+        /// Utilizada em conjunto com NaturezaOperacao + Destino para resolver a RegraFiscal.
+        /// </summary>
+        public int? SituacaoTributariaId { get; set; }
+
+        /// <summary>
+        /// Navegacao para a situacao tributaria.
+        /// </summary>
+        public SituacaoTributaria? SituacaoTributaria { get; set; }
+
+        // ========== TRIBUTACAO POR PRODUTO (deprecated - mantido para compatibilidade) ==========
+
+        /// <summary>
+        /// Quando true, este produto usa sua propria ConfiguracaoTributaria.
+        /// Deprecated: Substituido pelo modelo de matriz tributaria (RegraFiscal).
+        /// Mantido para compatibilidade com registros existentes.
         /// </summary>
         public bool UsaTributacaoPropria { get; set; } = false;
 
         /// <summary>
-        /// Configuração tributária específica do produto.
-        /// Só é utilizada quando UsaTributacaoPropria = true.
+        /// Configuracao tributaria especifica do produto.
+        /// Deprecated: Substituido pelo modelo de matriz tributaria.
+        /// Mantido para compatibilidade com registros existentes.
         /// </summary>
         public ConfiguracaoTributaria? ConfiguracaoTributaria { get; set; }
 
         /// <summary>
-        /// ID da Natureza de Operação de origem (quando a config foi clonada).
-        /// Null se a tributação foi configurada manualmente.
+        /// ID da Natureza de Operacao de origem (quando a config foi clonada).
+        /// Deprecated: Mantido para compatibilidade.
         /// </summary>
         public int? NaturezaOperacaoOrigemId { get; set; }
 
         /// <summary>
-        /// Data da última modificação da configuração tributária.
+        /// Data da ultima modificacao da configuracao tributaria.
         /// </summary>
         public DateTime? DataAtualizacaoTributaria { get; set; }
     }
