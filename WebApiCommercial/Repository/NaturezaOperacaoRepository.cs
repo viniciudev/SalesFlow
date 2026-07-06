@@ -18,6 +18,7 @@ namespace Repository
 		{
 			return await _dbContext.Set<NaturezaOperacao>()
 				.Where(x => x.CompanyId == tenantid)
+				.Include(x=>x.RegrasFiscais)
 				.AsNoTracking()
 				.ToListAsync();
 		}
@@ -67,6 +68,19 @@ namespace Repository
 				.AsNoTracking()
 				.FirstOrDefaultAsync(x => x.Id == naturezaId);
 		}
+
+		/// <summary>
+		/// Busca natureza de operacao com RegrasFiscais incluidas e tracking ativo
+		/// para permitir operacoes de atualizacao (upsert/delete/insert) nos filhos.
+		/// </summary>
+		public async Task<NaturezaOperacao?> GetByIdWithRegrasTrackedAsync(int naturezaId)
+		{
+			return await _dbContext.Set<NaturezaOperacao>()
+				.Include(n => n.RegrasFiscais)
+				.AsNoTracking()
+				.FirstOrDefaultAsync(x => x.Id == naturezaId);
+			
+		}
 	}
 
 	public interface INaturezaOperacaoRepository : IGenericRepository<NaturezaOperacao>
@@ -75,5 +89,6 @@ namespace Repository
 		Task<bool> ExistsCfopAsync(string cfop, TipoDocumentoEnum tipoDocumento, int id, int idComapny);
 		Task<NaturezaOperacao?> GetById(int naturezaId);
 		Task<NaturezaOperacao?> GetByIdWithRegrasAsync(int naturezaId);
+		Task<NaturezaOperacao?> GetByIdWithRegrasTrackedAsync(int naturezaId);
 	}
 }

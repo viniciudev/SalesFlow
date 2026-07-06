@@ -307,7 +307,9 @@ namespace WebAppCommercial
 			services.AddTransient<IGenericRepository<Purchase>, PurchaseRepository>();
 			services.AddTransient<IPurchaseRepository, PurchaseRepository>();
 			services.AddTransient<IBaseService<Purchase>, PurchaseService>();
-		
+			//regras fiscais 
+			services.AddTransient<IGenericRepository<RegraFiscal>, RegrasFiscalRepository>();
+			services.AddTransient<IRegrasFiscalRepository, RegrasFiscalRepository>();
 			//services.AddCors(options =>
 			//{
 			//    options.AddPolicy("EnableCORS", builder =>

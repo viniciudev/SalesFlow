@@ -49,8 +49,9 @@ public class ConventionPermissionMiddleware
         { "Dashboard", "DASHBOARD" }, // Se tiver no enum
                 // === COMPRA ===
                      { "Compras", "COMPRA" },
-      { "Fornecedores", "FORNECEDOR" },
+			{ "Fornecedores", "FORNECEDOR" },
 		{"ServiceProvided", "SERVICO" },
+		{  "SituacaoTributaria", "SITUACAO_TRIBUTARIA"   }
 		};
 
 	// 🔥 Controllers que NÃO exigem permissão (públicos)
@@ -311,6 +312,10 @@ public class ConventionPermissionMiddleware
 			PermissionEnum.CADASTRO_SERVICO_EDIT => "Editar serviço prestado",
 			PermissionEnum.CADASTRO_SERVICO_VIEW => "Visualizar serviço prestado",
 			PermissionEnum.CADASTRO_SERVICO_DELETE => "Deletar serviço prestado",
+			PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_CREATE => "Criar situação tributária",
+			PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_EDIT => "Editar situação tributária",
+			PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_VIEW => "Visualizar situação tributária",
+			PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_DELETE => "Deletar situação tributária",
 			_ => permission.ToString().Replace("_", " ")
 		};
 	}

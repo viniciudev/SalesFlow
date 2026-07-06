@@ -395,7 +395,32 @@ namespace Model
                             Code = PermissionEnum.CADASTRO_SERVICO_VIEW,
                             Name = "Visualizar Serviço Prestado",
                             Category = "Serviços"
-										}
+										},
+                    new Permission {
+                            Id = (int)PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_CREATE,
+                            Code = PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_CREATE,
+                            Name = "Criar Situação Tributária",
+                            Category = "Situação Tributária"
+                    },
+                    new Permission {
+                            Id = (int)PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_EDIT,
+                            Code = PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_EDIT,
+                            Name = "Editar Situação Tributária",
+                            Category = "Situação Tributária"
+                    },
+                    new Permission {
+                            Id = (int)PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_DELETE,
+                            Code = PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_DELETE,
+                            Name = "Deletar Situação Tributária",
+                            Category = "Situação Tributária"
+                    },
+                    new Permission {
+                            Id = (int)PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_VIEW,
+                            Code = PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_VIEW,
+                            Name = "Visualizar Situação Tributária",
+                            Category = "Situação Tributária"
+                            },
+                    
 						};
         }
     }
