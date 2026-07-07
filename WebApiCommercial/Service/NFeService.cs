@@ -310,6 +310,7 @@ namespace Service
 				_currentFiscalConfiguration = fiscalConfiguration;
 				_currentNaturezaOperacao = naturezaOperacao;
 				_currentSale = sale;
+				ValidarTipoDocumentoPorVenda();
 				_configuracaoApp = criarConfiguracaoApp(fiscalConfiguration, naturezaOperacao);
 				ModeloDocumento modeloDocumento = _currentNaturezaOperacao.TipoDocumento == TipoDocumentoEnum.NFCE ? ModeloDocumento.NFCe : ModeloDocumento.NFe;
 					_nfe = await ObterNfeValidadaAsync(VersaoServico.Versao400, modeloDocumento,
@@ -455,6 +456,74 @@ namespace Service
 				_currentFiscalConfiguration = null;
 				_currentNaturezaOperacao = null;
 				_currentSale = null;
+			}
+		}
+		private void ValidarTipoDocumentoPorVenda()
+		{
+			var tipoDocumento = _currentNaturezaOperacao.TipoDocumento;
+
+			if (tipoDocumento == TipoDocumentoEnum.NFE)
+			{
+				// NFe: Destinatário OBRIGATÓRIO
+				if (_currentSale?.Client == null)
+				{
+					throw new Exception(
+							"A venda não possui cliente cadastrado. " +
+							"NFe exige destinatário com CPF/CNPJ. " +
+							"Considere usar NFCe se for consumidor final não identificado."
+					);
+				}
+
+				// Validações adicionais para NFe
+				var cliente = _currentSale.Client;
+
+				// CPF ou CNPJ deve ser válido
+				if (string.IsNullOrEmpty(cliente.Document) || cliente.Document.Length < 11)
+				{
+					throw new Exception(
+							$"Documento do destinatário inválido: {cliente.Document}. " +
+							"NFe exige CPF ou CNPJ válido."
+					);
+				}
+
+				// Endereço deve estar completo
+				if (string.IsNullOrEmpty(cliente.Address) ||
+						string.IsNullOrEmpty(cliente.Municipio) ||
+						string.IsNullOrEmpty(cliente.Uf))
+				{
+					throw new Exception(
+							"Endereço do destinatário incompleto. " +
+							"Logradouro, município e UF são obrigatórios para NFe."
+					);
+				}
+
+				// IE é obrigatória para alguns estados (quando contribuinte)
+				if (cliente.IndicadorIE == "1" && string.IsNullOrEmpty(cliente.Ie))
+				{
+					throw new Exception(
+							"Inscrição Estadual obrigatória para contribuintes do ICMS."
+					);
+				}
+			}
+			else if (tipoDocumento == TipoDocumentoEnum.NFCE)
+			{
+				// NFCe: Aceita destinatário nulo (consumidor não identificado)
+				if (_currentSale?.Client != null)
+				{
+					// Se tiver cliente, valida que o documento é de pessoa física
+					if (_currentSale.Client.TipoPessoa == "J")
+					{
+						// ⚠️ ATENÇÃO: NFCe normalmente só aceita CPF (pessoa física)
+						// Alguns estados aceitam CNPJ para NFCe, verificar legislação local
+						var cliente = _currentSale.Client;
+						if (cliente.Document.Length == 14 && !string.IsNullOrEmpty(cliente.Ie))
+						{
+							// Log de aviso, mas não bloqueia
+							Console.WriteLine($"AVISO: NFCe com CNPJ ({cliente.Document}). " +
+															 "Verifique se a SEFAZ do seu estado aceita.");
+						}
+					}
+				}
 			}
 		}
 		/// <summary>
