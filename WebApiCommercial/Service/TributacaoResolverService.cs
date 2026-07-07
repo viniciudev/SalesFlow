@@ -72,16 +72,16 @@ namespace Service
             string? clienteUf = null,
             string? clienteCodPais = null)
         {
-            var naturezaTask = GetNaturezaOperacaoCachedAsync(naturezaOperacaoId);
-            Task<Product?>? productTask = productId.HasValue && productId.Value > 0
-                ? GetProductCachedAsync(productId.Value) : null;
+            var natureza = await _naturezaOperacaoRepository.GetByIdWithRegrasAsync (naturezaOperacaoId);
+            var product =  productId.HasValue && productId.Value > 0
+                ? await _productRepository.GetByIdAsync(productId.Value) : null;
 
-            await Task.WhenAll(
-                naturezaTask,
-                productTask ?? Task.CompletedTask);
+            //await Task.WhenAll(
+            //    naturezaTask,
+            //    productTask ?? Task.CompletedTask);
 
-            var natureza = naturezaTask.Result;
-            var product = productTask?.Result;
+            //var natureza = naturezaTask.Result;
+            //var product = productTask?.Result;
 
             if (natureza == null)
                 throw new DomainException("Natureza de operacao nao encontrada.");

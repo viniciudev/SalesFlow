@@ -21,7 +21,8 @@
         public bool UsaTributacaoPropria { get; set; } = false;
         public ProductTributacaoDto? ConfiguracaoTributaria { get; set; }
         public int? NaturezaOperacaoOrigemId { get; set; }
-    }
+		public string ?Cest { get; set; }
+	}
 
     public class ProductTributacaoDto
     {

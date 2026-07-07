@@ -764,7 +764,7 @@ namespace Service
 						{
 							tpIntegra = TipoIntegracaoPagamento.TipNaoIntegrado,
 							cAut = "NAOINTEGRADO",
-							CNPJ = "00000000000000",
+							CNPJ = _configuracaoApp.Emitente.CNPJ,
 							tBand = BandeiraCartao.bcOutros
 						};
 					}
@@ -981,7 +981,7 @@ namespace Service
 				vUnTrib = i.Value,
 				indTot = IndicadorTotal.ValorDoItemCompoeTotalNF,
 				//NVE = {"AA0001", "AB0002", "AC0002"},
-				//CEST = ?
+				CEST = i.Product.Cest ?? "0000000"
 
 				//ProdutoEspecifico = new arma
 				//{

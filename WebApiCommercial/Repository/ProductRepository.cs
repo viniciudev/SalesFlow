@@ -44,8 +44,8 @@ namespace Repository
                       NaturezaOperacaoOrigemId = p.NaturezaOperacaoOrigemId,
                       DataAtualizacaoTributaria = p.DataAtualizacaoTributaria,
                       SituacaoTributariaId = p.SituacaoTributariaId,
-                      ConfiguracaoTributaria = p.ConfiguracaoTributaria
-
+                      ConfiguracaoTributaria = p.ConfiguracaoTributaria,
+                      Cest=p.Cest,
                    })
                    .WithCaseInsensitive()
                  .AsNoTracking()
