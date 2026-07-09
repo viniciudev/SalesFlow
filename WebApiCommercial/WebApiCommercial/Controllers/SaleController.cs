@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Model;
 using Model.DTO;
-using Model.Enums;
 using Model.Moves;
 using Repository;
 using Service;
@@ -12,85 +11,86 @@ using System.Threading.Tasks;
 
 namespace WebApiCommercial.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    [Authorize]
-    public class SaleController : ControllerBase
-    {
-        private readonly ISaleService saleService;
+	[Route("api/[controller]")]
+	[ApiController]
+	[Authorize]
+	public class SaleController : ControllerBase
+	{
+		private readonly ISaleService saleService;
 
-        public SaleController(ISaleService saleService)
-        {
-            this.saleService = saleService;
-        }
-        // GET: api/<SaleController>
-        [HttpGet]
-        public async Task<ActionResult<PagedResult<Sale>>> GetPaged([FromQuery] Filters filters,
-          [FromHeader] int tenantid)
-        {
-            filters.IdCompany = tenantid;
-            return Ok(await saleService.GetAllPaged(filters));
-        }
+		public SaleController(ISaleService saleService)
+		{
+			this.saleService = saleService;
+		}
+		// GET: api/<SaleController>
+		[HttpGet]
+		public async Task<ActionResult<PagedResult<Sale>>> GetPaged([FromQuery] Filters filters,
+			[FromHeader] int tenantid)
+		{
+			filters.IdCompany = tenantid;
+			return Ok(await saleService.GetAllPaged(filters));
+		}
 
-        [HttpGet("GetByMonthAllSales")]
-        public async Task<ActionResult<SaleInfoResponse>> GetByMonthAllSales([FromQuery] Filters filters,
-        [FromHeader] int tenantid)
-        {
-            filters.IdCompany = tenantid;
-            return Ok(await saleService.GetByMonthAllSales(filters));
-        }
-        [HttpGet("GetByIdSale")]
-        public async Task<ActionResult<Sale>> GetByIdSale([FromQuery] int id)
-        {
-            return Ok(await saleService.GetByIdSale(id));
-        }
-        [HttpGet("GetByWeekAllSales")]
-        public async Task<ActionResult<SalesCommissionsInfo>> GetByWeekAllSales([FromQuery] Filters filters,
-          [FromHeader] int tenantid)
-        {
-            filters.IdCompany = tenantid;
-            return Ok(await saleService.GetByWeekAllSales(filters));
-        }
-        [HttpGet("GetSalesmanByWeek")]
-        public async Task<ActionResult<SalesCommissionsInfo>> GetSalesmanByWeek(
-          [FromHeader] int tenantid)
-        {
-            return Ok(await saleService.GetSalesmanByWeek(tenantid));
-        }
-        // POST api/<SaleController>
-        [HttpPost("PostWithItems")]
-        public async Task<ActionResult<int>> PostWithItems([FromBody] SaleDto sale,
-          [FromHeader] int tenantid)
-        {
-            sale.IdCompany = tenantid;
-            int id = await saleService.SaveWithItems(sale);
-            return Ok(id);
-        }
+		[HttpGet("GetByMonthAllSales")]
+		public async Task<ActionResult<SaleInfoResponse>> GetByMonthAllSales([FromQuery] Filters filters,
+		[FromHeader] int tenantid)
+		{
+			filters.IdCompany = tenantid;
+			return Ok(await saleService.GetByMonthAllSales(filters));
+		}
+		[HttpGet("GetByIdSale")]
+		public async Task<ActionResult<Sale>> GetByIdSale([FromQuery] int id)
+		{
+			return Ok(await saleService.GetByIdSale(id));
+		}
+		[HttpGet("GetByWeekAllSales")]
+		public async Task<ActionResult<SalesCommissionsInfo>> GetByWeekAllSales([FromQuery] Filters filters,
+			[FromHeader] int tenantid)
+		{
+			filters.IdCompany = tenantid;
+			return Ok(await saleService.GetByWeekAllSales(filters));
+		}
+		[HttpGet("GetSalesmanByWeek")]
+		public async Task<ActionResult<SalesCommissionsInfo>> GetSalesmanByWeek(
+			[FromHeader] int tenantid)
+		{
+			return Ok(await saleService.GetSalesmanByWeek(tenantid));
+		}
+		// POST api/<SaleController>
+		[HttpPost("PostWithItems")]
+		public async Task<ActionResult<int>> PostWithItems([FromBody] SaleDto sale,
+			[FromHeader] int tenantid)
+		{
+			sale.IdCompany = tenantid;
+			int id = await saleService.SaveWithItems(sale);
+			return Ok(id);
+		}
 
-        [HttpPut]
-        public async Task<ActionResult<dynamic>> Put([FromBody] Sale sale,
-          [FromHeader] int tenantid)
-        {
-            sale.IdCompany = tenantid;
-            await saleService.Alter(sale);
-            return Ok(true);
-        }
+		[HttpPut]
+		public async Task<ActionResult<dynamic>> Put([FromBody] Sale sale,
+			[FromHeader] int tenantid)
+		{
+			sale.IdCompany = tenantid;
+			await saleService.Alter(sale);
+			return Ok(true);
+		}
 
-        //[RequirePermission(PermissionEnum.VENDA_ALTER)]
-        [HttpPut("PutWithItems")]
-        public async Task<ActionResult<dynamic>> PutWithItems([FromBody] SaleDto sale,
-          [FromHeader] int tenantid)
-        {
-            sale.IdCompany = tenantid;
-            await saleService.PutWithItems(sale);
-            return Ok(true);
-        }
+		//[RequirePermission(PermissionEnum.VENDA_ALTER)]
+		[HttpPut("PutWithItems")]
+		public async Task<ActionResult<dynamic>> PutWithItems([FromBody] SaleDto sale,
+			[FromHeader] int tenantid)
+		{
+			sale.IdCompany = tenantid;
+			await saleService.PutWithItems(sale);
+			return Ok(true);
+		}
 
-        // DELETE api/<SaleController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-
-        }
-    }
+		// DELETE api/<SaleController>/5
+		[HttpDelete("{id}")]
+		public async Task<ActionResult> Delete(int id)
+		{
+			await saleService.Cancel(id);
+			return Ok(true);
+		}
+	}
 }

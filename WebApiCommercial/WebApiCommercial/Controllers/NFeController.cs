@@ -103,7 +103,7 @@ namespace WebApiCommercial.Controllers
         {
             try
             {
-                var resp = await _nfeService.Resend(id);
+                var resp = await _nfeService.Resend(id, null);
                 return Ok(resp);
             }
             catch (Exception ex)

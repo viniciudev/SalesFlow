@@ -85,13 +85,13 @@ namespace Service
 		{
 			List<NFeEmission> nFeEmissionList = await (repository as INFeRepository).GetBySaleIdAsync(nfeDto.SaleId);
 
-			if (nFeEmissionList.Count > 0)
+			if (nFeEmissionList.Count > 0 )
 			{
 				NFeEmission nFeEmission = nFeEmissionList.FirstOrDefault(x => x.StatusNfe == StatusNfe.pendente);
 
 				if (nFeEmission != null)
 				{
-					ResponseGeneric responseGeneric = await Resend(nFeEmission.Id);
+					ResponseGeneric responseGeneric = await Resend(nFeEmission.Id, nfeDto.NaturezaOperacaoId);
 					NFeEmission nFeEmissionResp = responseGeneric.Data as NFeEmission;
 					if (nFeEmissionResp == null)
 					{
@@ -111,7 +111,29 @@ namespace Service
 						};
 					}
 				}
-				return new ResponseGeneric { Success = false, Message = "N�o foi encontrado a nota!" };
+				//pode ser nota cancelada
+				else
+				{
+					ResponseGeneric responseGeneric = await CreateAttemptAsync(nfeDto);
+					NFeEmission nFeEmissionResp = responseGeneric.Data as NFeEmission;
+					if (nFeEmissionResp == null)
+					{
+						return responseGeneric;
+
+					}
+					if (nFeEmissionResp.StatusNfe != StatusNfe.emitida)
+					{
+						return new ResponseGeneric { Success = false, Message = nFeEmissionResp.ErrorMessage };
+					}
+					else
+					{
+						return new ResponseGeneric
+						{
+							Success = true
+						};
+					}
+				}
+			
 			}
 			else
 			{
@@ -137,12 +159,14 @@ namespace Service
 		}
 
 		// M�todo principal para reenvio
-		public async Task<ResponseGeneric> Resend(int id)
+		public async Task<ResponseGeneric> Resend(int id, int? nop)
 		{
 			NFeEmission nFeEmission = await (repository as INFeRepository).GetByIdAsync(id);
+		
 			if (nFeEmission == null)
 				return new ResponseGeneric { Success = false, Message = "N�o foi encontrado a nota!" };
-
+			if (nop != null)
+				nFeEmission.NaturezaOperacaoId = nop ?? nFeEmission.NaturezaOperacaoId;
 			var (validationResult, fiscalConfig, sale, naturezaOperacao) =
 					await ValidateAndGetDependencies(nFeEmission.CompanyId, nFeEmission.SaleId, nFeEmission.NaturezaOperacaoId);
 
@@ -185,7 +209,7 @@ namespace Service
 			// Configura��o da empresa
 			FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(companyId);
 			if (fiscalConfiguration == null)
-				return (new ResponseGeneric { Success = false, Message = "N�o encontrado as configura��es para emiss�o de nota!" }, null, null, null);
+				return (new ResponseGeneric { Success = false, Message = "N�o encontrado as configurações para emiss�o de nota!" }, null, null, null);
 
 			// Verifica se existe a venda
 			Sale sale = await _saleRepository.GetSaleByCompany(saleId, companyId);
@@ -198,7 +222,7 @@ namespace Service
 			// Natureza da opera��o
 			NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(naturezaOperacaoId);
 			if (naturezaOperacao == null)
-				return (new ResponseGeneric { Success = false, Message = "Natureza de opera��o n�o encontrada." }, null, null, null);
+				return (new ResponseGeneric { Success = false, Message = "Natureza de operação n�o encontrada." }, null, null, null);
 
 			return (new ResponseGeneric { Success = true }, fiscalConfiguration, sale, naturezaOperacao);
 		}
@@ -2103,7 +2127,7 @@ namespace Service
 
 		Task<List<NFeEmission>> GetAll(int tenantid);
 		Task<PagedResult<NFeEmission>> GetPaged(Filters filters);
-		Task<ResponseGeneric> Resend(int id);
+		Task<ResponseGeneric> Resend(int id, int? nop);
 		Task<byte[]> Danfe(int id);
 		Task update(NFeEmissionDto attempt);
 		Task<byte[]> ObterXml(int id);
