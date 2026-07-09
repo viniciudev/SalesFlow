@@ -20,10 +20,11 @@ namespace WebApiCommercial.Dtos
         public Emitente? Emitente { get; set; }
 
         public bool AutorizacaoASO { get; set; }
+		public int TenantId { get; set; }
 
-        // Converte DTO para entidade do Model
-     
-    }
+		// Converte DTO para entidade do Model
+
+	}
 
     public class CertificadoDigitalRequest
     {

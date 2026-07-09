@@ -38,6 +38,7 @@ namespace WebApiCommercial.Controllers
 			}
 
 			// mapear DTO para entidade
+			request.TenantId = tenantid;
 			var model = await _service.CreateEntityFromRequest(request);
 			await _service.Create(model);
 			return Ok(new ResponseGeneric { Success = true, Data = model });

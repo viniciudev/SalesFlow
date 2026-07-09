@@ -25,7 +25,7 @@ namespace Model.Registrations
 
         // NFSe / ServiceInvoice fields
         public int LastInvoiceNumber { get; set; }
-        public string CodMunIBGE { get; set; }
+        public string ?CodMunIBGE { get; set; }
 
         public Company Company { get; set; }
         public int CompanyId { get; set; }
