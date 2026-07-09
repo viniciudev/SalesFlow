@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Model;
 using Model.DTO;
 using Model.Moves;
+using Model.Registrations;
 using Repository;
 using System;
 using System.Collections.Generic;
@@ -291,9 +292,18 @@ namespace Service
 					var sale = await GetByIdSale(saleId);
 					if (sale == null)
 						throw new Exception("Venda não encontrada");
+					List<NFeEmission> nFeEmissionList = await (repository as INFeRepository).GetBySaleIdAsync(saleId);
 
-					// Buscar itens
-					var saleItems = await saleItemsService.GetByIdSaleAsync(saleId);
+					if (nFeEmissionList.Count > 0)
+					{
+						NFeEmission nFeEmission = nFeEmissionList.FirstOrDefault(x => x.StatusNfe == StatusNfe.emitida);
+						if (nFeEmission != null)
+						{
+							throw new Exception("Não é possível cancelar venda com nota fiscal");
+						}
+					}
+						// Buscar itens
+						var saleItems = await saleItemsService.GetByIdSaleAsync(saleId);
 
 					// Reverter estoque
 					foreach (var item in saleItems)
