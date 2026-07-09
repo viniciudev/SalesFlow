@@ -334,9 +334,7 @@ namespace Service
 
 			// cClassTrib derivado do CST: preenche com 6 dígitos (ex: CST "010" → "010000")
 			// Para CSTs que exigem modificador específico, usa um código válido da tabela oficial
-			string cClassTrib = !string.IsNullOrWhiteSpace(cstCode)
-				? ObtercClassTribPadrao(cstCode)
-				: "010011";
+			string cClassTrib = _config.cClassTrib;
 
 			var ibsCbs = new IBSCBS
 			{
