@@ -1074,7 +1074,7 @@ namespace Service
 				vUnTrib = i.Value,
 				indTot = IndicadorTotal.ValorDoItemCompoeTotalNF,
 				//NVE = {"AA0001", "AB0002", "AC0002"},
-				CEST = i.Product.Cest ?? "0000000"
+				CEST = string.IsNullOrEmpty( i.Product.Cest) ? "0000000": i.Product.Cest
 
 				//ProdutoEspecifico = new arma
 				//{
