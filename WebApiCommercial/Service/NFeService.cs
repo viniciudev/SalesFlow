@@ -742,8 +742,8 @@ namespace Service
 					index++;
 
 						// Resolve tributacao pela matriz (NaturezaOperacao + SituacaoTributaria + Destino)
-						var empresaUf = _currentFiscalConfiguration?.Emitente?.EmitenteEndereco?.Uf ?? "";
-						var clienteUf = _currentSale?.Client?.Uf ?? "";
+						var empresaUf =  _currentFiscalConfiguration?.Emitente?.EmitenteEndereco?.Uf ?? "";
+						var clienteUf = modelo == ModeloDocumento.NFCe ? empresaUf : _currentSale?.Client?.Uf ?? "";
 						var clienteCodPais = _currentSale?.Client?.CodPais ?? "1058";
 
 						var tributacaoResolvida = await _tributacaoResolver.ResolverTributacaoAsync(
@@ -1074,7 +1074,7 @@ namespace Service
 				vUnTrib = i.Value,
 				indTot = IndicadorTotal.ValorDoItemCompoeTotalNF,
 				//NVE = {"AA0001", "AB0002", "AC0002"},
-				CEST = i.Product.Cest ?? "0000000"
+				//CEST = string.IsNullOrEmpty( i.Product.Cest) ? "0000000": i.Product.Cest
 
 				//ProdutoEspecifico = new arma
 				//{
@@ -1084,6 +1084,8 @@ namespace Service
 				//    descr = "TESTE DE ARMA"
 				//}
 			};
+			if(!string.IsNullOrEmpty(i.Product.Cest))
+				p.CEST=i.Product.Cest;
 			return p;
 		}
 		
@@ -1110,7 +1112,7 @@ namespace Service
 					ICMS = new ICMS { TipoICMS = tipoICMS },
 					COFINS = calculador.CalcularCOFINS(),
 					PIS = calculador.CalcularPIS(),
-					//IBSCBS = calculador.CalcularIBSCBS()
+					IBSCBS = calculador.CalcularIBSCBS()
 				}
 			};
 
@@ -1673,36 +1675,36 @@ namespace Service
 				decimal totalCBS = produtos.Sum(p =>
 					p.imposto?.IBSCBS?.gIBSCBS?.gCBS?.vCBS ?? 0);
 
-				//t.IBSCBSTot = new IBSCBSTot
-				//{
-				//	vBCIBSCBS = totalBCIBSCBS,
-				//	gIBS = new gIBSTotal
-				//	{
-				//		vIBS = Math.Round(totalIBS, 2),
-				//		gIBSUF = new gIBSUFTotal
-				//		{
-				//			vIBSUF = Math.Round(totalIBSUF, 2),
-				//			vDif = 0,
-				//			vDevTrib = 0
-				//		},
-				//		gIBSMun = new gIBSMunTotal
-				//		{
-				//			vIBSMun = Math.Round(totalIBSMun, 2),
-				//			vDif = 0,
-				//			vDevTrib = 0
-				//		},
-				//		vCredPres = 0,
-				//		vCredPresCondSus = 0
-				//	},
-				//	gCBS = new gCBSTotal
-				//	{
-				//		vCBS = Math.Round(totalCBS, 2),
-				//		vDif = 0,
-				//		vDevTrib = 0,
-				//		vCredPres = 0,
-				//		vCredPresCondSus = 0
-				//	}
-				//};
+				t.IBSCBSTot = new IBSCBSTot
+				{
+					vBCIBSCBS = totalBCIBSCBS,
+					gIBS = new gIBSTotal
+					{
+						vIBS = Math.Round(totalIBS, 2),
+						gIBSUF = new gIBSUFTotal
+						{
+							vIBSUF = Math.Round(totalIBSUF, 2),
+							vDif = 0,
+							vDevTrib = 0
+						},
+						gIBSMun = new gIBSMunTotal
+						{
+							vIBSMun = Math.Round(totalIBSMun, 2),
+							vDif = 0,
+							vDevTrib = 0
+						},
+						vCredPres = 0,
+						vCredPresCondSus = 0
+					},
+					gCBS = new gCBSTotal
+					{
+						vCBS = Math.Round(totalCBS, 2),
+						vDif = 0,
+						vDevTrib = 0,
+						vCredPres = 0,
+						vCredPresCondSus = 0
+					}
+				};
 			}
 
 			return t;

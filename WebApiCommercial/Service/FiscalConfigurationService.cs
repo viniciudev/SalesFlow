@@ -271,7 +271,8 @@ namespace Service
 
 			// 6. AutorizacaoASO
 			model.AutorizacaoASO = request.AutorizacaoASO;
-
+			model.CodMunIBGE = request?.Emitente?.EmitenteEndereco?.CodigoCidade;
+			model.CompanyId=request.TenantId;
 			return model;
 		}
 	}
