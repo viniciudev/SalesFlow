@@ -21,6 +21,7 @@ namespace Service
 		private readonly IFinancialService _financialService;
 		private readonly IFinancialPaymentMethodRepository _financialPaymentMethodRepository;
 		private readonly IBoxRepository _boxRepository;
+		private readonly INFeRepository _nfeRepository;
 		public SaleService(IGenericRepository<Sale> repository,
 			ISaleItemsService saleItemsService,
 			ICommissionService commissionService,
@@ -28,7 +29,8 @@ namespace Service
 			ICostCenterRepository costCenterRepository,
 			IFinancialService financialService,
 			IFinancialPaymentMethodRepository financialPaymentMethodRepository,
-			IBoxRepository boxRepository) : base(repository)
+			IBoxRepository boxRepository,
+			INFeRepository nfeRepository) : base(repository)
 		{
 			this.saleItemsService = saleItemsService;
 			this.commissionService = commissionService;
@@ -37,6 +39,7 @@ namespace Service
 			_financialPaymentMethodRepository = financialPaymentMethodRepository;
 			_financialService = financialService;
 			_boxRepository = boxRepository;
+			_nfeRepository = nfeRepository;
 		}
 
 		public async Task<PagedResult<Sale>> GetAllPaged(Filters filters)
@@ -282,24 +285,30 @@ namespace Service
 		{
 			return await (repository as ISaleRepository).GetSalesmanByWeek(idCompany);
 		}
-		public async Task<bool> Cancel(int saleId)
+		public async Task<ResponseGeneric> Cancel(int saleId)
 		{
 			using (var transaction = await repository.CreateTransactionAsync())
 			{
 				try
 				{
 					// Buscar venda
-					var sale = await GetByIdSale(saleId);
+					var sale = await base.GetByIdAsync(saleId);
 					if (sale == null)
-						throw new Exception("Venda não encontrada");
-					List<NFeEmission> nFeEmissionList = await (repository as INFeRepository).GetBySaleIdAsync(saleId);
+					return new ResponseGeneric { Success = false, Data = "Venda não encontrada" };
+					if (sale.Status== SaleStatus.canceled)
+					{
+						
+						return new ResponseGeneric { Success = false, Data = "Venda já foi cancelada!" };
+					}
+					List<NFeEmission> nFeEmissionList = await _nfeRepository.GetBySaleIdAsync(saleId);
 
 					if (nFeEmissionList.Count > 0)
 					{
 						NFeEmission nFeEmission = nFeEmissionList.FirstOrDefault(x => x.StatusNfe == StatusNfe.emitida);
 						if (nFeEmission != null)
 						{
-							throw new Exception("Não é possível cancelar venda com nota fiscal");
+							return new ResponseGeneric { Success = false, Data = "Não é possível cancelar venda com nota fiscal" };
+						
 						}
 					}
 						// Buscar itens
@@ -343,7 +352,7 @@ namespace Service
 					await base.Alter(sale);
 
 					transaction.Commit();
-					return true;
+					return new ResponseGeneric { Success = true };
 				}
 				catch
 				{
@@ -363,6 +372,6 @@ namespace Service
 		Task<List<SalesmanInfo>> GetSalesmanByWeek(int idCompany);
 
 		Task<int> PutWithItems(SaleDto sale);
-		Task<bool> Cancel(int saleId);
+		Task<ResponseGeneric> Cancel(int saleId);
 	}
 }

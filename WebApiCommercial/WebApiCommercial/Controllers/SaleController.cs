@@ -89,8 +89,8 @@ namespace WebApiCommercial.Controllers
 		[HttpDelete("{id}")]
 		public async Task<ActionResult> Delete(int id)
 		{
-			await saleService.Cancel(id);
-			return Ok(true);
+			var resp=await saleService.Cancel(id);
+			return Ok(resp);
 		}
 	}
 }

@@ -20,7 +20,7 @@
 		VENDA_VIEW = 30,
 		VENDA_CREATE = 31,
 		VENDA_CANCELAR = 32,
-
+		
 		// Financeiro
 		FINANCEIRO_VIEW = 40,
 		FINANCEIRO_EDIT = 41,

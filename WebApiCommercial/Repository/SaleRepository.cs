@@ -41,7 +41,7 @@ namespace Repository
                                    NameSeller = sale.Salesman.Name,
                                    ValueSale = sale.SaleItems.Sum(x => x.Value * x.Amount),
                                    Total = sale.Total,
-
+                                   Status = sale.Status,
                                    SaleItems = sale.SaleItems.Select(x => new SaleItems
                                    {
                                        Id = x.Id,

@@ -223,7 +223,7 @@ public class ConventionPermissionMiddleware
 			"GET" => new[] { "VIEW", "READ", "ACCESS", "LIST", "GET", "MANAGER" },
 			"POST" => new[] { "CREATE", "ADD", "INSERT", "NEW", "POST", "MANAGER" },
 			"PUT" or "PATCH" => new[] { "EDIT", "UPDATE", "MODIFY", "ALTER", "PUT", "MANAGER" },
-			"DELETE" => new[] { "DELETE", "REMOVE", "EXCLUDE", "DEL", "MANAGER", "CANCEL" },
+			"DELETE" => new[] { "DELETE", "REMOVE", "EXCLUDE", "DEL", "MANAGER", "CANCEL", "CANCELAR" },
 			_ => new[] { "ACCESS" }
 		};
 
