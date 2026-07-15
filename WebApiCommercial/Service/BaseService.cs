@@ -60,6 +60,4 @@ namespace Service
       Task<PagedResult<TEntity>> GetAllPage(int Number, int Size);
       Task DeleteAsync(int id);
    }
-
-
 }
