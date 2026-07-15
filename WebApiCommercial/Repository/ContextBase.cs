@@ -987,7 +987,7 @@ namespace Repository
 				entity.Property(c => c.CodigoProduto).HasMaxLength(50);
 				entity.Property(c => c.DescricaoProduto).HasMaxLength(200);
 				entity.Property(c => c.Quantidade).HasColumnType("decimal(18,3)");
-				entity.Property(c => c.ValorUnitario).HasColumnType("decimal(18,2)");
+				entity.Property(c => c.ValorUnitario).HasColumnType("decimal(18,4)");
 				entity.Property(c => c.Desconto).HasColumnType("decimal(18,2)");
 				entity.Property(c => c.ValorTotal).HasColumnType("decimal(18,2)");
 			});
