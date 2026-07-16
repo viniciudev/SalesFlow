@@ -132,6 +132,37 @@ namespace Service
 				var caixaAberto = await _boxRepository.GetByStatus(CaixaStatus.ABERTO, IdCompany);
 				var listCostCenter = await _costCenterRepository.GetByIdCompany(IdCompany);
 				decimal value = troco != null ? (decimal)(formPaymentSales.Sum(x => x.Value) - troco) : formPaymentSales.Sum(x => x.Value);
+				FinancialStatus status = FinancialStatus.paid; // status padrão
+				bool hasPendingPayment = false;
+
+				foreach (var m in formPaymentSales)
+				{
+					// Buscar método de pagamento
+					var paymentMethod = await _paymentMethodRepository.GetById(m.PaymentMethodId);
+					if (paymentMethod == null)
+						return;
+
+					// Validar parcelamento
+					if (m.Installments.HasValue && m.Installments.Value > 1)
+					{
+						// Verifica se o método permite parcelamento
+						if (!paymentMethod.AllowInstallments)
+							throw new Exception($"O método {paymentMethod.Name} não permite parcelamento");
+
+						// Pagamento parcelado SEMPRE é pendente
+						hasPendingPayment = true;
+					}
+
+					// Verifica se o método tem liquidação imediata
+					if (!paymentMethod.IsImmediateSettlement)
+					{
+						hasPendingPayment = true;
+					}
+				}
+
+				// Define o status final
+				status = hasPendingPayment ? FinancialStatus.pending : FinancialStatus.paid;
+
 				Financial item = new Financial();
 				item.Id = 0;
 				item.FinancialStatus = FinancialStatus.paid;
@@ -158,7 +189,7 @@ namespace Service
 						PaymentMethodId = m.PaymentMethodId,
 						FinancialId = item.Id,
 						Amount = m.Value,
-						//      Installments = item.Installments
+						     Installments = item.Installments
 					});
 				}
 				item.FinancialPaymentMethods = financialPaymentMethod;
