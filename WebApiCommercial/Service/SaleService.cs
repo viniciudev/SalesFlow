@@ -1,6 +1,4 @@
-﻿
-using Microsoft.AspNetCore.Components;
-using Model;
+﻿using Model;
 using Model.DTO;
 using Model.Moves;
 using Model.Registrations;
@@ -22,6 +20,7 @@ namespace Service
 		private readonly IFinancialPaymentMethodRepository _financialPaymentMethodRepository;
 		private readonly IBoxRepository _boxRepository;
 		private readonly INFeRepository _nfeRepository;
+		private readonly IPaymentMethodRepository _paymentMethodRepository;
 		public SaleService(IGenericRepository<Sale> repository,
 			ISaleItemsService saleItemsService,
 			ICommissionService commissionService,
@@ -30,7 +29,8 @@ namespace Service
 			IFinancialService financialService,
 			IFinancialPaymentMethodRepository financialPaymentMethodRepository,
 			IBoxRepository boxRepository,
-			INFeRepository nfeRepository) : base(repository)
+			INFeRepository nfeRepository,
+			IPaymentMethodRepository paymentMethodRepository) : base(repository)
 		{
 			this.saleItemsService = saleItemsService;
 			this.commissionService = commissionService;
@@ -40,6 +40,7 @@ namespace Service
 			_financialService = financialService;
 			_boxRepository = boxRepository;
 			_nfeRepository = nfeRepository;
+			_paymentMethodRepository = paymentMethodRepository;
 		}
 
 		public async Task<PagedResult<Sale>> GetAllPaged(Filters filters)
@@ -111,7 +112,7 @@ namespace Service
 					if (sale.IdSeller != null)
 						await commissionService.GenerateCommission(data, sharedCommission, (int)sale.IdSeller, sale.IdCompany);
 					await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany,
-						sale.IdClient, sale.BankAccountId,sale.Troco);
+						sale.IdClient, sale.BankAccountId, sale.Troco);
 
 					transaction.Commit();
 					return s.Id;
@@ -124,10 +125,10 @@ namespace Service
 			}
 
 		}
-		private async Task GenerateFinancial(ICollection<FormPaymentSale> formPaymentSales, int IdSale, int IdCompany, 
-			int? IdClient = null, int? BankAccountId=null,decimal ?troco=null)
+		private async Task GenerateFinancial(ICollection<FormPaymentSale> formPaymentSales, int IdSale, int IdCompany,
+			int? IdClient = null, int? BankAccountId = null, decimal? troco = null)
 		{
-			if (formPaymentSales!=null&& formPaymentSales.Count() > 0)
+			if (formPaymentSales != null && formPaymentSales.Count() > 0)
 			{
 				var caixaAberto = await _boxRepository.GetByStatus(CaixaStatus.ABERTO, IdCompany);
 				var listCostCenter = await _costCenterRepository.GetByIdCompany(IdCompany);
@@ -138,7 +139,7 @@ namespace Service
 				foreach (var m in formPaymentSales)
 				{
 					// Buscar método de pagamento
-					var paymentMethod = await _paymentMethodRepository.GetById(m.PaymentMethodId);
+					var paymentMethod = await _paymentMethodRepository.GetByIdAsync(m.PaymentMethodId);
 					if (paymentMethod == null)
 						return;
 
@@ -165,7 +166,7 @@ namespace Service
 
 				Financial item = new Financial();
 				item.Id = 0;
-				item.FinancialStatus = FinancialStatus.paid;
+				item.FinancialStatus = status;
 				item.FinancialType = FinancialType.recipe;
 				item.Origin = OriginFinancial.financial;
 				item.IdSale = IdSale;
@@ -173,7 +174,7 @@ namespace Service
 				item.DueDate = DateTime.Now;
 				item.SettlementDate = DateTime.Now.ToString();
 				item.IdCompany = IdCompany;
-				item.BoxId=caixaAberto != null ? caixaAberto.Id : null;
+				item.BoxId = caixaAberto != null ? caixaAberto.Id : null;
 				item.Description = $"Venda no dia:{DateTime.Now}";
 				item.IdCostCenter = listCostCenter.FirstOrDefault()?.Id;
 				item.IdClient = IdClient;
@@ -189,7 +190,7 @@ namespace Service
 						PaymentMethodId = m.PaymentMethodId,
 						FinancialId = item.Id,
 						Amount = m.Value,
-						     Installments = item.Installments
+						Installments = m.Installments
 					});
 				}
 				item.FinancialPaymentMethods = financialPaymentMethod;
@@ -243,7 +244,7 @@ namespace Service
 					}
 					//gerar novos financeiros
 					await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany,
-						sale.IdClient,sale.BankAccountId,sale.Troco);
+						sale.IdClient, sale.BankAccountId, sale.Troco);
 					foreach (var item in sale.SaleItems)
 					{
 						item.IdSale = s.Id;
@@ -325,10 +326,10 @@ namespace Service
 					// Buscar venda
 					var sale = await base.GetByIdAsync(saleId);
 					if (sale == null)
-					return new ResponseGeneric { Success = false, Data = "Venda não encontrada" };
-					if (sale.Status== SaleStatus.canceled)
+						return new ResponseGeneric { Success = false, Data = "Venda não encontrada" };
+					if (sale.Status == SaleStatus.canceled)
 					{
-						
+
 						return new ResponseGeneric { Success = false, Data = "Venda já foi cancelada!" };
 					}
 					List<NFeEmission> nFeEmissionList = await _nfeRepository.GetBySaleIdAsync(saleId);
@@ -339,11 +340,11 @@ namespace Service
 						if (nFeEmission != null)
 						{
 							return new ResponseGeneric { Success = false, Data = "Não é possível cancelar venda com nota fiscal" };
-						
+
 						}
 					}
-						// Buscar itens
-						var saleItems = await saleItemsService.GetByIdSaleAsync(saleId);
+					// Buscar itens
+					var saleItems = await saleItemsService.GetByIdSaleAsync(saleId);
 
 					// Reverter estoque
 					foreach (var item in saleItems)
