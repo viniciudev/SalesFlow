@@ -26,10 +26,12 @@ namespace Model.Moves
 		public ICollection<Financial> Financials { get; set; }
 		public ICollection<NFeEmission> NFeEmissions { get; set; } = new List<NFeEmission>();
 		public SaleStatus Status { get; set; }
+		public bool SalesOrder { get; set; } = false;
 	}
 	public enum SaleStatus
 	{
 		completed = 0,
 		canceled = 1,
+		pending = 2,
 	}
 }

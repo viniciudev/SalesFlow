@@ -60,7 +60,9 @@ namespace Service
 						IdSeller = sale.IdSeller == 0 ? null : sale.IdSeller,
 						ReleaseDate = sale.ReleaseDate,
 						SaleDate = sale.SaleDate,
-						Total = sale.Total
+						Total = sale.Total,
+						Status = sale.SalesOrder ? SaleStatus.pending : SaleStatus.completed,
+						SalesOrder = sale.SalesOrder
 					};
 					await base.Save(s);
 
@@ -111,8 +113,11 @@ namespace Service
 					}
 					if (sale.IdSeller != null)
 						await commissionService.GenerateCommission(data, sharedCommission, (int)sale.IdSeller, sale.IdCompany);
-					await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany,
-						sale.IdClient, sale.BankAccountId, sale.Troco);
+					if (!sale.SalesOrder)
+					{
+						await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany,
+							sale.IdClient, sale.BankAccountId, sale.Troco);
+					}
 
 					transaction.Commit();
 					return s.Id;
@@ -267,7 +272,9 @@ namespace Service
 						IdSeller = sale.IdSeller == 0 ? null : sale.IdSeller,
 						ReleaseDate = sale.ReleaseDate,
 						SaleDate = sale.SaleDate,
-						Total = sale.Total
+						Total = sale.Total,
+						SalesOrder = sale.SalesOrder,
+						Status = sale.SalesOrder ? SaleStatus.pending : SaleStatus.completed,
 					};
 					await base.Alter(s);
 
@@ -288,19 +295,23 @@ namespace Service
 						}
 
 					}
-					//deletar financeiros
-					var fin = await _financialService.GetByIdSaleAsync(sale.Id);
-					foreach (var item in fin)
+					if (!sale.SalesOrder)
 					{
-						foreach (var forms in item.FinancialPaymentMethods)
+						//deletar financeiros
+						var fin = await _financialService.GetByIdSaleAsync(sale.Id);
+						foreach (var item in fin)
 						{
-							await _financialPaymentMethodRepository.DeleteAsync(forms.Id);
+							foreach (var forms in item.FinancialPaymentMethods)
+							{
+								await _financialPaymentMethodRepository.DeleteAsync(forms.Id);
+							}
+							await _financialService.DeleteAsync(item.Id);
 						}
-						await _financialService.DeleteAsync(item.Id);
+						//gerar novos financeiros
+
+						await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany,
+							sale.IdClient, sale.BankAccountId, sale.Troco);
 					}
-					//gerar novos financeiros
-					await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany,
-						sale.IdClient, sale.BankAccountId, sale.Troco);
 					foreach (var item in sale.SaleItems)
 					{
 						item.IdSale = s.Id;
@@ -449,6 +460,8 @@ namespace Service
 				}
 			}
 		}
+
+
 	}
 	public interface ISaleService : IBaseService<Sale>
 	{

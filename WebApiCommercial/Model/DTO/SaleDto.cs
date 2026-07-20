@@ -32,5 +32,6 @@ namespace Model.DTO
 		public int Id { get; set; }
 		public int? BankAccountId { get; set; }
 		public decimal? Troco { get; set; }
+		public bool SalesOrder { get; set; } = false;
 	}
 }

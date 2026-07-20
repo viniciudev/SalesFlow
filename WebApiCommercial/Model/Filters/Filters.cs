@@ -31,6 +31,7 @@ namespace Model
 		public int? ClientId { get; set; }
 		public int? PaymentMethodId { get; set; }
 		public int? BankAccountId { get; set; }
+		public bool? SalesOrder { get; set; }
 	}
 
 	public enum FilterType
