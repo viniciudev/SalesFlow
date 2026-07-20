@@ -126,76 +126,132 @@ namespace Service
 
 		}
 		private async Task GenerateFinancial(ICollection<FormPaymentSale> formPaymentSales, int IdSale, int IdCompany,
-			int? IdClient = null, int? BankAccountId = null, decimal? troco = null)
+				int? IdClient = null, int? BankAccountId = null, decimal? troco = null)
 		{
-			if (formPaymentSales != null && formPaymentSales.Count() > 0)
+			if (formPaymentSales == null || !formPaymentSales.Any())
+				return;
+
+			// BUSCAR DADOS UMA ÚNICA VEZ
+			var caixaAberto = await _boxRepository.GetByStatus(CaixaStatus.ABERTO, IdCompany);
+			//if (caixaAberto == null)
+			//	throw new Exception("Não há caixa aberto para esta empresa");
+
+			var listCostCenter = await _costCenterRepository.GetByIdCompany(IdCompany);
+			var costCenterId = listCostCenter.FirstOrDefault()?.Id;
+
+			// VALIDAR E PREPARAR
+			var paymentMethods = new Dictionary<int, PaymentMethod>();
+			decimal totalValue = 0;
+			bool hasPendingPayment = false;
+
+			foreach (var m in formPaymentSales)
 			{
-				var caixaAberto = await _boxRepository.GetByStatus(CaixaStatus.ABERTO, IdCompany);
-				var listCostCenter = await _costCenterRepository.GetByIdCompany(IdCompany);
-				decimal value = troco != null ? (decimal)(formPaymentSales.Sum(x => x.Value) - troco) : formPaymentSales.Sum(x => x.Value);
-				FinancialStatus status = FinancialStatus.paid; // status padrão
-				bool hasPendingPayment = false;
+				totalValue += m.Value;
 
-				foreach (var m in formPaymentSales)
+				var paymentMethod = await _paymentMethodRepository.GetByIdAsync(m.PaymentMethodId);
+				if (paymentMethod == null)
+					throw new Exception($"Método de pagamento ID {m.PaymentMethodId} não encontrado");
+
+				paymentMethods[m.PaymentMethodId] = paymentMethod;
+
+				// VALIDAÇÕES
+				if (!paymentMethod.IsImmediateSettlement)
+					hasPendingPayment = true;
+
+				if (m.Installments.HasValue && m.Installments.Value > 1)
 				{
-					// Buscar método de pagamento
-					var paymentMethod = await _paymentMethodRepository.GetByIdAsync(m.PaymentMethodId);
-					if (paymentMethod == null)
-						return;
-
-					// Validar parcelamento
-					if (m.Installments.HasValue && m.Installments.Value > 1)
-					{
-						// Verifica se o método permite parcelamento
-						if (!paymentMethod.AllowInstallments)
-							throw new Exception($"O método {paymentMethod.Name} não permite parcelamento");
-
-						// Pagamento parcelado SEMPRE é pendente
-						hasPendingPayment = true;
-					}
-
-					// Verifica se o método tem liquidação imediata
-					if (!paymentMethod.IsImmediateSettlement)
-					{
-						hasPendingPayment = true;
-					}
+					//if (!paymentMethod.AllowInstallments)
+					//	throw new Exception($"O método {paymentMethod.Name} não permite parcelamento");
+					hasPendingPayment = true;
 				}
-
-				// Define o status final
-				status = hasPendingPayment ? FinancialStatus.pending : FinancialStatus.paid;
-
-				Financial item = new Financial();
-				item.Id = 0;
-				item.FinancialStatus = status;
-				item.FinancialType = FinancialType.recipe;
-				item.Origin = OriginFinancial.financial;
-				item.IdSale = IdSale;
-				item.CreationDate = DateTime.Now;
-				item.DueDate = DateTime.Now;
-				item.SettlementDate = DateTime.Now.ToString();
-				item.IdCompany = IdCompany;
-				item.BoxId = caixaAberto != null ? caixaAberto.Id : null;
-				item.Description = $"Venda no dia:{DateTime.Now}";
-				item.IdCostCenter = listCostCenter.FirstOrDefault()?.Id;
-				item.IdClient = IdClient;
-				item.Value = value;
-				item.Troco = troco;
-				item.BankAccountId = BankAccountId;
-
-				List<FinancialPaymentMethod> financialPaymentMethod = new();
-				foreach (var m in formPaymentSales)
+				else
 				{
-					financialPaymentMethod.Add(new FinancialPaymentMethod
-					{
-						PaymentMethodId = m.PaymentMethodId,
-						FinancialId = item.Id,
-						Amount = m.Value,
-						Installments = m.Installments
-					});
+					m.Installments = 1;
 				}
-				item.FinancialPaymentMethods = financialPaymentMethod;
-				await _financialService.Create(item);
 			}
+
+			decimal finalValue = troco.HasValue ? totalValue - troco.Value : totalValue;
+
+			// CRIAR FINANCEIROS
+			var financialsToCreate = new List<Financial>();
+
+			foreach (var m in formPaymentSales)
+			{
+				var paymentMethod = paymentMethods[m.PaymentMethodId];
+				int installments = m.Installments ?? 1;
+				decimal installmentValue = Math.Round(m.Value / installments, 2);
+				decimal remainingValue = m.Value;
+
+				DateTime firstDueDate = GetFirstDueDate();
+
+				for (int i = 0; i < installments; i++)
+				{
+					decimal currentValue = (i == installments - 1)
+							? Math.Round(remainingValue, 2)
+							: installmentValue;
+					remainingValue -= currentValue;
+
+					DateTime dueDate = AdjustToBusinessDay(firstDueDate.AddMonths(i));
+
+					// Definir status: Só é PAID se for à vista E liquidação imediata
+					bool isPaid = paymentMethod.IsImmediateSettlement && installments == 1;
+					FinancialStatus status = isPaid ? FinancialStatus.paid : FinancialStatus.pending;
+
+					var financial = new Financial
+					{
+						Id = 0,
+						FinancialStatus = status,
+						FinancialType = FinancialType.recipe,
+						Origin = OriginFinancial.financial,
+						IdSale = IdSale,
+						CreationDate = DateTime.Now,
+						DueDate = dueDate,
+						SettlementDate = isPaid ? DateTime.Now.ToString() : null,
+						IdCompany = IdCompany,
+						BoxId = caixaAberto?.Id,
+						Description = installments > 1
+									? $"Parcela {i + 1}/{installments} - {paymentMethod.Name} - Venda #{IdSale}"
+									: $"{paymentMethod.Name} - Venda #{IdSale}",
+						IdCostCenter = costCenterId,
+						IdClient = IdClient,
+						Value = currentValue,
+						Troco = null,
+						BankAccountId = BankAccountId,
+						FinancialPaymentMethods = new List<FinancialPaymentMethod>
+								{
+										new FinancialPaymentMethod
+										{
+												PaymentMethodId = m.PaymentMethodId,
+												FinancialId = 0,
+												Amount = currentValue,
+												Installments = 1
+										}
+								}
+					};
+
+					await _financialService.Create(financial);
+				}
+			}
+
+			// SALVAR EM LOTE
+			//if (financialsToCreate.Any())
+			//{
+			//	await _financialService.Create(financialsToCreate);
+			//}
+		}
+
+		private DateTime GetFirstDueDate()
+		{
+			return AdjustToBusinessDay(DateTime.Now.AddDays(30));
+		}
+
+		private DateTime AdjustToBusinessDay(DateTime date)
+		{
+			if (date.DayOfWeek == DayOfWeek.Saturday)
+				return date.AddDays(2);
+			if (date.DayOfWeek == DayOfWeek.Sunday)
+				return date.AddDays(1);
+			return date;
 		}
 		public async Task<int> PutWithItems(SaleDto sale)
 		{

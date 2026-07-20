@@ -14,5 +14,6 @@ namespace Model.DTO
 		public string PaymentMethodName { get; set; }
 		public int? BankAccountId { get; set; }      // Nullable porque pode não existir
 		public string? BankAccountName { get; set; }
+		public int? Installments { get; set; }
 	}
 }

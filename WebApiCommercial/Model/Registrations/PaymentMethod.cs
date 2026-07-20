@@ -15,5 +15,6 @@ namespace Model.Registrations
 		public bool AllowInstallments { get; set; } = false; // Permite parcelamento?
 		public bool IsImmediateSettlement { get; set; } = true; // 
 		public virtual ICollection<FinancialPaymentMethod> FinancialPaymentMethods { get; set; } = new List<FinancialPaymentMethod>();
+				
 	}
 }

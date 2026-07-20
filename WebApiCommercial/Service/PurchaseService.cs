@@ -2,6 +2,7 @@
 using Model;
 using Model.DTO;
 using Model.Moves;
+using Model.Registrations;
 using Repository;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,12 @@ namespace Service
 		private readonly IBoxRepository _boxRepository;
 		private readonly ICostCenterRepository _costCenterRepository;
 		private readonly IFinancialPaymentMethodRepository _financialPaymentMethodRepository;
-		public PurchaseService(IGenericRepository<Purchase> repository, ContextBase dbContext, IStockService stockService, IFinancialService financialService, IBoxRepository boxRepository, ICostCenterRepository costCenterRepository, IFinancialPaymentMethodRepository financialPaymentMethodRepository) : base(repository)
+		private readonly IPaymentMethodRepository _paymentMethodRepository;
+		public PurchaseService(IGenericRepository<Purchase> repository, ContextBase dbContext, IStockService stockService,
+			IFinancialService financialService, IBoxRepository boxRepository,
+			ICostCenterRepository costCenterRepository,
+			IFinancialPaymentMethodRepository financialPaymentMethodRepository,
+			IPaymentMethodRepository paymentMethodRepository) : base(repository)
 		{
 			_dbContext = dbContext;
 			_stockService = stockService;
@@ -26,6 +32,7 @@ namespace Service
 			_boxRepository = boxRepository;
 			_costCenterRepository = costCenterRepository;
 			_financialPaymentMethodRepository = financialPaymentMethodRepository;
+			_paymentMethodRepository = paymentMethodRepository;
 		}
 
 		public async Task<PagedResult<Purchase>> GetAllPaged(Filters filters)
@@ -108,8 +115,8 @@ namespace Service
 						});
 
 					}
-			
-					 await GenerateFinancial(purchaseDto.FormPayment, compra.Id, purchaseDto.IdCompany, null, purchaseDto.BankAccountId, purchaseDto.Troco);
+
+					await GenerateFinancial(purchaseDto.FormPayment, compra.Id, purchaseDto.IdCompany, null, purchaseDto.BankAccountId, purchaseDto.Troco);
 
 
 					transaction.Commit();
@@ -218,7 +225,7 @@ namespace Service
 							ReferenceId = purchaseItem.Id,
 						});
 					}
-					await GenerateFinancial(purchaseDto.FormPayment, compra.Id, purchaseDto.IdCompany, null, purchaseDto.BankAccountId, purchaseDto.Troco);	
+					await GenerateFinancial(purchaseDto.FormPayment, compra.Id, purchaseDto.IdCompany, null, purchaseDto.BankAccountId, purchaseDto.Troco);
 
 
 					transaction.Commit();
@@ -236,47 +243,128 @@ namespace Service
 			int IdPurchase, int IdCompany,
 			int? IdClient = null, int? BankAccountId = null, decimal? troco = null)
 		{
-			if (formPayment != null && formPayment.Count() > 0)
-			{
-				var caixaAberto = await _boxRepository.GetByStatus(CaixaStatus.ABERTO, IdCompany);
-				var listCostCenter = await _costCenterRepository.GetByIdCompany(IdCompany);
-				decimal value = troco != null ? (decimal)(formPayment.Sum(x => x.Value) - troco) : formPayment.Sum(x => x.Value);
-				Financial item = new Financial();
-				item.Id = 0;
-				item.FinancialStatus = FinancialStatus.paid;
-				item.FinancialType = FinancialType.expense;
-				item.Origin = OriginFinancial.financial;
-				item.IdPurchase = IdPurchase;
-				item.CreationDate = DateTime.Now;
-				item.DueDate = DateTime.Now;
-				item.SettlementDate = DateTime.Now.ToString();
-				item.IdCompany = IdCompany;
-				item.BoxId = caixaAberto != null ? caixaAberto.Id : null;
-				item.Description = $"Compra no dia:{DateTime.Now}";
-				item.IdCostCenter = listCostCenter.FirstOrDefault()?.Id;
-				item.IdClient = IdClient;
-				item.Value = value;
-				item.Troco = troco;
-				item.BankAccountId = BankAccountId;
+			if (formPayment == null || !formPayment.Any())
+				return;
 
-				List<FinancialPaymentMethod> financialPaymentMethod = new();
-				foreach (var m in formPayment)
+			// BUSCAR DADOS
+			var caixaAberto = await _boxRepository.GetByStatus(CaixaStatus.ABERTO, IdCompany);
+		
+
+			var listCostCenter = await _costCenterRepository.GetByIdCompany(IdCompany);
+			var costCenterId = listCostCenter.FirstOrDefault()?.Id;
+
+			// VALIDAR
+			var paymentMethods = new Dictionary<int, PaymentMethod>();
+			decimal totalValue = 0;
+			bool hasPendingPayment = false;
+
+			foreach (var m in formPayment)
+			{
+				totalValue += m.Value;
+
+				var paymentMethod = await _paymentMethodRepository.GetByIdAsync(m.PaymentMethodId);
+				if (paymentMethod == null)
+					throw new Exception($"Método de pagamento ID {m.PaymentMethodId} não encontrado");
+
+				paymentMethods[m.PaymentMethodId] = paymentMethod;
+
+				if (!paymentMethod.IsImmediateSettlement)
+					hasPendingPayment = true;
+
+				if (m.Installments.HasValue && m.Installments.Value > 1)
 				{
-					financialPaymentMethod.Add(new FinancialPaymentMethod
-					{
-						PaymentMethodId = m.PaymentMethodId,
-						FinancialId = item.Id,
-						Amount = m.Value,
-						//      Installments = item.Installments
-					});
+					if (!paymentMethod.AllowInstallments)
+						throw new Exception($"O método {paymentMethod.Name} não permite parcelamento");
+					hasPendingPayment = true;
 				}
-				item.FinancialPaymentMethods = financialPaymentMethod;
-				await _financialService.Create(item);
+				else
+				{
+					m.Installments = 1;
+				}
 			}
+
+			decimal finalValue = troco.HasValue ? totalValue - troco.Value : totalValue;
+
+			// CRIAR FINANCEIROS
+			var financialsToCreate = new List<Financial>();
+
+			foreach (var m in formPayment)
+			{
+				var paymentMethod = paymentMethods[m.PaymentMethodId];
+				int installments = m.Installments ?? 1;
+				decimal installmentValue = Math.Round(m.Value / installments, 2);
+				decimal remainingValue = m.Value;
+
+				DateTime firstDueDate = GetFirstDueDate();
+
+				for (int i = 0; i < installments; i++)
+				{
+					decimal currentValue = (i == installments - 1)
+							? Math.Round(remainingValue, 2)
+							: installmentValue;
+					remainingValue -= currentValue;
+
+					DateTime dueDate = AdjustToBusinessDay(firstDueDate.AddMonths(i));
+
+					// DEFINE STATUS
+					bool isPaid = paymentMethod.IsImmediateSettlement && installments == 1;
+					FinancialStatus status = isPaid ? FinancialStatus.paid : FinancialStatus.pending;
+
+					var financial = new Financial
+					{
+						Id = 0,
+						FinancialStatus = status,
+						FinancialType = FinancialType.expense, // COMPRA
+						Origin = OriginFinancial.financial,
+						IdPurchase = IdPurchase, // FK PARA COMPRA
+						CreationDate = DateTime.Now,
+						DueDate = dueDate,
+						SettlementDate = isPaid ? DateTime.Now.ToString() : null,
+						IdCompany = IdCompany,
+						BoxId = caixaAberto?.Id,
+						Description = installments > 1
+									? $"Parcela {i + 1}/{installments} - {paymentMethod.Name} - Compra #{IdPurchase}"
+									: $"{paymentMethod.Name} - Compra #{IdPurchase}",
+						IdCostCenter = costCenterId,
+						IdClient = IdClient,
+						Value = currentValue,
+						Troco = null,
+						BankAccountId = BankAccountId,
+						FinancialPaymentMethods = new List<FinancialPaymentMethod>
+								{
+										new FinancialPaymentMethod
+										{
+												PaymentMethodId = m.PaymentMethodId,
+												FinancialId = 0,
+												Amount = currentValue,
+												Installments = 1
+										}
+								}
+					};
+
+					await _financialService.Create(financial);
+				}
+			}
+
+
+		}
+
+		private DateTime GetFirstDueDate()
+		{
+			return AdjustToBusinessDay(DateTime.Now.AddDays(30));
+		}
+
+		private DateTime AdjustToBusinessDay(DateTime date)
+		{
+			if (date.DayOfWeek == DayOfWeek.Saturday)
+				return date.AddDays(2);
+			if (date.DayOfWeek == DayOfWeek.Sunday)
+				return date.AddDays(1);
+			return date;
 		}
 	}
 
-	public interface IPurchaseService : IBaseService<Purchase>
+		public interface IPurchaseService : IBaseService<Purchase>
 	{
 		Task<PagedResult<Purchase>> GetAllPaged(Filters filters);
 		Task<Purchase> GetByIdWithItems(int id);

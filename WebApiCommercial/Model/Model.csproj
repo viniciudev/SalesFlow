@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <Compile Remove="DTO\ClosuresRequest.cs" />
+    <Compile Remove="Moves\FinancialInstallment.cs" />
   </ItemGroup>
 
   <ItemGroup>

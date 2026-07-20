@@ -111,6 +111,7 @@ namespace Repository
                 ConfiguraPurchaseItem(modelBuilder);
                 ConfiguraSituacaoTributaria(modelBuilder);
                 ConfiguraRegraFiscal(modelBuilder);
+
 			//ConfiguraServiceOrder(modelBuilder);
 			//ConfiguraServiceOrderItem(modelBuilder);
 			//ConfiguraServiceInvoice(modelBuilder);

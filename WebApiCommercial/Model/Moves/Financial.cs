@@ -53,6 +53,7 @@ namespace Model.Moves
 		public decimal SettledValue { get; set; }
 		public decimal? Troco { get; set; }
 		public int? Installments { get; set; }
+	
 	}
 
 
