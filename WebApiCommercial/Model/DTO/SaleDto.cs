@@ -1,4 +1,4 @@
-﻿using Model.Moves;
+using Model.Moves;
 using Model.Registrations;
 using System;
 using System.Collections.Generic;
@@ -28,6 +28,7 @@ namespace Model.DTO
 		[NotMapped]
 		public decimal ValueSale { get; set; }
 		public ICollection<FormPaymentSale> FormPaymentSales { get; set; }
+		public ICollection<SalePayment> SalePayments { get; set; }
 		public ICollection<NFeEmission> NFeEmissions { get; set; } = new List<NFeEmission>();
 		public int Id { get; set; }
 		public int? BankAccountId { get; set; }

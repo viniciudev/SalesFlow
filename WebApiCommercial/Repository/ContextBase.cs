@@ -85,6 +85,7 @@ namespace Repository
 			ConfiguraSalesman(modelBuilder);
 			ConfiguraSale(modelBuilder);
 			ConfiguraSaleItems(modelBuilder);
+				ConfiguraSalePayment(modelBuilder);
 			ConfiguraCommission(modelBuilder);
 			ConfiguraCostCenter(modelBuilder);
 			ConfiguraFinancial(modelBuilder);
@@ -1089,5 +1090,27 @@ namespace Repository
                     .HasForeignKey(e => e.SituacaoTributariaId)
                     .OnDelete(DeleteBehavior.Restrict);
             }
+		private void ConfiguraSalePayment(ModelBuilder builder)
+		{
+			builder.Entity<SalePayment>(entity =>
+			{
+				entity.ToTable("tb_salePayment");
+				entity.HasKey(e => e.Id);
+				entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+				entity.Property(e => e.Value)
+					.HasColumnType("decimal(18,2)");
+
+				entity.HasOne(e => e.Sale)
+					.WithMany(s => s.SalePayments)
+					.HasForeignKey(e => e.IdSale)
+					.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasOne(e => e.PaymentMethod)
+					.WithMany()
+					.HasForeignKey(e => e.PaymentMethodId)
+					.OnDelete(DeleteBehavior.Restrict);
+			});
+		}
         }
     }

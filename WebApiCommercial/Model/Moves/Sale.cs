@@ -1,4 +1,4 @@
-﻿using Model.Registrations;
+using Model.Registrations;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -25,6 +25,7 @@ namespace Model.Moves
 		public decimal ValueSale { get; set; }
 		public ICollection<Financial> Financials { get; set; }
 		public ICollection<NFeEmission> NFeEmissions { get; set; } = new List<NFeEmission>();
+		public ICollection<SalePayment> SalePayments { get; set; } = new List<SalePayment>();
 		public SaleStatus Status { get; set; }
 		public bool SalesOrder { get; set; } = false;
 	}
@@ -33,5 +34,8 @@ namespace Model.Moves
 		completed = 0,
 		canceled = 1,
 		pending = 2,
+			Approved = 3,
+			Received = 4,
+			Invoiced = 5,
 	}
 }

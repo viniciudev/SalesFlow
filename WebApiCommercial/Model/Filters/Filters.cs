@@ -1,4 +1,5 @@
-﻿using Model.Registrations;
+﻿using Model.Moves;
+using Model.Registrations;
 using System;
 
 namespace Model
@@ -32,6 +33,7 @@ namespace Model
 		public int? PaymentMethodId { get; set; }
 		public int? BankAccountId { get; set; }
 		public bool? SalesOrder { get; set; }
+		public SaleStatus? SaleStatus { get; set; }
 	}
 
 	public enum FilterType

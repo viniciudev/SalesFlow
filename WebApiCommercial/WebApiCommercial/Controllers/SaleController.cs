@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Model;
 using Model.DTO;
@@ -6,8 +6,6 @@ using Model.Moves;
 using Repository;
 using Service;
 using System.Threading.Tasks;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace WebApiCommercial.Controllers
 {
@@ -75,7 +73,6 @@ namespace WebApiCommercial.Controllers
 			return Ok(true);
 		}
 
-		//[RequirePermission(PermissionEnum.VENDA_ALTER)]
 		[HttpPut("PutWithItems")]
 		public async Task<ActionResult<dynamic>> PutWithItems([FromBody] SaleDto sale,
 			[FromHeader] int tenantid)
@@ -90,6 +87,27 @@ namespace WebApiCommercial.Controllers
 		public async Task<ActionResult> Delete(int id)
 		{
 			var resp=await saleService.Cancel(id);
+			return Ok(resp);
+		}
+
+		// ===== NOVOS ENDPOINTS - PEDIDO DE VENDA =====
+
+		[HttpPost("SalesOrder")]
+		public async Task<ActionResult<int>> PostSalesOrder([FromBody] SaleDto sale,
+			[FromHeader] int tenantid)
+		{
+			sale.IdCompany = tenantid;
+			int id = await saleService.SaveSalesOrder(sale);
+			return Ok(id);
+		}
+
+		[HttpPut("SalesOrder/{saleId}/Receive")]
+		public async Task<ActionResult<ResponseGeneric>> ReceiveSalesOrder(int saleId,
+			[FromBody] SaleDto receiveData,
+			[FromHeader] int tenantid)
+		{
+			receiveData.IdCompany = tenantid;
+			var resp = await saleService.ReceiveSalesOrder(saleId, receiveData);
 			return Ok(resp);
 		}
 	}

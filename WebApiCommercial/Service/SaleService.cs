@@ -1,4 +1,4 @@
-﻿using Model;
+using Model;
 using Model.DTO;
 using Model.Moves;
 using Model.Registrations;
@@ -21,6 +21,7 @@ namespace Service
 		private readonly IBoxRepository _boxRepository;
 		private readonly INFeRepository _nfeRepository;
 		private readonly IPaymentMethodRepository _paymentMethodRepository;
+		private readonly ISalePaymentRepository _salePaymentRepository;
 		public SaleService(IGenericRepository<Sale> repository,
 			ISaleItemsService saleItemsService,
 			ICommissionService commissionService,
@@ -30,7 +31,8 @@ namespace Service
 			IFinancialPaymentMethodRepository financialPaymentMethodRepository,
 			IBoxRepository boxRepository,
 			INFeRepository nfeRepository,
-			IPaymentMethodRepository paymentMethodRepository) : base(repository)
+			IPaymentMethodRepository paymentMethodRepository,
+			ISalePaymentRepository salePaymentRepository) : base(repository)
 		{
 			this.saleItemsService = saleItemsService;
 			this.commissionService = commissionService;
@@ -41,6 +43,7 @@ namespace Service
 			_boxRepository = boxRepository;
 			_nfeRepository = nfeRepository;
 			_paymentMethodRepository = paymentMethodRepository;
+			_salePaymentRepository = salePaymentRepository;
 		}
 
 		public async Task<PagedResult<Sale>> GetAllPaged(Filters filters)
@@ -136,15 +139,11 @@ namespace Service
 			if (formPaymentSales == null || !formPaymentSales.Any())
 				return;
 
-			// BUSCAR DADOS UMA ÚNICA VEZ
 			var caixaAberto = await _boxRepository.GetByStatus(CaixaStatus.ABERTO, IdCompany);
-			//if (caixaAberto == null)
-			//	throw new Exception("Não há caixa aberto para esta empresa");
 
 			var listCostCenter = await _costCenterRepository.GetByIdCompany(IdCompany);
 			var costCenterId = listCostCenter.FirstOrDefault()?.Id;
 
-			// VALIDAR E PREPARAR
 			var paymentMethods = new Dictionary<int, PaymentMethod>();
 			decimal totalValue = 0;
 			bool hasPendingPayment = false;
@@ -159,14 +158,11 @@ namespace Service
 
 				paymentMethods[m.PaymentMethodId] = paymentMethod;
 
-				// VALIDAÇÕES
 				if (!paymentMethod.IsImmediateSettlement)
 					hasPendingPayment = true;
 
 				if (m.Installments.HasValue && m.Installments.Value > 1)
 				{
-					//if (!paymentMethod.AllowInstallments)
-					//	throw new Exception($"O método {paymentMethod.Name} não permite parcelamento");
 					hasPendingPayment = true;
 				}
 				else
@@ -176,9 +172,6 @@ namespace Service
 			}
 
 			decimal finalValue = troco.HasValue ? totalValue - troco.Value : totalValue;
-
-			// CRIAR FINANCEIROS
-			var financialsToCreate = new List<Financial>();
 
 			foreach (var m in formPaymentSales)
 			{
@@ -198,7 +191,6 @@ namespace Service
 
 					DateTime dueDate = AdjustToBusinessDay(firstDueDate.AddMonths(i));
 
-					// Definir status: Só é PAID se for à vista E liquidação imediata
 					bool isPaid = paymentMethod.IsImmediateSettlement && installments == 1;
 					FinancialStatus status = isPaid ? FinancialStatus.paid : FinancialStatus.pending;
 
@@ -237,12 +229,6 @@ namespace Service
 					await _financialService.Create(financial);
 				}
 			}
-
-			// SALVAR EM LOTE
-			//if (financialsToCreate.Any())
-			//{
-			//	await _financialService.Create(financialsToCreate);
-			//}
 		}
 
 		private DateTime GetFirstDueDate()
@@ -264,6 +250,11 @@ namespace Service
 			{
 				try
 				{
+					Sale existingSale = await base.GetByIdAsync(sale.Id);
+					bool isApprovedSalesOrder = existingSale != null
+						&& existingSale.SalesOrder
+						&& existingSale.Status == SaleStatus.Approved;
+
 					Sale s = new Sale
 					{
 						Id = sale.Id,
@@ -274,7 +265,8 @@ namespace Service
 						SaleDate = sale.SaleDate,
 						Total = sale.Total,
 						SalesOrder = sale.SalesOrder,
-						Status = sale.SalesOrder ? SaleStatus.pending : SaleStatus.completed,
+						Status = isApprovedSalesOrder ? SaleStatus.Approved
+							: (sale.SalesOrder ? SaleStatus.pending : SaleStatus.completed),
 					};
 					await base.Alter(s);
 
@@ -283,21 +275,16 @@ namespace Service
 					List<SaleItems> prods = await saleItemsService.GetByIdSaleAsync(s.Id);
 					foreach (var item in prods)
 					{
-						//deletar itens pra incluir tudo depois
 						if (item.Id > 0)
 							await saleItemsService.DeleteAsync(item.Id);
-						//voltar estoque
 						Stock stock = await _stockService.GetByReferenceIdAsync(item.Id, sale.IdCompany, StockType.exit);
-						//deletar para inserir com os novos itens
 						if (stock != null)
 						{
 							await _stockService.DeleteAsync(stock.Id);
 						}
-
 					}
 					if (!sale.SalesOrder)
 					{
-						//deletar financeiros
 						var fin = await _financialService.GetByIdSaleAsync(sale.Id);
 						foreach (var item in fin)
 						{
@@ -307,11 +294,23 @@ namespace Service
 							}
 							await _financialService.DeleteAsync(item.Id);
 						}
-						//gerar novos financeiros
 
 						await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany,
 							sale.IdClient, sale.BankAccountId, sale.Troco);
 					}
+
+					if (sale.SalesOrder && sale.SalePayments != null && sale.SalePayments.Any())
+					{
+						await _salePaymentRepository.DeleteBySaleIdAsync(s.Id);
+						foreach (var sp in sale.SalePayments)
+						{
+							sp.IdSale = s.Id;
+							sp.Id = 0;
+							sp.Status = SalePaymentStatus.Planned;
+							await _salePaymentRepository.CreateAsync(sp);
+						}
+					}
+
 					foreach (var item in sale.SaleItems)
 					{
 						item.IdSale = s.Id;
@@ -329,16 +328,19 @@ namespace Service
 						};
 						await saleItemsService.Save(data);
 
-						await _stockService.Create(new Stock
+						if (!isApprovedSalesOrder)
 						{
-							IdCompany = sale.IdCompany,
-							Quantity = item.Amount,
-							Date = sale.SaleDate,
-							IdProduct = (int)item.IdProduct,
-							Reason = $"Venda: dia {sale.SaleDate}",
-							Type = StockType.exit,
-							ReferenceId = data.Id,
-						});
+							await _stockService.Create(new Stock
+							{
+								IdCompany = sale.IdCompany,
+								Quantity = item.Amount,
+								Date = sale.SaleDate,
+								IdProduct = (int)item.IdProduct,
+								Reason = $"Venda: dia {sale.SaleDate}",
+								Type = StockType.exit,
+								ReferenceId = data.Id,
+							});
+						}
 
 						if (item.SharedCommissions != null && item.SharedCommissions.Count > 0)
 							sharedCommission = new SharedCommission
@@ -355,7 +357,7 @@ namespace Service
 								TypeDay = item.SharedCommissions.First().TypeDay,
 							};
 					}
-					if (sale.IdSeller != null)
+					if (sale.IdSeller != null && !isApprovedSalesOrder)
 						await commissionService.GenerateCommission(data, sharedCommission, (int)sale.IdSeller, sale.IdCompany);
 					transaction.Commit();
 					return s.Id;
@@ -390,13 +392,11 @@ namespace Service
 			{
 				try
 				{
-					// Buscar venda
 					var sale = await base.GetByIdAsync(saleId);
 					if (sale == null)
 						return new ResponseGeneric { Success = false, Data = "Venda não encontrada" };
 					if (sale.Status == SaleStatus.canceled)
 					{
-
 						return new ResponseGeneric { Success = false, Data = "Venda já foi cancelada!" };
 					}
 					List<NFeEmission> nFeEmissionList = await _nfeRepository.GetBySaleIdAsync(saleId);
@@ -407,13 +407,25 @@ namespace Service
 						if (nFeEmission != null)
 						{
 							return new ResponseGeneric { Success = false, Data = "Não é possível cancelar venda com nota fiscal" };
-
 						}
 					}
-					// Buscar itens
 					var saleItems = await saleItemsService.GetByIdSaleAsync(saleId);
 
-					// Reverter estoque
+					if (sale.SalesOrder && sale.Status == SaleStatus.Approved)
+					{
+						var salePayments = await _salePaymentRepository.GetBySaleIdAsync(saleId);
+						foreach (var sp in salePayments)
+						{
+							sp.Status = SalePaymentStatus.Cancelled;
+							await _salePaymentRepository.UpdateAsync(sp.Id, sp);
+						}
+
+						sale.Status = SaleStatus.canceled;
+						await base.Alter(sale);
+						transaction.Commit();
+						return new ResponseGeneric { Success = true };
+					}
+
 					foreach (var item in saleItems)
 					{
 						var stock = await _stockService.GetByReferenceIdAsync(item.Id, sale.IdCompany, StockType.exit);
@@ -432,7 +444,6 @@ namespace Service
 						}
 					}
 
-					// Excluir financeiros
 					var financials = await _financialService.GetByIdSaleAsync(saleId);
 					foreach (var financial in financials)
 					{
@@ -446,7 +457,6 @@ namespace Service
 						await _financialService.DeleteAsync(financial.Id);
 					}
 
-					// Cancelar venda
 					sale.Status = SaleStatus.canceled;
 					await base.Alter(sale);
 
@@ -461,6 +471,156 @@ namespace Service
 			}
 		}
 
+		public async Task<int> SaveSalesOrder(SaleDto sale)
+		{
+			using (var transaction = await repository.CreateTransactionAsync())
+			{
+				try
+				{
+					Sale s = new Sale
+					{
+						IdClient = sale.IdClient,
+						IdCompany = sale.IdCompany,
+						IdSeller = sale.IdSeller == 0 ? null : sale.IdSeller,
+						ReleaseDate = sale.ReleaseDate,
+						SaleDate = sale.SaleDate,
+						Total = sale.Total,
+						Status = SaleStatus.Approved,
+						SalesOrder = true
+					};
+					await base.Save(s);
+
+					foreach (var item in sale.SaleItems)
+					{
+						item.IdSale = s.Id;
+						var saleItem = new SaleItems
+						{
+							IdSale = item.IdSale,
+							IdProduct = item.IdProduct == 0 ? null : item.IdProduct,
+							IdService = item.IdService == 0 ? null : item.IdService,
+							Value = item.Value,
+							Amount = item.Amount,
+							InclusionDate = item.InclusionDate,
+							TypeItem = item.TypeItem,
+							EnableRecurrence = item.EnableRecurrence,
+							RecurringAmount = item.RecurringAmount,
+						};
+						await saleItemsService.Save(saleItem);
+					}
+
+					if (sale.SalePayments != null && sale.SalePayments.Any())
+					{
+						foreach (var sp in sale.SalePayments)
+						{
+							sp.IdSale = s.Id;
+							sp.Id = 0;
+							sp.Status = SalePaymentStatus.Planned;
+							await _salePaymentRepository.CreateAsync(sp);
+						}
+					}
+
+					transaction.Commit();
+					return s.Id;
+				}
+				catch (Exception ex)
+				{
+					transaction.Rollback();
+					throw;
+				}
+			}
+		}
+
+		public async Task<ResponseGeneric> ReceiveSalesOrder(int saleId, SaleDto receiveData)
+		{
+			using (var transaction = await repository.CreateTransactionAsync())
+			{
+				try
+				{
+					var sale = await (repository as ISaleRepository).GetSaleByCompany(saleId, receiveData.IdCompany);
+					if (sale == null)
+						return new ResponseGeneric { Success = false, Data = "Pedido não encontrado" };
+
+					if (sale.Status != SaleStatus.Approved)
+						return new ResponseGeneric { Success = false, Data = "Somente pedidos aprovados podem ser recebidos" };
+
+					var existingPayments = await _salePaymentRepository.GetBySaleIdAsync(saleId);
+					foreach (var ep in existingPayments)
+					{
+						ep.Status = SalePaymentStatus.Confirmed;
+						await _salePaymentRepository.UpdateAsync(ep.Id, ep);
+					}
+
+					if (receiveData.SalePayments != null && receiveData.SalePayments.Any())
+					{
+						await _salePaymentRepository.DeleteBySaleIdAsync(saleId);
+						foreach (var sp in receiveData.SalePayments)
+						{
+							sp.IdSale = saleId;
+							sp.Id = 0;
+							sp.Status = SalePaymentStatus.Confirmed;
+							await _salePaymentRepository.CreateAsync(sp);
+						}
+					}
+
+					var saleItems = await saleItemsService.GetByIdSaleAsync(saleId);
+					foreach (var item in saleItems)
+					{
+						if (item.IdProduct != null && item.IdProduct > 0)
+						{
+							await _stockService.Create(new Stock
+							{
+								IdCompany = sale.IdCompany,
+								Quantity = item.Amount,
+								Date = DateTime.Now,
+								IdProduct = (int)item.IdProduct,
+								Reason = $"Pedido de Venda #{saleId} - Recebido",
+								Type = StockType.exit,
+								ReferenceId = item.Id
+							});
+						}
+					}
+
+					var payments = receiveData.SalePayments ?? existingPayments;
+					if (payments != null && payments.Any())
+					{
+						var formPayments = payments.Select(sp => new FormPaymentSale
+						{
+							PaymentMethodId = sp.PaymentMethodId,
+							Value = sp.Value,
+							Installments = sp.Installments
+						}).ToList();
+
+						await GenerateFinancial(formPayments, saleId, sale.IdCompany,
+							sale.IdClient, receiveData.BankAccountId, receiveData.Troco);
+					}
+
+					if (sale.IdSeller != null)
+					{
+						SharedCommission sharedCommission = new SharedCommission();
+						foreach (var item in saleItems)
+						{
+							if (item.SharedCommissions != null && item.SharedCommissions.Count > 0)
+							{
+								sharedCommission = item.SharedCommissions.First();
+							}
+							await commissionService.GenerateCommission(item, sharedCommission, (int)sale.IdSeller, sale.IdCompany);
+						}
+					}
+
+					sale.Status = SaleStatus.Received;
+					sale.Total = receiveData.Total;
+					await base.Alter(sale);
+
+					transaction.Commit();
+					return new ResponseGeneric { Success = true, Data = "Pedido recebido com sucesso" };
+				}
+				catch (Exception ex)
+				{
+					transaction.Rollback();
+					throw;
+				}
+			}
+		}
 
 	}
 	public interface ISaleService : IBaseService<Sale>
@@ -474,5 +634,7 @@ namespace Service
 
 		Task<int> PutWithItems(SaleDto sale);
 		Task<ResponseGeneric> Cancel(int saleId);
+		Task<int> SaveSalesOrder(SaleDto sale);
+		Task<ResponseGeneric> ReceiveSalesOrder(int saleId, SaleDto receiveData);
 	}
 }

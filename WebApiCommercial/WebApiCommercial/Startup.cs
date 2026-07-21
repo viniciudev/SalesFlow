@@ -294,6 +294,10 @@ namespace WebAppCommercial
 				//TributacaoResolver (cache de configuracoes tributarias)
 				services.AddMemoryCache();
 				services.AddTransient<ITributacaoResolverService, TributacaoResolverService>();
+				//SalePayment
+				services.AddTransient<ISalePaymentRepository, SalePaymentRepository>();
+				services.AddTransient<IGenericRepository<SalePayment>, SalePaymentRepository>();
+
 			//FinancialPaymentMethod
 			services.AddTransient<IGenericRepository<FinancialPaymentMethod>, FinancialPaymentMethodRepository>();
 			services.AddTransient<IFinancialPaymentMethodRepository, FinancialPaymentMethodRepository>();
