@@ -64,8 +64,8 @@ namespace Service
 						ReleaseDate = sale.ReleaseDate,
 						SaleDate = sale.SaleDate,
 						Total = sale.Total,
-						Status = sale.SalesOrder ? SaleStatus.pending : SaleStatus.completed,
-						SalesOrder = sale.SalesOrder
+						Status = SaleStatus.completed,
+						//SalesOrder = sale.SalesOrder
 					};
 					await base.Save(s);
 
@@ -116,11 +116,11 @@ namespace Service
 					}
 					if (sale.IdSeller != null)
 						await commissionService.GenerateCommission(data, sharedCommission, (int)sale.IdSeller, sale.IdCompany);
-					if (!sale.SalesOrder)
-					{
-						await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany,
-							sale.IdClient, sale.BankAccountId, sale.Troco);
-					}
+					//if (!sale.SalesOrder)
+					//{
+					await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany,
+						sale.IdClient, sale.BankAccountId, sale.Troco);
+					//}
 
 					transaction.Commit();
 					return s.Id;
@@ -189,7 +189,8 @@ namespace Service
 							: installmentValue;
 					remainingValue -= currentValue;
 
-					DateTime dueDate = AdjustToBusinessDay(firstDueDate.AddMonths(i));
+					DateTime dueDate = paymentMethod.IsImmediateSettlement && installments==1?DateTime.Now:
+						AdjustToBusinessDay(firstDueDate.AddMonths(i));
 
 					bool isPaid = paymentMethod.IsImmediateSettlement && installments == 1;
 					FinancialStatus status = isPaid ? FinancialStatus.paid : FinancialStatus.pending;
@@ -251,9 +252,9 @@ namespace Service
 				try
 				{
 					Sale existingSale = await base.GetByIdAsync(sale.Id);
-					bool isApprovedSalesOrder = existingSale != null
-						&& existingSale.SalesOrder
-						&& existingSale.Status == SaleStatus.Approved;
+					//bool isApprovedSalesOrder = existingSale != null
+					//	&& existingSale.SalesOrder
+					//	&& existingSale.Status == SaleStatus.Approved;
 
 					Sale s = new Sale
 					{
@@ -265,8 +266,9 @@ namespace Service
 						SaleDate = sale.SaleDate,
 						Total = sale.Total,
 						SalesOrder = sale.SalesOrder,
-						Status = isApprovedSalesOrder ? SaleStatus.Approved
-							: (sale.SalesOrder ? SaleStatus.pending : SaleStatus.completed),
+						Status = SaleStatus.completed
+						//isApprovedSalesOrder ? SaleStatus.Approved
+						//	: (sale.SalesOrder ? SaleStatus.pending : SaleStatus.completed),
 					};
 					await base.Alter(s);
 
@@ -283,21 +285,21 @@ namespace Service
 							await _stockService.DeleteAsync(stock.Id);
 						}
 					}
-					if (!sale.SalesOrder)
+					//if (!sale.SalesOrder)
+					//{
+					var fin = await _financialService.GetByIdSaleAsync(sale.Id);
+					foreach (var item in fin)
 					{
-						var fin = await _financialService.GetByIdSaleAsync(sale.Id);
-						foreach (var item in fin)
+						foreach (var forms in item.FinancialPaymentMethods)
 						{
-							foreach (var forms in item.FinancialPaymentMethods)
-							{
-								await _financialPaymentMethodRepository.DeleteAsync(forms.Id);
-							}
-							await _financialService.DeleteAsync(item.Id);
+							await _financialPaymentMethodRepository.DeleteAsync(forms.Id);
 						}
-
-						await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany,
-							sale.IdClient, sale.BankAccountId, sale.Troco);
+						await _financialService.DeleteAsync(item.Id);
 					}
+
+					await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany,
+						sale.IdClient, sale.BankAccountId, sale.Troco);
+					//}
 
 					if (sale.SalesOrder && sale.SalePayments != null && sale.SalePayments.Any())
 					{
@@ -328,19 +330,19 @@ namespace Service
 						};
 						await saleItemsService.Save(data);
 
-						if (!isApprovedSalesOrder)
+						//if (!isApprovedSalesOrder)
+						//{
+						await _stockService.Create(new Stock
 						{
-							await _stockService.Create(new Stock
-							{
-								IdCompany = sale.IdCompany,
-								Quantity = item.Amount,
-								Date = sale.SaleDate,
-								IdProduct = (int)item.IdProduct,
-								Reason = $"Venda: dia {sale.SaleDate}",
-								Type = StockType.exit,
-								ReferenceId = data.Id,
-							});
-						}
+							IdCompany = sale.IdCompany,
+							Quantity = item.Amount,
+							Date = sale.SaleDate,
+							IdProduct = (int)item.IdProduct,
+							Reason = $"Venda: dia {sale.SaleDate}",
+							Type = StockType.exit,
+							ReferenceId = data.Id,
+						});
+						//}
 
 						if (item.SharedCommissions != null && item.SharedCommissions.Count > 0)
 							sharedCommission = new SharedCommission
@@ -357,7 +359,7 @@ namespace Service
 								TypeDay = item.SharedCommissions.First().TypeDay,
 							};
 					}
-					if (sale.IdSeller != null && !isApprovedSalesOrder)
+					if (sale.IdSeller != null)
 						await commissionService.GenerateCommission(data, sharedCommission, (int)sale.IdSeller, sale.IdCompany);
 					transaction.Commit();
 					return s.Id;

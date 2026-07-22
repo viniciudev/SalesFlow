@@ -23,8 +23,9 @@ namespace Repository
                                .Include(x => x.Salesman)
                                .Include(x => x.SaleItems)
                                .Include(x => x.Client)
-                               .Include(x => x.Financials)
-                               .Include(x=>x.NFeEmissions).Include(x=>x.SalePayments).ThenInclude(x=>x.PaymentMethod)
+                               .Include(x => x.Financials).ThenInclude(x=>x.FinancialPaymentMethods)
+                               .Include(x=>x.NFeEmissions)
+                               .Include(x=>x.SalePayments).ThenInclude(x=>x.PaymentMethod)
                                where sale.IdCompany == filters.IdCompany
                                && (filters.IdClient == 0 || sale.IdClient == filters.IdClient)
                                && (filters.IdSeller == 0 || sale.IdSeller == filters.IdSeller)
@@ -32,7 +33,8 @@ namespace Repository
                                && sale.SaleDate <= filters.SaleDateFinal.Date.
                                AddHours(23).AddMinutes(59).AddSeconds(59))
                                && (string.IsNullOrEmpty(filters.TextOption) || sale.Client.Name.Contains(filters.TextOption))
-                               && (filters.SalesOrder == null || sale.SalesOrder == filters.SalesOrder) && (filters.SaleStatus == null || sale.Status == filters.SaleStatus)
+                               //&& (filters.SalesOrder == null || sale.SalesOrder == filters.SalesOrder) 
+                               && (filters.SaleStatus == null || sale.Status == filters.SaleStatus)
                                orderby sale.SaleDate descending
                                select new Sale
                                {
