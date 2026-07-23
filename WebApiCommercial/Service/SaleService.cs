@@ -265,7 +265,7 @@ namespace Service
 						ReleaseDate = sale.ReleaseDate,
 						SaleDate = sale.SaleDate,
 						Total = sale.Total,
-						SalesOrder = sale.SalesOrder,
+						//SalesOrder = sale.SalesOrder,
 						Status = SaleStatus.completed
 						//isApprovedSalesOrder ? SaleStatus.Approved
 						//	: (sale.SalesOrder ? SaleStatus.pending : SaleStatus.completed),

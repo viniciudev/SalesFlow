@@ -113,8 +113,8 @@ namespace Model
         public string InscricaoMunicipal { get; set; }
 
         [StringLength(60)]
-        [EmailAddress]
-        public string Email { get; set; }
+   
+        public string? Email { get; set; }
 
         public string CellPhone { get; set; }
 

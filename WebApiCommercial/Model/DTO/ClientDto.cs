@@ -24,7 +24,7 @@ public class ClientDto
 	public string Complemento { get; set; } = string.Empty;
 	public string Ie { get; set; } = string.Empty;
 	public string InscricaoMunicipal { get; set; } = string.Empty;
-	public string Email { get; set; } = string.Empty;
+	public string? Email { get; set; }
 	public string CellPhone { get; set; } = string.Empty;
 	public string Pais { get; set; } = "Brasil";
 	public string CodPais { get; set; } = "1058";

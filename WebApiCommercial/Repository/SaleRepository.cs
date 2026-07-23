@@ -33,7 +33,7 @@ namespace Repository
                                && sale.SaleDate <= filters.SaleDateFinal.Date.
                                AddHours(23).AddMinutes(59).AddSeconds(59))
                                && (string.IsNullOrEmpty(filters.TextOption) || sale.Client.Name.Contains(filters.TextOption))
-                               //&& (filters.SalesOrder == null || sale.SalesOrder == filters.SalesOrder) 
+                               && (filters.SalesOrder == null || sale.SalesOrder == filters.SalesOrder) 
                                && (filters.SaleStatus == null || sale.Status == filters.SaleStatus)
                                orderby sale.SaleDate descending
                                select new Sale

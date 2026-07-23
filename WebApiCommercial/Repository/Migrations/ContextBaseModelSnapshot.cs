@@ -2685,7 +2685,7 @@ namespace Repository.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.OwnsOne("Model.Registrations.CertificadoDigital", "CertificadoDigital", b1 =>
+                    b.OwnsOne("Model.Registrations.FiscalConfiguration.CertificadoDigital#Model.Registrations.CertificadoDigital", "CertificadoDigital", b1 =>
                         {
                             b1.Property<int>("FiscalConfigurationId")
                                 .HasColumnType("integer");
@@ -2702,13 +2702,13 @@ namespace Repository.Migrations
 
                             b1.HasKey("FiscalConfigurationId");
 
-                            b1.ToTable("tb_fiscalConfiguration");
+                            b1.ToTable("tb_fiscalConfiguration", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("FiscalConfigurationId");
                         });
 
-                    b.OwnsOne("Model.Registrations.Csc", "Csc", b1 =>
+                    b.OwnsOne("Model.Registrations.FiscalConfiguration.Csc#Model.Registrations.Csc", "Csc", b1 =>
                         {
                             b1.Property<int>("FiscalConfigurationId")
                                 .HasColumnType("integer");
@@ -2725,13 +2725,13 @@ namespace Repository.Migrations
 
                             b1.HasKey("FiscalConfigurationId");
 
-                            b1.ToTable("tb_fiscalConfiguration");
+                            b1.ToTable("tb_fiscalConfiguration", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("FiscalConfigurationId");
                         });
 
-                    b.OwnsOne("Model.Registrations.Emitente", "Emitente", b1 =>
+                    b.OwnsOne("Model.Registrations.FiscalConfiguration.Emitente#Model.Registrations.Emitente", "Emitente", b1 =>
                         {
                             b1.Property<int>("FiscalConfigurationId")
                                 .HasColumnType("integer");
@@ -2763,12 +2763,12 @@ namespace Repository.Migrations
 
                             b1.HasKey("FiscalConfigurationId");
 
-                            b1.ToTable("tb_fiscalConfiguration");
+                            b1.ToTable("tb_fiscalConfiguration", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("FiscalConfigurationId");
 
-                            b1.OwnsOne("Model.Registrations.Contato", "EmitenteContato", b2 =>
+                            b1.OwnsOne("Model.Registrations.FiscalConfiguration.Emitente#Model.Registrations.Emitente.EmitenteContato#Model.Registrations.Contato", "EmitenteContato", b2 =>
                                 {
                                     b2.Property<int>("EmitenteFiscalConfigurationId")
                                         .HasColumnType("integer");
@@ -2780,13 +2780,13 @@ namespace Repository.Migrations
 
                                     b2.HasKey("EmitenteFiscalConfigurationId");
 
-                                    b2.ToTable("tb_fiscalConfiguration");
+                                    b2.ToTable("tb_fiscalConfiguration", (string)null);
 
                                     b2.WithOwner()
                                         .HasForeignKey("EmitenteFiscalConfigurationId");
                                 });
 
-                            b1.OwnsOne("Model.Registrations.Endereco", "EmitenteEndereco", b2 =>
+                            b1.OwnsOne("Model.Registrations.FiscalConfiguration.Emitente#Model.Registrations.Emitente.EmitenteEndereco#Model.Registrations.Endereco", "EmitenteEndereco", b2 =>
                                 {
                                     b2.Property<int>("EmitenteFiscalConfigurationId")
                                         .HasColumnType("integer");
@@ -2833,13 +2833,13 @@ namespace Repository.Migrations
 
                                     b2.HasKey("EmitenteFiscalConfigurationId");
 
-                                    b2.ToTable("tb_fiscalConfiguration");
+                                    b2.ToTable("tb_fiscalConfiguration", (string)null);
 
                                     b2.WithOwner()
                                         .HasForeignKey("EmitenteFiscalConfigurationId");
                                 });
 
-                            b1.OwnsOne("Model.Registrations.RegimeTributario", "RegimeTributario", b2 =>
+                            b1.OwnsOne("Model.Registrations.FiscalConfiguration.Emitente#Model.Registrations.Emitente.RegimeTributario#Model.Registrations.RegimeTributario", "RegimeTributario", b2 =>
                                 {
                                     b2.Property<int>("EmitenteFiscalConfigurationId")
                                         .HasColumnType("integer");
@@ -2851,7 +2851,7 @@ namespace Repository.Migrations
 
                                     b2.HasKey("EmitenteFiscalConfigurationId");
 
-                                    b2.ToTable("tb_fiscalConfiguration");
+                                    b2.ToTable("tb_fiscalConfiguration", (string)null);
 
                                     b2.WithOwner()
                                         .HasForeignKey("EmitenteFiscalConfigurationId");
@@ -2867,19 +2867,19 @@ namespace Repository.Migrations
                                 .IsRequired();
                         });
 
-                    b.OwnsOne("Model.Registrations.NumeracaoDocumentos", "NumeracaoDocumentos", b1 =>
+                    b.OwnsOne("Model.Registrations.FiscalConfiguration.NumeracaoDocumentos#Model.Registrations.NumeracaoDocumentos", "NumeracaoDocumentos", b1 =>
                         {
                             b1.Property<int>("FiscalConfigurationId")
                                 .HasColumnType("integer");
 
                             b1.HasKey("FiscalConfigurationId");
 
-                            b1.ToTable("tb_fiscalConfiguration");
+                            b1.ToTable("tb_fiscalConfiguration", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("FiscalConfigurationId");
 
-                            b1.OwnsOne("Model.Registrations.NumeracaoItem", "Nfce", b2 =>
+                            b1.OwnsOne("Model.Registrations.FiscalConfiguration.NumeracaoDocumentos#Model.Registrations.NumeracaoDocumentos.Nfce#Model.Registrations.NumeracaoItem", "Nfce", b2 =>
                                 {
                                     b2.Property<int>("NumeracaoDocumentosFiscalConfigurationId")
                                         .HasColumnType("integer");
@@ -2895,13 +2895,13 @@ namespace Repository.Migrations
 
                                     b2.HasKey("NumeracaoDocumentosFiscalConfigurationId");
 
-                                    b2.ToTable("tb_fiscalConfiguration");
+                                    b2.ToTable("tb_fiscalConfiguration", (string)null);
 
                                     b2.WithOwner()
                                         .HasForeignKey("NumeracaoDocumentosFiscalConfigurationId");
                                 });
 
-                            b1.OwnsOne("Model.Registrations.NumeracaoItem", "Nfe", b2 =>
+                            b1.OwnsOne("Model.Registrations.FiscalConfiguration.NumeracaoDocumentos#Model.Registrations.NumeracaoDocumentos.Nfe#Model.Registrations.NumeracaoItem", "Nfe", b2 =>
                                 {
                                     b2.Property<int>("NumeracaoDocumentosFiscalConfigurationId")
                                         .HasColumnType("integer");
@@ -2917,7 +2917,7 @@ namespace Repository.Migrations
 
                                     b2.HasKey("NumeracaoDocumentosFiscalConfigurationId");
 
-                                    b2.ToTable("tb_fiscalConfiguration");
+                                    b2.ToTable("tb_fiscalConfiguration", (string)null);
 
                                     b2.WithOwner()
                                         .HasForeignKey("NumeracaoDocumentosFiscalConfigurationId");
@@ -2980,7 +2980,7 @@ namespace Repository.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.OwnsOne("Model.Registrations.ConfiguracaoTributaria", "ConfiguracaoTributaria", b1 =>
+                    b.OwnsOne("Model.Registrations.NaturezaOperacao.ConfiguracaoTributaria#Model.Registrations.ConfiguracaoTributaria", "ConfiguracaoTributaria", b1 =>
                         {
                             b1.Property<int>("NaturezaOperacaoId")
                                 .HasColumnType("integer");
@@ -3093,7 +3093,7 @@ namespace Repository.Migrations
 
                             b1.HasKey("NaturezaOperacaoId");
 
-                            b1.ToTable("tb_naturezaOperacao");
+                            b1.ToTable("tb_naturezaOperacao", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("NaturezaOperacaoId");
@@ -3139,7 +3139,7 @@ namespace Repository.Migrations
                         .HasForeignKey("SituacaoTributariaId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.OwnsOne("Model.Registrations.ConfiguracaoTributaria", "ConfiguracaoTributaria", b1 =>
+                    b.OwnsOne("Model.Registrations.Product.ConfiguracaoTributaria#Model.Registrations.ConfiguracaoTributaria", "ConfiguracaoTributaria", b1 =>
                         {
                             b1.Property<int>("ProductId")
                                 .HasColumnType("integer");
@@ -3252,7 +3252,7 @@ namespace Repository.Migrations
 
                             b1.HasKey("ProductId");
 
-                            b1.ToTable("tb_product");
+                            b1.ToTable("tb_product", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("ProductId");
@@ -3301,7 +3301,7 @@ namespace Repository.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.OwnsOne("Model.Registrations.ConfiguracaoTributaria", "ConfiguracaoTributaria", b1 =>
+                    b.OwnsOne("Model.Registrations.RegraFiscal.ConfiguracaoTributaria#Model.Registrations.ConfiguracaoTributaria", "ConfiguracaoTributaria", b1 =>
                         {
                             b1.Property<int>("RegraFiscalId")
                                 .HasColumnType("integer");
@@ -3416,7 +3416,7 @@ namespace Repository.Migrations
 
                             b1.HasKey("RegraFiscalId");
 
-                            b1.ToTable("tb_regraFiscal");
+                            b1.ToTable("tb_regraFiscal", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("RegraFiscalId");
