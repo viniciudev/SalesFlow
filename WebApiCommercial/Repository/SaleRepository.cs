@@ -100,28 +100,71 @@ namespace Repository
 		}
 		public async Task<Sale> GetByIdSale(int id)
 		{
-			var paged = await (from sale in base._dbContext.Set<Sale>().
-												 Include(x => x.SaleItems).ThenInclude(x => x.Product)
-												 .Include(x => x.SaleItems).ThenInclude(x => x.ServiceProvided)
-													.Include(x => x.SaleItems).ThenInclude(x => x.SharedCommissions)
-												 join cli in base._dbContext.Set<Client>()
-												 on sale.IdClient equals cli.Id
-												 join saller in base._dbContext.Set<Salesman>()
-												 on sale.IdSeller equals saller.Id into left
-												 from saller in left.DefaultIfEmpty()
+			var paged = await (from sale in base._dbContext.Set<Sale>()
+												 .Include(x => x.Salesman)
+												 .Include(x => x.SaleItems)
+												 .Include(x => x.Client)
+												 .Include(x => x.Financials).ThenInclude(x => x.FinancialPaymentMethods)
+												 .Include(x => x.NFeEmissions)
+												 .Include(x => x.SalePayments).ThenInclude(x => x.PaymentMethod)
 												 where sale.Id == id
-												 select
-												 new Sale
+												 select new Sale
 												 {
 													 Id = sale.Id,
-													 IdCompany = sale.IdCompany,
-													 IdClient = sale.IdClient,
-													 NameClient = cli.Name,
-													 IdSeller = sale.IdSeller,
-													 NameSeller = saller.Name,
 													 ReleaseDate = sale.ReleaseDate,
 													 SaleDate = sale.SaleDate,
-													 SaleItems = FormatSaleItems(sale.SaleItems)
+													 NameSeller = sale.Salesman.Name,
+													 ValueSale = sale.SaleItems.Sum(x => x.Value * x.Amount),
+													 Total = sale.Total,
+													 Status = sale.Status,
+													 SaleItems = sale.SaleItems.Select(x => new SaleItems
+													 {
+														 Id = x.Id,
+														 IdProduct = x.Product.Id,
+														 ProductName = x.Product.Name,
+														 Amount = x.Amount,
+														 Value = x.Value,
+														 IdSale = x.IdSale
+													 }).ToList(),
+													 NameClient = sale.Client.Name,
+													 IdClient = sale.IdClient,
+													 Financials = sale.Financials.Select(x => new Financial
+													 {
+														 Id = x.Id,
+														 CreationDate = x.CreationDate,
+														 Value = x.Value,
+														 DueDate = x.DueDate,
+														 Origin = x.Origin,
+														 FinancialStatus = x.FinancialStatus,
+														 PaymentMethodName = x.FinancialPaymentMethods.Select(x => x.PaymentMethod.Name).ToList(),
+														 FinancialPaymentMethods = x.FinancialPaymentMethods.Select(x => new FinancialPaymentMethod
+														 {
+															 Amount = x.Amount,
+															 FinancialId = x.FinancialId,
+															 Id = x.Id,
+															 PaymentMethodId = x.PaymentMethodId,
+															 PaymentMethodName = x.PaymentMethod.Name
+														 }).ToList(),
+														 Description = x.Description,
+														 FinancialType = x.FinancialType,
+														 IdCompany = x.IdCompany,
+														 ClientName = x.Client.Name,
+														 IdClient = x.Client.Id,
+														 BankAccountId = x.BankAccountId,
+														 BankAccountName = x.BankAccount.BankName
+													 }).ToList(),
+													 SalePayments = sale.SalePayments.Select(x => new SalePayment
+													 {
+														 Id = x.Id,
+														 IdSale = x.IdSale,
+														 PaymentMethodId = x.PaymentMethodId,
+														 Value = x.Value,
+														 Installments = x.Installments,
+														 Status = x.Status,
+														 PaymentMethodName = x.PaymentMethod.Name,
+														 InstallmentDueDatesJson = x.InstallmentDueDatesJson
+													 }).ToList(),
+													 NFeEmissions = sale.NFeEmissions.Select(x => new NFeEmission { Id = x.Id, StatusNfe = x.StatusNfe, TipoDocumento = x.TipoDocumento }).ToList()
 												 })
 												 .AsNoTracking()
 												 .FirstOrDefaultAsync();

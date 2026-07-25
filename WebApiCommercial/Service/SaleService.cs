@@ -278,6 +278,7 @@ namespace Service
 						SaleDate = sale.SaleDate,
 						Total = sale.Total,
 						SalesOrder = sale.SalesOrder,
+						
 						Status =
 						isApprovedSalesOrder ? SaleStatus.Approved
 							: (sale.SalesOrder ? SaleStatus.pending : SaleStatus.completed),
