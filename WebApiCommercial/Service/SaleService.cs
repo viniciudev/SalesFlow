@@ -199,7 +199,8 @@ namespace Service
 					}
 					else
 					{
-						dueDate = paymentMethod.IsImmediateSettlement && installments == 1
+						//sem parcelamento e liquidação pendente=data de vencimento hoje
+						dueDate = !paymentMethod.AllowInstallments
 							? DateTime.Now
 							: AdjustToBusinessDay(firstDueDate.AddMonths(i));
 					}
