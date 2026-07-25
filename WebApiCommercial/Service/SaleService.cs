@@ -181,6 +181,8 @@ namespace Service
 				decimal remainingValue = m.Value;
 
 				DateTime firstDueDate = GetFirstDueDate();
+				bool hasManualDueDates = m.InstallmentDueDates != null
+					&& m.InstallmentDueDates.Count == installments;
 
 				for (int i = 0; i < installments; i++)
 				{
@@ -189,8 +191,18 @@ namespace Service
 							: installmentValue;
 					remainingValue -= currentValue;
 
-					DateTime dueDate = paymentMethod.IsImmediateSettlement && installments==1?DateTime.Now:
-						AdjustToBusinessDay(firstDueDate.AddMonths(i));
+					DateTime dueDate;
+					if (hasManualDueDates)
+					{
+						// Usa a data informada manualmente pelo usuário
+						dueDate = m.InstallmentDueDates[i];
+					}
+					else
+					{
+						dueDate = paymentMethod.IsImmediateSettlement && installments == 1
+							? DateTime.Now
+							: AdjustToBusinessDay(firstDueDate.AddMonths(i));
+					}
 
 					bool isPaid = paymentMethod.IsImmediateSettlement && installments == 1;
 					FinancialStatus status = isPaid ? FinancialStatus.paid : FinancialStatus.pending;
@@ -252,9 +264,9 @@ namespace Service
 				try
 				{
 					Sale existingSale = await base.GetByIdAsync(sale.Id);
-					//bool isApprovedSalesOrder = existingSale != null
-					//	&& existingSale.SalesOrder
-					//	&& existingSale.Status == SaleStatus.Approved;
+					bool isApprovedSalesOrder = existingSale != null
+						&& existingSale.SalesOrder
+						&& existingSale.Status == SaleStatus.Approved;
 
 					Sale s = new Sale
 					{
@@ -265,10 +277,10 @@ namespace Service
 						ReleaseDate = sale.ReleaseDate,
 						SaleDate = sale.SaleDate,
 						Total = sale.Total,
-						//SalesOrder = sale.SalesOrder,
-						Status = SaleStatus.completed
-						//isApprovedSalesOrder ? SaleStatus.Approved
-						//	: (sale.SalesOrder ? SaleStatus.pending : SaleStatus.completed),
+						SalesOrder = sale.SalesOrder,
+						Status =
+						isApprovedSalesOrder ? SaleStatus.Approved
+							: (sale.SalesOrder ? SaleStatus.pending : SaleStatus.completed),
 					};
 					await base.Alter(s);
 
@@ -285,27 +297,38 @@ namespace Service
 							await _stockService.DeleteAsync(stock.Id);
 						}
 					}
-					//if (!sale.SalesOrder)
-					//{
-					var fin = await _financialService.GetByIdSaleAsync(sale.Id);
-					foreach (var item in fin)
+					if (!sale.SalesOrder)
 					{
-						foreach (var forms in item.FinancialPaymentMethods)
+						var fin = await _financialService.GetByIdSaleAsync(sale.Id);
+						foreach (var item in fin)
 						{
-							await _financialPaymentMethodRepository.DeleteAsync(forms.Id);
+							foreach (var forms in item.FinancialPaymentMethods)
+							{
+								await _financialPaymentMethodRepository.DeleteAsync(forms.Id);
+							}
+							await _financialService.DeleteAsync(item.Id);
 						}
-						await _financialService.DeleteAsync(item.Id);
-					}
 
-					await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany,
-						sale.IdClient, sale.BankAccountId, sale.Troco);
-					//}
+						await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany,
+							sale.IdClient, sale.BankAccountId, sale.Troco);
+					}
 
 					if (sale.SalesOrder && sale.SalePayments != null && sale.SalePayments.Any())
 					{
 						await _salePaymentRepository.DeleteBySaleIdAsync(s.Id);
 						foreach (var sp in sale.SalePayments)
 						{
+							// Busca o FormPaymentSale correspondente para obter as datas de vencimento
+							var formPayment = sale.FormPaymentSales?
+								.FirstOrDefault(fp => fp.PaymentMethodId == sp.PaymentMethodId);
+
+							if (formPayment?.InstallmentDueDates != null
+								&& formPayment.InstallmentDueDates.Count == sp.Installments)
+							{
+								sp.InstallmentDueDatesJson =
+									System.Text.Json.JsonSerializer.Serialize(formPayment.InstallmentDueDates);
+							}
+
 							sp.IdSale = s.Id;
 							sp.Id = 0;
 							sp.Status = SalePaymentStatus.Planned;
@@ -330,19 +353,19 @@ namespace Service
 						};
 						await saleItemsService.Save(data);
 
-						//if (!isApprovedSalesOrder)
-						//{
-						await _stockService.Create(new Stock
+						if (!isApprovedSalesOrder)
 						{
-							IdCompany = sale.IdCompany,
-							Quantity = item.Amount,
-							Date = sale.SaleDate,
-							IdProduct = (int)item.IdProduct,
-							Reason = $"Venda: dia {sale.SaleDate}",
-							Type = StockType.exit,
-							ReferenceId = data.Id,
-						});
-						//}
+							await _stockService.Create(new Stock
+							{
+								IdCompany = sale.IdCompany,
+								Quantity = item.Amount,
+								Date = sale.SaleDate,
+								IdProduct = (int)item.IdProduct,
+								Reason = $"Venda: dia {sale.SaleDate}",
+								Type = StockType.exit,
+								ReferenceId = data.Id,
+							});
+						}
 
 						if (item.SharedCommissions != null && item.SharedCommissions.Count > 0)
 							sharedCommission = new SharedCommission
@@ -514,6 +537,17 @@ namespace Service
 					{
 						foreach (var sp in sale.SalePayments)
 						{
+							// Busca o FormPaymentSale correspondente para obter as datas de vencimento
+							var formPayment = sale.FormPaymentSales?
+								.FirstOrDefault(fp => fp.PaymentMethodId == sp.PaymentMethodId);
+
+							if (formPayment?.InstallmentDueDates != null
+								&& formPayment.InstallmentDueDates.Count == sp.Installments)
+							{
+								sp.InstallmentDueDatesJson =
+									System.Text.Json.JsonSerializer.Serialize(formPayment.InstallmentDueDates);
+							}
+
 							sp.IdSale = s.Id;
 							sp.Id = 0;
 							sp.Status = SalePaymentStatus.Planned;
@@ -582,17 +616,35 @@ namespace Service
 						}
 					}
 
-					var payments = receiveData.SalePayments ?? existingPayments;
-					if (payments != null && payments.Any())
-					{
-						var formPayments = payments.Select(sp => new FormPaymentSale
-						{
-							PaymentMethodId = sp.PaymentMethodId,
-							Value = sp.Value,
-							Installments = sp.Installments
-						}).ToList();
+					// Prefere os FormPaymentSales enviados pelo frontend (contem
+					// InstallmentDueDates quando o usuario definiu manualmente).
+					ICollection<FormPaymentSale>? formPaymentsToGenerate = null;
 
-						await GenerateFinancial(formPayments, saleId, sale.IdCompany,
+					if (receiveData.FormPaymentSales != null && receiveData.FormPaymentSales.Any())
+					{
+						formPaymentsToGenerate = receiveData.FormPaymentSales;
+					}
+					else
+					{
+						var payments = receiveData.SalePayments ?? existingPayments;
+						if (payments != null && payments.Any())
+						{
+							formPaymentsToGenerate = payments.Select(sp => new FormPaymentSale
+							{
+								PaymentMethodId = sp.PaymentMethodId,
+								Value = sp.Value,
+								Installments = sp.Installments,
+								// Desserializa as datas de vencimento persistidas no pedido
+								InstallmentDueDates = !string.IsNullOrEmpty(sp.InstallmentDueDatesJson)
+									? System.Text.Json.JsonSerializer.Deserialize<List<DateTime>>(sp.InstallmentDueDatesJson)
+									: null
+							}).ToList();
+						}
+					}
+
+					if (formPaymentsToGenerate != null && formPaymentsToGenerate.Any())
+					{
+						await GenerateFinancial(formPaymentsToGenerate, saleId, sale.IdCompany,
 							sale.IdClient, receiveData.BankAccountId, receiveData.Troco);
 					}
 

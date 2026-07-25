@@ -770,6 +770,9 @@ namespace Repository.Migrations
                     b.Property<int>("Installments")
                         .HasColumnType("integer");
 
+                    b.Property<string>("InstallmentDueDatesJson")
+                        .HasColumnType("text");
+
                     b.Property<int>("PaymentMethodId")
                         .HasColumnType("integer");
 
