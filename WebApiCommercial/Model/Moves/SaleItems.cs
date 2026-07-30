@@ -8,7 +8,7 @@ namespace Model.Moves
     public class SaleItems : BaseEntity
     {
         public decimal Value { get; set; }
-        public int Amount { get; set; }
+        public decimal Amount { get; set; }
         public DateTime InclusionDate { get; set; }
         public int IdSale { get; set; }
         public Sale Sale { get; set; }
