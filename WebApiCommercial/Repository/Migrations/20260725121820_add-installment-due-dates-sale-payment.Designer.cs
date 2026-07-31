@@ -12,7 +12,7 @@ using Repository;
 namespace Repository.Migrations
 {
     [DbContext(typeof(ContextBase))]
-    [Migration("20260725121820")]
+    [Migration("20260725121820_add-installment-due-dates-sale-payment")]
     partial class addinstallmentduedatessalepayment
     {
         /// <inheritdoc />

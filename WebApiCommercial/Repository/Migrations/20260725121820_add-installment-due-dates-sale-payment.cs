@@ -4,25 +4,22 @@
 
 namespace Repository.Migrations
 {
-    /// <inheritdoc />
-    public partial class addinstallmentduedatessalepayment : Migration
-    {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.AddColumn<string>(
-                name: "InstallmentDueDatesJson",
-                table: "tb_salePayment",
-                type: "text",
-                nullable: true);
-        }
+	public partial class addinstallmentduedatessalepayment : Migration
+	{
+		protected override void Up(MigrationBuilder migrationBuilder)
+		{
+			migrationBuilder.Sql(@"
+                ALTER TABLE ""tb_salePayment""
+                ADD COLUMN IF NOT EXISTS ""InstallmentDueDatesJson"" text;
+            ");
+		}
 
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.DropColumn(
-                name: "InstallmentDueDatesJson",
-                table: "tb_salePayment");
-        }
-    }
+		protected override void Down(MigrationBuilder migrationBuilder)
+		{
+			migrationBuilder.Sql(@"
+                ALTER TABLE ""tb_salePayment""
+                DROP COLUMN IF EXISTS ""InstallmentDueDatesJson"";
+            ");
+		}
+	}
 }
