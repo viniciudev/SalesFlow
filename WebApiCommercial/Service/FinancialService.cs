@@ -172,7 +172,9 @@ namespace Service
 				throw new Exception("O número de parcelas deve ser maior que zero.");
 			if (financial.InstallmentIntervalDays < 1)
 				throw new Exception("O intervalo entre parcelas deve ser maior que zero.");
-			if (financial.InstallmentDueDates != null && financial.InstallmentDueDates.Count != financial.NumberOfInstallments)
+			if (financial.InstallmentDueDates != null &&
+			    financial.InstallmentDueDates.Count >0 &&
+			    financial.InstallmentDueDates.Count != financial.NumberOfInstallments)
 				throw new Exception("O número de datas de vencimento deve ser igual ao número de parcelas.");
 			if (financial.PaymentMethods == null || !financial.PaymentMethods.Any())
 				throw new Exception("Adicione pelo menos uma forma de pagamento.");
