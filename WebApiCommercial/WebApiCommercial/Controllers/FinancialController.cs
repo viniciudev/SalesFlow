@@ -75,6 +75,7 @@ namespace WebApiCommercial.Controllers
         {
             try
             {
+                //teste
                 financial.IdCompany = tenantid;
                 var ids = await financialService.CreateFinancial(financial);
                 return Ok(new ResponseGeneric
