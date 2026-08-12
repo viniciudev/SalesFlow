@@ -104,53 +104,141 @@ namespace Service
 				await base.Alter(financialData);
 			}
 		}
-		public async Task<bool> CreateFinancial(FinancialRequest financial)
+		public async Task<List<int>> CreateFinancial(FinancialInstallmentRequest financial)
 		{
 			try
 			{
+				ValidateFinancialRequest(financial);
+
 				var listCostCenter = await _costCenterRepository.GetByIdCompany(financial.IdCompany);
+				int? costCenterId = listCostCenter.FirstOrDefault()?.Id;
 
-				Financial fin = new Financial
-				{
-					BankAccountId = financial.BankAccountId,
-					FinancialStatus = financial.FinancialStatus,
-					FinancialType = financial.FinancialType,
+				int installments = financial.NumberOfInstallments <= 0 ? 1 : financial.NumberOfInstallments;
+				var ids = new List<int>();
 
-					CreationDate = financial.CreationDate,
-					DueDate = financial.DueDate,
-					Description = financial.Description,
-					Origin = financial.Origin,
-					IdCompany = (int)financial.IdCompany,
-					IdCostCenter = listCostCenter.FirstOrDefault()?.Id,
-					Value = financial.Value,
-					IdClient = financial.ClientId,
-					SettlementDate = financial.SettlementDate, // Novo
-					InterestValue = financial.InterestValue,     // Novo
-					FineValue = financial.FineValue,             // Novo
-					SettledValue = financial.SettledValue,       // Novo
-				};
-				List<FinancialPaymentMethod> financialPaymentMethod = new();
-				foreach (var item in financial.PaymentMethods)
+				// Registro simples (sem parcelamento) - comportamento existente
+				if (installments == 1)
 				{
-					financialPaymentMethod.Add(new FinancialPaymentMethod
-					{
-						PaymentMethodId = item.PaymentMethodId,
-						FinancialId = fin.Id,
-						Amount = item.Value,
-						//      Installments = item.Installments
-					});
+					Financial fin = BuildFinancialRecord(financial, financial.Value, financial.DueDate,
+						financial.Description, costCenterId, installmentIndex: -1, installments: 1);
+					await base.Save(fin);
+					ids.Add(fin.Id);
+					return ids;
 				}
-				fin.FinancialPaymentMethods = financialPaymentMethod;
-				await base.Save(fin);
 
-				return true;
+				// Parcelamento: divide o valor em partes iguais e gera um registro por parcela
+				decimal installmentValue = Math.Round(financial.Value / installments, 2);
+				decimal remainingValue = financial.Value;
+				bool hasManualDueDates = financial.InstallmentDueDates != null
+					&& financial.InstallmentDueDates.Count == installments;
+
+				for (int i = 0; i < installments; i++)
+				{
+					// A última parcela absorve a diferença de arredondamento
+					decimal currentValue = (i == installments - 1)
+						? Math.Round(remainingValue, 2)
+						: installmentValue;
+					remainingValue -= currentValue;
+
+					// Vencimento manual (se informado) ou sequencial por intervalo de dias
+					DateTime dueDate = hasManualDueDates
+						? financial.InstallmentDueDates[i]
+						: financial.DueDate.AddDays(i * financial.InstallmentIntervalDays);
+
+					string description = $"Parcela {i + 1}/{installments} - {financial.Description}";
+
+					Financial fin = BuildFinancialRecord(financial, currentValue, dueDate,
+						description, costCenterId, installmentIndex: i, installments: installments);
+					await base.Save(fin);
+					ids.Add(fin.Id);
+				}
+
+				return ids;
 			}
 			catch (System.Exception ex)
 			{
-
-				return false;
+				throw;
 			}
+		}
 
+		/// <summary>
+		/// Valida os dados do request de financeiro/parcelamento.
+		/// </summary>
+		private void ValidateFinancialRequest(FinancialInstallmentRequest financial)
+		{
+			if (financial.Value <= 0)
+				throw new Exception("O valor total deve ser maior que zero.");
+			if (financial.NumberOfInstallments < 1)
+				throw new Exception("O número de parcelas deve ser maior que zero.");
+			if (financial.InstallmentIntervalDays < 1)
+				throw new Exception("O intervalo entre parcelas deve ser maior que zero.");
+			if (financial.InstallmentDueDates != null && financial.InstallmentDueDates.Count != financial.NumberOfInstallments)
+				throw new Exception("O número de datas de vencimento deve ser igual ao número de parcelas.");
+			if (financial.PaymentMethods == null || !financial.PaymentMethods.Any())
+				throw new Exception("Adicione pelo menos uma forma de pagamento.");
+		}
+
+		/// <summary>
+		/// Monta um registro financeiro a partir do request, aplicando o valor e a
+		/// data de vencimento da parcela. Quando parcelado, cada parcela recebe
+		/// uma FinancialPaymentMethod com o valor rateado (a última parcela absorve
+		/// a diferença de arredondamento).
+		/// </summary>
+		private Financial BuildFinancialRecord(
+			FinancialInstallmentRequest financial,
+			decimal value,
+			DateTime dueDate,
+			string description,
+			int? costCenterId,
+			int installmentIndex,
+			int installments)
+		{
+			Financial fin = new Financial
+			{
+				BankAccountId = financial.BankAccountId,
+				FinancialStatus = financial.FinancialStatus,
+				FinancialType = financial.FinancialType,
+				CreationDate = financial.CreationDate,
+				DueDate = dueDate,
+				Description = description,
+				Origin = financial.Origin,
+				IdCompany = (int)financial.IdCompany,
+				IdCostCenter = costCenterId,
+				Value = value,
+				IdClient = financial.ClientId,
+				SettlementDate = financial.SettlementDate,
+				InterestValue = financial.InterestValue,
+				FineValue = financial.FineValue,
+				SettledValue = financial.SettledValue,
+			};
+
+			List<FinancialPaymentMethod> financialPaymentMethod = new();
+			foreach (var item in financial.PaymentMethods)
+			{
+				decimal amount;
+				if (installments > 1)
+				{
+					decimal pmInstallment = Math.Round(item.Value / installments, 2);
+					amount = (installmentIndex == installments - 1)
+						? Math.Round(item.Value - (pmInstallment * (installments - 1)), 2)
+						: pmInstallment;
+				}
+				else
+				{
+					amount = item.Value;
+				}
+
+				financialPaymentMethod.Add(new FinancialPaymentMethod
+				{
+					PaymentMethodId = item.PaymentMethodId,
+					FinancialId = fin.Id,
+					Amount = amount,
+					Installments = 1
+				});
+			}
+			fin.FinancialPaymentMethods = financialPaymentMethod;
+
+			return fin;
 		}
 		public async Task<List<Financial>> GetByIdSaleAsync(int id)
 		{
@@ -264,7 +352,7 @@ namespace Service
 		Task<List<Financial>> GetByIdCompany(Filters filters);
 		Task AlterFinancial(FinancialRequest financial);
 		Task<List<Financial>> GetByIdSaleAsync(int id);
-		Task<bool> CreateFinancial(FinancialRequest financial);
+		Task<List<int>> CreateFinancial(FinancialInstallmentRequest financial);
 		Task<PagedResultWithTotals> GetPaged(Filters filters);
 		Task AlterFinancialStatus(Financial financial);
 		Task<PagedResult<FinancialResponse>> GetPagedByIdClient(Filters filters);

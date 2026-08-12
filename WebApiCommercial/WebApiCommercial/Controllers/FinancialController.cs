@@ -70,24 +70,30 @@ namespace WebApiCommercial.Controllers
 
         // POST api/<FinancialController>
         [HttpPost]
-        public async Task<ActionResult<dynamic>> Post([FromBody] FinancialRequest financial
+        public async Task<ActionResult<ResponseGeneric>> Post([FromBody] FinancialInstallmentRequest financial
           , [FromHeader] int tenantid)
         {
             try
             {
                 financial.IdCompany = tenantid;
-                bool resp = await financialService.CreateFinancial(financial);
-                if (resp)
-                    return Ok("Salvo com sucesso!");
-                else return BadRequest("Não foi possível salvar o financeiro");
+                var ids = await financialService.CreateFinancial(financial);
+                return Ok(new ResponseGeneric
+                {
+                    Success = true,
+                    Message = ids.Count > 1
+                        ? $"Lançamento parcelado criado com sucesso ({ids.Count} parcelas)."
+                        : "Salvo com sucesso!",
+                    Data = ids
+                });
             }
             catch (System.Exception ex)
             {
-
-                return BadRequest(ex.Message);
+                return BadRequest(new ResponseGeneric
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
-
-
         }
 
         // PUT api/<FinancialController>/5
