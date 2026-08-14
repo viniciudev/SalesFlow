@@ -21,8 +21,8 @@ namespace Repository
                && (String.IsNullOrEmpty(clientFilter.cellPhoneOption)
                || (x.CellPhone == clientFilter.cellPhoneOption)) &&
                (clientFilter.SelectOption == FilterType.Name
-               && (string.IsNullOrEmpty(clientFilter.TextOption)
-               || x.Name.Contains(clientFilter.TextOption))))
+               && (string.IsNullOrEmpty(clientFilter.Search)
+               || x.Name.Contains(clientFilter.Search))))
                .AsNoTracking()
                .WithCaseInsensitive()
                .OrderByDescending(x=>x.Id)

@@ -34,6 +34,7 @@ namespace Model
 		public int? BankAccountId { get; set; }
 		public bool? SalesOrder { get; set; }
 		public SaleStatus? SaleStatus { get; set; }
+		public string? Search { get; set; }
 	}
 
 	public enum FilterType
