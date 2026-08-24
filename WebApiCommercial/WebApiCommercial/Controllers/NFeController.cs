@@ -50,11 +50,11 @@ namespace WebApiCommercial.Controllers
         }
 
         // POST api/nfe
-        // Cria tentativa de emissão (salva payload para retry)
+        // Cria tentativa de emissï¿½o (salva payload para retry)
         [HttpPost]
         public async Task<IActionResult> CreateAttempt([FromHeader]int tenantid,[FromBody] NFeEmissionDto attempt)
         {
-            if (attempt == null) return BadRequest("Payload inválido.");
+            if (attempt == null) return BadRequest("Payload invï¿½lido.");
             try
             {
                 attempt.CompanyId = tenantid;
@@ -69,7 +69,7 @@ namespace WebApiCommercial.Controllers
         [HttpPost("sale")]
         public async Task<IActionResult> CreateFromSale([FromHeader] int tenantid, [FromBody] NFeEmissionDto attempt)
         {
-            if (attempt == null) return BadRequest("Payload inválido.");
+            if (attempt == null) return BadRequest("Payload invï¿½lido.");
             try
             {
                 attempt.CompanyId = tenantid;
@@ -85,7 +85,7 @@ namespace WebApiCommercial.Controllers
         [HttpPut]
         public async Task<IActionResult> Update( [FromBody] NFeEmissionDto attempt)
         {
-            if (attempt == null) return BadRequest("Payload inválido.");
+            if (attempt == null) return BadRequest("Payload invï¿½lido.");
             try
             {
                 await _nfeService.update(attempt);
@@ -97,7 +97,7 @@ namespace WebApiCommercial.Controllers
             }
         }
         // POST api/nfe
-        // reenvio de emissão (salva payload para retry)
+        // reenvio de emissï¿½o (salva payload para retry)
         [HttpPost("{id}/resend")]
         public async Task<IActionResult> Resend(int id)
         {
@@ -131,10 +131,10 @@ namespace WebApiCommercial.Controllers
 			{
 				byte[] pdfBytes = await _nfeService.Danfe(id);
 
-				// Verifica se o array está vazio
+				// Verifica se o array estï¿½ vazio
 				if (pdfBytes == null || pdfBytes.Length == 0)
 				{
-					return BadRequest(new { error = "PDF não gerado" });
+					return BadRequest(new { error = "PDF nï¿½o gerado" });
 				}
 
 				// Retorna como arquivo PDF com Content-Type correto
@@ -161,6 +161,31 @@ namespace WebApiCommercial.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
+        // GET api/nfe/download-massa?mes=8&ano=2026
+        // Baixa um ZIP com os XMLs de todas as notas do mï¿½s/ano informado
+        [HttpGet("download-massa")]
+        public async Task<IActionResult> DownloadMassaXml([FromHeader] int tenantid, [FromQuery] int mes, [FromQuery] int ano)
+        {
+            try
+            {
+                if (mes < 1 || mes > 12)
+                    return BadRequest(new { error = "Mes invalido. Informe um valor entre 1 e 12." });
+
+                if (ano < 2000 || ano > DateTime.Now.Year)
+                    return BadRequest(new { error = "Ano invalido." });
+
+                var zipBytes = await _nfeService.ObterXmlsPorPeriodoZip(mes, ano, tenantid);
+
+                if (zipBytes == null)
+                    return NotFound(new { error = "Nenhuma nota fiscal encontrada no periodo informado." });
+
+                return File(zipBytes, "application/zip", $"nfe_{ano}_{mes:D2}.zip");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
         [HttpPost("Cancelar")]
         public async Task<IActionResult> CancelarNfe( [FromBody] CancelarNotaRequest cancelarNota)
         {
@@ -176,11 +201,11 @@ namespace WebApiCommercial.Controllers
         }
 
         // PUT api/nfe/{id}/result
-        // Atualiza resultado da emissão (success/failure, número, response)
+        // Atualiza resultado da emissï¿½o (success/failure, nï¿½mero, response)
         [HttpPut("{id:int}/result")]
         public async Task<IActionResult> UpdateResult(int id, [FromBody] NFeResultRequest req)
         {
-            if (req == null) return BadRequest("Payload inválido.");
+            if (req == null) return BadRequest("Payload invï¿½lido.");
             try
             {
                 await _nfeService.UpdateResultAsync(id, req.Sent, req.Numero, req.ResponseJson, req.ErrorMessage);
@@ -209,7 +234,7 @@ namespace WebApiCommercial.Controllers
         //        // incrementa TryCount utilizando UpdateResultAsync mantendo os dados atuais
         //        await _nfeService.UpdateResultAsync(existing.Id, existing.Sent, existing.Numero, existing.ResponseJson, existing.ErrorMessage);
 
-        //        // Retorna o payload salvo para o processo que fará o reenvio
+        //        // Retorna o payload salvo para o processo que farï¿½ o reenvio
         //        return Ok(new
         //        {
         //            id = existing.Id,
@@ -229,10 +254,10 @@ namespace WebApiCommercial.Controllers
         public async Task<IActionResult> GetLastNumber([FromQuery] string serie, [FromQuery] string tipo)
         {
             if (string.IsNullOrWhiteSpace(serie) || string.IsNullOrWhiteSpace(tipo))
-                return BadRequest("Parâmetros 'serie' e 'tipo' são obrigatórios.");
+                return BadRequest("Parï¿½metros 'serie' e 'tipo' sï¿½o obrigatï¿½rios.");
 
             if (!Enum.TryParse<TipoDocumentoEnum>(tipo, true, out var tipoDoc))
-                return BadRequest("Tipo de documento inválido. Use NFE ou NFCE.");
+                return BadRequest("Tipo de documento invï¿½lido. Use NFE ou NFCE.");
 
             var last = await _nfeService.GetLastNumeroAsync(serie, tipoDoc);
             return Ok(new { serie, tipo = tipoDoc.ToString(), lastNumero = last });

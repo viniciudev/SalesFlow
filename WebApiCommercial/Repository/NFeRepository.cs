@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Model;
 using Model.Enums;
 using Model.Registrations;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -77,6 +78,37 @@ namespace Repository
                 .FirstOrDefaultAsync();
         }
 
+        public async Task<List<NFeEmission>> GetByPeriodAsync(int mes, int ano, int companyId)
+        {
+            // A coluna CreatedAt � timestamp with time zone (UTC).
+            // Converte o m�s/ano selecionado (fuso local da empresa, America/Sao_Paulo)
+            // para um range UTC, garantindo que a consulta cubra exatamente o m�s local
+            // e seja sarg�vel (usa �ndice) em vez de comparar Month/Year por linha.
+            var timeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+            var startLocal = new DateTime(ano, mes, 1, 0, 0, 0, DateTimeKind.Unspecified);
+            var endLocal = startLocal.AddMonths(1);
+            var startUtc = TimeZoneInfo.ConvertTimeToUtc(startLocal, timeZone);
+            var endUtc = TimeZoneInfo.ConvertTimeToUtc(endLocal, timeZone);
+
+            return await _dbContext.Set<NFeEmission>()
+                .Where(x => x.CompanyId == companyId
+                    && x.CreatedAt >= startUtc
+                    && x.CreatedAt < endUtc
+                    && x.XmlCompleto != null
+                    && x.XmlCompleto != "")
+                .AsNoTracking()
+                .Select(x => new NFeEmission
+                {
+                    Id = x.Id,
+                    Numero = x.Numero,
+                    Serie = x.Serie,
+                    ChaveAcesso = x.ChaveAcesso,
+                    TipoDocumento = x.TipoDocumento,
+                    XmlCompleto = x.XmlCompleto
+                })
+                .ToListAsync();
+        }
+
     }
     public interface INFeRepository : IGenericRepository<NFeEmission>
     {
@@ -87,5 +119,6 @@ namespace Repository
         Task<List<NFeEmission>> GetAllAsync(int tenantid);
         Task<PagedResult<NFeEmission>> GetPaged(Filters filters);
         Task<NFeEmission> GetByCompany(int companyId);
+        Task<List<NFeEmission>> GetByPeriodAsync(int mes, int ano, int companyId);
     }
 }

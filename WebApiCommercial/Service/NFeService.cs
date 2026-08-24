@@ -45,6 +45,7 @@ using Repository;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
@@ -2058,6 +2059,35 @@ namespace Service
 
 			return $"nfe-{nfe.Numero}-{DateTime.Now:yyyyMMddHHmmss}.xml";
 		}
+		public async Task<byte[]> ObterXmlsPorPeriodoZip(int mes, int ano, int companyId)
+		{
+			var notas = await (repository as INFeRepository).GetByPeriodAsync(mes, ano, companyId);
+
+			if (notas == null || notas.Count == 0)
+				return null;
+
+			using var memoryStream = new MemoryStream();
+			using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+			{
+				foreach (var nota in notas)
+				{
+					if (string.IsNullOrWhiteSpace(nota.XmlCompleto))
+						continue;
+
+					var numero = nota.Numero?.ToString() ?? nota.Id.ToString();
+					var serie = LimparString(nota.Serie);
+					var chave = LimparString(nota.ChaveAcesso);
+					var entryName = $"nfe-{nota.TipoDocumento}-{serie}-{numero}-{chave}.xml";
+
+					var entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
+					using var entryStream = entry.Open();
+					var xmlBytes = Encoding.UTF8.GetBytes(nota.XmlCompleto);
+					await entryStream.WriteAsync(xmlBytes, 0, xmlBytes.Length);
+				}
+			}
+
+			return memoryStream.ToArray();
+		}
 		public async Task update(NFeEmissionDto attempt)
 		{
 			NFeEmission nFeEmission = await GetByIdAsync(attempt.Id);
@@ -2134,6 +2164,7 @@ namespace Service
 		Task update(NFeEmissionDto attempt);
 		Task<byte[]> ObterXml(int id);
 		Task<string> ObterNomeArquivoXml(int id);
+		Task<byte[]> ObterXmlsPorPeriodoZip(int mes, int ano, int companyId);
 		Task<ResponseGeneric> CancelarNfe(CancelarNotaRequest cancelarNota);
 		Task<ResponseGeneric> CreatedFromSale(NFeEmissionDto nfeDto);
 	}
