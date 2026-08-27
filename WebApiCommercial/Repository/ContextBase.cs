@@ -106,6 +106,7 @@ namespace Repository
 			ConfiguraNaturezaOperacao(modelBuilder);
 			ConfiguraFiscalConfiguration(modelBuilder);
 			ConfiguraNFeEmission(modelBuilder);
+			ConfiguraNFeEvento(modelBuilder);
 			ConfiguraFinancialPaymentMethod(modelBuilder);
 			ConfiguraProvider(modelBuilder);
 			ConfiguraPurchase(modelBuilder);
@@ -926,6 +927,43 @@ namespace Repository
 									.WithMany(e => e.NFeEmissions)
 									.HasForeignKey(e => e.SaleId)
 									.OnDelete(DeleteBehavior.Restrict);
+			});
+		}
+
+		private void ConfiguraNFeEvento(ModelBuilder builder)
+		{
+			builder.Entity<NFeEvento>(entity =>
+			{
+				entity.ToTable("tb_nfeEvento");
+				entity.HasKey(e => e.Id);
+				entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+				entity.Property(e => e.DescricaoEvento).HasMaxLength(200);
+				entity.Property(e => e.ChaveAcesso).HasMaxLength(44);
+				entity.Property(e => e.Protocolo).HasMaxLength(15);
+				entity.Property(e => e.Correcao).HasColumnType("text");
+				entity.Property(e => e.XMotivo).HasColumnType("text");
+				entity.Property(e => e.XmlEvento).HasColumnType("text");
+
+				entity.Property(e => e.TipoEvento);
+				entity.Property(e => e.NSeqEvento);
+				entity.Property(e => e.CStat);
+				// Padrão do banco (todas as demais tabelas usam timestamp with time zone)
+				entity.Property(e => e.DhRegEvento).HasColumnType("timestamp with time zone");
+				entity.Property(e => e.Situacao);
+				entity.Property(e => e.CreatedAt).HasColumnType("timestamp with time zone");
+
+				entity.HasOne(e => e.NFeEmission)
+									.WithMany()
+									.HasForeignKey(e => e.NFeEmissionId)
+									.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasOne(e => e.Company)
+									.WithMany()
+									.HasForeignKey(e => e.CompanyId)
+									.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasIndex(e => new { e.NFeEmissionId, e.TipoEvento, e.Situacao });
 			});
 		}
 

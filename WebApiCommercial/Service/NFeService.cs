@@ -9,6 +9,7 @@ using Model.Moves;
 using Model.NFe;
 using Model.Registrations;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NFe.App;
 using NFe.Classes;
 using NFe.Classes.Informacoes;
@@ -38,6 +39,7 @@ using NFe.Servicos;
 using NFe.Servicos.Retorno;
 using NFe.Utils;
 using NFe.Utils.Email;
+using NFe.Utils.Consulta;
 using NFe.Utils.Evento;
 using NFe.Utils.InformacoesSuplementares;
 using NFe.Utils.NFe;
@@ -61,6 +63,7 @@ namespace Service
 		private readonly ISaleRepository _saleRepository;
 		private readonly IFiscalConfigurationRepository _fiscalConfigurationRepository;
 		private readonly INaturezaOperacaoRepository _naturezaOperacaoRepository;
+		private readonly INFeEventoRepository _nfeEventoRepository;
 		private readonly IWebHostEnvironment _environment;
 			private readonly ITributacaoResolverService _tributacaoResolver;
 		private NFe.Classes.NFe _nfe;
@@ -73,12 +76,14 @@ namespace Service
 					ISaleRepository saleRepository,
 				IFiscalConfigurationRepository fiscalConfigurationRepository,
 				INaturezaOperacaoRepository naturezaOperacaoRepository,
+				INFeEventoRepository nfeEventoRepository,
 					IWebHostEnvironment webHostEnvironment,
 					ITributacaoResolverService tributacaoResolver) : base(repository)
 		{
 			_saleRepository = saleRepository;
 			_fiscalConfigurationRepository = fiscalConfigurationRepository;
 			_naturezaOperacaoRepository = naturezaOperacaoRepository;
+			_nfeEventoRepository = nfeEventoRepository;
 			_environment = webHostEnvironment;
 				_tributacaoResolver = tributacaoResolver;
 		}
@@ -2147,6 +2152,256 @@ namespace Service
 				return new ResponseGeneric { Success = false, Message = $"Erro ao cancelar NFe: {ex.Message}" };
 			}
 		}
+
+		#region Carta de Correção Eletrônica (CC-e)
+
+		/// <summary>
+		/// Indica se a NF-e pode receber Carta de Correção Eletrônica (CC-e).
+		/// Regras conforme MOC v7.0 seção 5.10 e OS:
+		///  - NF-e autorizada (StatusNfe = emitida);
+		///  - NF-e não cancelada/denegada;
+		///  - prazo máximo de 168 horas (7 dias) a partir da autorização;
+		///  - máximo de 20 CC-e por NF-e (controle pelo nSeqEvento);
+		///  - somente modelo 55 (NF-e); NFC-e (modelo 65) não pode receber CC-e.
+		/// </summary>
+		public async Task<bool> PodeEmitirCartaCorrecao(int nfeId)
+		{
+			var (pode, _) = await ValidarCartaCorrecaoAsync(nfeId);
+			return pode;
+		}
+
+		/// <summary>
+		/// Valida a elegibilidade de uma NF-e para receber CC-e, retornando detalhes
+		/// (motivos) para exibição ao usuário.
+		/// </summary>
+		public async Task<ResponseGeneric> ValidarCartaCorrecao(int nfeId)
+		{
+			var nfe = await (repository as INFeRepository).GetByIdAsync(nfeId);
+			if (nfe == null)
+				return new ResponseGeneric { Success = false, Message = "Nota fiscal não encontrada." };
+
+			var (pode, motivos) = await ValidarCartaCorrecaoAsync(nfe);
+
+			return new ResponseGeneric
+			{
+				Success = pode,
+				Message = pode
+					? "NF-e apta a receber Carta de Correção."
+					: string.Join(" ", motivos),
+				Data = new { Pode = pode, Motivos = motivos }
+			};
+		}
+
+		private async Task<(bool Pode, List<string> Motivos)> ValidarCartaCorrecaoAsync(int nfeId)
+		{
+			var nfe = await (repository as INFeRepository).GetByIdAsync(nfeId);
+			if (nfe == null)
+				return (false, new List<string> { "Nota fiscal não encontrada." });
+
+			return await ValidarCartaCorrecaoAsync(nfe);
+		}
+
+		private async Task<(bool Pode, List<string> Motivos)> ValidarCartaCorrecaoAsync(NFeEmission nfe)
+		{
+			var motivos = new List<string>();
+
+			if (nfe.StatusNfe != StatusNfe.emitida)
+				motivos.Add("A NF-e não está autorizada. Somente notas autorizadas podem receber Carta de Correção.");
+			if (nfe.StatusNfe == StatusNfe.cancelada)
+				motivos.Add("A NF-e está cancelada e não pode receber Carta de Correção.");
+			if (nfe.TipoDocumento == TipoDocumentoEnum.NFCE)
+				motivos.Add("NFC-e (modelo 65) não pode receber Carta de Correção (regra MOC).");
+			if (string.IsNullOrWhiteSpace(nfe.ChaveAcesso))
+				motivos.Add("A NF-e não possui chave de acesso (não autorizada).");
+			if (string.IsNullOrWhiteSpace(nfe.Protocolo))
+				motivos.Add("A NF-e não possui protocolo de autorização.");
+
+			// Prazo: até 168 horas (7 dias) a partir da autorização da NF-e.
+			var dataAutorizacao = ObterDataAutorizacao(nfe);
+			if (dataAutorizacao.HasValue && DateTime.Now > dataAutorizacao.Value.AddHours(168))
+				motivos.Add("O prazo para emissão de Carta de Correção expirou (máximo de 168 horas após a autorização).");
+
+			// Limite: máximo de 20 CC-e por NF-e (controlado pelo nSeqEvento).
+			int quantidadeCce = await _nfeEventoRepository.CountCartaCorrecaoAsync(nfe.Id);
+			if (quantidadeCce >= 20)
+				motivos.Add("Limite de 20 Cartas de Correção para esta NF-e atingido.");
+
+			return (motivos.Count == 0, motivos);
+		}
+
+		/// <summary>
+		/// Obtém a data/hora de autorização da NF-e a partir do infProt armazenado em
+		/// ResponseJson (dhRecbto). Se não for possível extrair, usa o CreatedAt como fallback.
+		/// </summary>
+		private DateTime? ObterDataAutorizacao(NFeEmission nfe)
+		{
+			if (!string.IsNullOrWhiteSpace(nfe.ResponseJson))
+			{
+				try
+				{
+					var json = JObject.Parse(nfe.ResponseJson);
+					var token = json["dhRecbto"] ?? json["ProxyDhRecbto"];
+					if (token != null && DateTime.TryParse(token.Value<string>(), out var dhRecbto))
+						return dhRecbto;
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"[CC-e] Falha ao extrair data de autorização do ResponseJson. NFeId={nfe.Id}, Erro={ex.Message}");
+				}
+			}
+
+			// Fallback: data de criação do registro (aproximação da emissão).
+			var created = nfe.CreatedAt;
+			return created.Kind == DateTimeKind.Utc ? created.ToLocalTime() : created;
+		}
+
+		/// <summary>
+		/// Emite a Carta de Correção Eletrônica (CC-e) para uma NF-e autorizada.
+		/// Monta o evento (tpEvento 110110), assina com o certificado do emitente,
+		/// transmite via NFeRecepcaoEvento (síncrono) e persiste o evento/protocolo/XML.
+		/// </summary>
+		public async Task<ResponseGeneric> EmitirCartaCorrecao(CartaCorrecaoRequest request)
+		{
+			// 1. Validação do texto da correção (MOC 5.10: mínimo 15, máximo 1000 caracteres).
+			var correcao = request.TextoCorrecao?.Trim() ?? string.Empty;
+			if (string.IsNullOrWhiteSpace(correcao))
+				return new ResponseGeneric { Success = false, Message = "O texto da correção não pode estar vazio." };
+			if (correcao.Length < 15)
+				return new ResponseGeneric { Success = false, Message = "O texto da correção deve ter no mínimo 15 caracteres." };
+			if (correcao.Length > 1000)
+				return new ResponseGeneric { Success = false, Message = "O texto da correção deve ter no máximo 1000 caracteres." };
+
+			// 2. Carrega a NF-e e valida a elegibilidade.
+			var nfe = await (repository as INFeRepository).GetByIdAsync(request.NFeId);
+			if (nfe == null)
+				return new ResponseGeneric { Success = false, Message = "Nota fiscal não encontrada." };
+
+			var (pode, motivos) = await ValidarCartaCorrecaoAsync(nfe);
+			if (!pode)
+				return new ResponseGeneric { Success = false, Message = string.Join(" ", motivos) };
+
+			// 3. Próximo nSeqEvento (sequencial das CC-e autorizadas + 1).
+			int nSeqEvento = await _nfeEventoRepository.CountCartaCorrecaoAsync(nfe.Id) + 1;
+
+			try
+			{
+				FiscalConfiguration fiscalConfiguration = await _fiscalConfigurationRepository.GetByCompany(nfe.CompanyId);
+				if (fiscalConfiguration == null)
+					return new ResponseGeneric { Success = false, Message = "Configuração fiscal da empresa não encontrada." };
+				NaturezaOperacao naturezaOperacao = await _naturezaOperacaoRepository.GetByIdAsync(nfe.NaturezaOperacaoId);
+				if (naturezaOperacao == null)
+					return new ResponseGeneric { Success = false, Message = "Natureza de operação não encontrada." };
+
+				_configuracaoApp = criarConfiguracaoApp(fiscalConfiguration, naturezaOperacao);
+				var servicoNFe = new ServicosNFe(_configuracaoApp.CfgServico);
+				var cpfcnpj = string.IsNullOrEmpty(_configuracaoApp.Emitente.CNPJ)
+						? _configuracaoApp.Emitente.CPF
+						: _configuracaoApp.Emitente.CNPJ;
+
+				// Identificador do lote (inteiro único, sequencial no tempo).
+				int idlote = Convert.ToInt32(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+
+				Console.WriteLine($"[CC-e] Enviando Carta de Correção. NFeId={nfe.Id}, Chave={nfe.ChaveAcesso}, nSeqEvento={nSeqEvento}, cpfcnpj={cpfcnpj}");
+
+				var retorno = servicoNFe.RecepcaoEventoCartaCorrecao(
+						idlote, nSeqEvento, nfe.ChaveAcesso, correcao, cpfcnpj);
+
+				var retEvento = retorno?.Retorno?.retEvento?.FirstOrDefault();
+				var infEvento = retEvento?.infEvento;
+				int cstat = infEvento?.cStat ?? 0;
+
+				var evento = new NFeEvento
+				{
+					NFeEmissionId = nfe.Id,
+					CompanyId = nfe.CompanyId,
+					TipoEvento = 110110,
+					DescricaoEvento = "Carta de Correção",
+					NSeqEvento = nSeqEvento,
+					ChaveAcesso = nfe.ChaveAcesso,
+					Correcao = correcao,
+					CStat = cstat,
+					XMotivo = infEvento?.xMotivo ?? retorno?.Retorno?.xMotivo,
+					DhRegEvento = infEvento?.dhRegEvento,
+					Protocolo = infEvento?.nProt,
+					XmlEvento = retorno?.ProcEventosNFe?.FirstOrDefault()?.ObterXmlString(),
+					CreatedAt = DateTime.Now
+				};
+
+				// cStat 135 = Evento registrado e vinculado à NF-e; cStat 136 = Evento registrado (não vinculado).
+				if (NfeSituacao.EventoVinculado(cstat) || cstat == 136)
+				{
+					evento.Situacao = SituacaoEvento.Autorizado;
+					await _nfeEventoRepository.CreateAsync(evento);
+
+					Console.WriteLine($"[CC-e] Carta de Correção autorizada. cStat={cstat}, nProt={infEvento?.nProt}, dhRegEvento={infEvento?.dhRegEvento}");
+
+					return new ResponseGeneric
+					{
+						Success = true,
+						Message = "Carta de Correção transmitida com sucesso.",
+						Data = new
+						{
+							Protocolo = infEvento?.nProt,
+							DataHora = infEvento?.dhRegEvento,
+							NSeqEvento = nSeqEvento,
+							CStat = cstat
+						}
+					};
+				}
+
+				// Rejeição da SEFAZ.
+				evento.Situacao = SituacaoEvento.Rejeitado;
+				await _nfeEventoRepository.CreateAsync(evento);
+
+				var mensagemRejeicao = infEvento?.xMotivo ?? retorno?.Retorno?.xMotivo ?? "Rejeição não detalhada pela SEFAZ.";
+				Console.WriteLine($"[CC-e] Carta de Correção rejeitada. cStat={cstat}, xMotivo={mensagemRejeicao}");
+
+				return new ResponseGeneric { Success = false, Message = $"Carta de Correção rejeitada: {mensagemRejeicao}" };
+			}
+			catch (Exception ex)
+			{
+				// Falha de comunicação (timeout, certificado, indisponibilidade da SEFAZ) ou erro interno.
+				// Registra a tentativa para auditoria e permite reprocessamento.
+				Console.WriteLine($"[CC-e] Falha ao transmitir Carta de Correção. NFeId={request.NFeId}, Erro={ex.Message}");
+
+				try
+				{
+					await _nfeEventoRepository.CreateAsync(new NFeEvento
+					{
+						NFeEmissionId = nfe.Id,
+						CompanyId = nfe.CompanyId,
+						TipoEvento = 110110,
+						DescricaoEvento = "Carta de Correção",
+						NSeqEvento = nSeqEvento,
+						ChaveAcesso = nfe.ChaveAcesso,
+						Correcao = correcao,
+						Situacao = SituacaoEvento.FalhaComunicacao,
+						XMotivo = ex.Message,
+						CreatedAt = DateTime.Now
+					});
+				}
+				catch (Exception auditEx)
+				{
+					Console.WriteLine($"[CC-e] Falha ao registrar evento de auditoria. Erro={auditEx.Message}");
+				}
+
+				return new ResponseGeneric
+				{
+					Success = false,
+					Message = "Falha de comunicação com a SEFAZ ao transmitir a Carta de Correção. Tente novamente."
+				};
+			}
+		}
+
+		/// <summary>
+		/// Retorna o histórico de eventos fiscais vinculados à NF-e (ex.: Cartas de Correção).
+		/// </summary>
+		public async Task<List<NFeEvento>> ObterEventos(int nfeId)
+		{
+			return await _nfeEventoRepository.GetByNFeEmissionIdAsync(nfeId);
+		}
+
+		#endregion
 	}
 	public interface INFeService
 	{
@@ -2167,5 +2422,10 @@ namespace Service
 		Task<byte[]> ObterXmlsPorPeriodoZip(int mes, int ano, int companyId);
 		Task<ResponseGeneric> CancelarNfe(CancelarNotaRequest cancelarNota);
 		Task<ResponseGeneric> CreatedFromSale(NFeEmissionDto nfeDto);
+		//Carta de Correção Eletrônica (CC-e)
+		Task<bool> PodeEmitirCartaCorrecao(int nfeId);
+		Task<ResponseGeneric> ValidarCartaCorrecao(int nfeId);
+		Task<ResponseGeneric> EmitirCartaCorrecao(CartaCorrecaoRequest request);
+		Task<List<NFeEvento>> ObterEventos(int nfeId);
 	}
 }

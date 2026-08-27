@@ -291,6 +291,9 @@ namespace WebAppCommercial
 			services.AddTransient<IGenericRepository<NFeEmission>, NFeRepository>();
 			services.AddTransient<INFeRepository, NFeRepository>();
 			services.AddTransient<IBaseService<NFeEmission>, NFeService>();
+			//Eventos de NFe (ex.: Carta de Correção - CC-e)
+			services.AddTransient<INFeEventoRepository, NFeEventoRepository>();
+			services.AddTransient<IGenericRepository<NFeEvento>, NFeEventoRepository>();
 				//TributacaoResolver (cache de configuracoes tributarias)
 				services.AddMemoryCache();
 				services.AddTransient<ITributacaoResolverService, TributacaoResolverService>();

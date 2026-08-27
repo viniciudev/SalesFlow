@@ -200,6 +200,55 @@ namespace WebApiCommercial.Controllers
             }
         }
 
+        // GET api/nfe/{id}/carta-correcao/verificar
+        // Verifica se a NF-e pode receber Carta de Correção (elegibilidade).
+        [HttpGet("{id:int}/carta-correcao/verificar")]
+        public async Task<IActionResult> VerificarCartaCorrecao(int id)
+        {
+            try
+            {
+                var result = await _nfeService.ValidarCartaCorrecao(id);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        // POST api/nfe/carta-correcao
+        // Emite a Carta de Correção Eletrônica (CC-e) para uma NF-e autorizada.
+        [HttpPost("carta-correcao")]
+        public async Task<IActionResult> EmitirCartaCorrecao([FromBody] CartaCorrecaoRequest request)
+        {
+            if (request == null) return BadRequest(new { error = "Payload inválido." });
+            try
+            {
+                var result = await _nfeService.EmitirCartaCorrecao(request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        // GET api/nfe/{id}/eventos
+        // Retorna o histórico de eventos fiscais vinculados à NF-e (ex.: Cartas de Correção).
+        [HttpGet("{id:int}/eventos")]
+        public async Task<IActionResult> ObterEventos(int id)
+        {
+            try
+            {
+                var eventos = await _nfeService.ObterEventos(id);
+                return Ok(eventos);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
         // PUT api/nfe/{id}/result
         // Atualiza resultado da emiss�o (success/failure, n�mero, response)
         [HttpPut("{id:int}/result")]
