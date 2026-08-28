@@ -26,6 +26,7 @@ public class DanfeNfeDocument : IDocument
     private static float FontSizeSmall => 7f;
     private static float FontSizeNormal => 8f;
     private static float FontSizeTitle => 12f;
+    private static float LineHeightPadrao => 1.5f;
 
     public DanfeNfeDocument(string xml, byte[]? logo, ConfiguracaoDanfeNfe? configuracao = null, string desenvolvedor = "")
     {
@@ -70,6 +71,7 @@ public class DanfeNfeDocument : IDocument
             page.MarginRight(0.5f, Unit.Centimetre);
             page.MarginTop(0.5f, Unit.Centimetre);
             page.MarginBottom(0.5f, Unit.Centimetre);
+            page.DefaultTextStyle(TextStyle.Default.FontFamily(FontFamily).LineHeight(LineHeightPadrao));
             page.Header().Element(Cabecalho);
             page.Content().Element(Conteudo);
             page.Footer().Element(Rodape);
@@ -103,10 +105,15 @@ public class DanfeNfeDocument : IDocument
 
             column.Item().Border(0.5f).Row(r =>
             {
-                r.RelativeItem().Column(c =>
+                r.RelativeItem(7).Column(c =>
                 {
                     c.Item().BorderBottom(0.5f).PaddingLeft(2).Text("CHAVE DE ACESSO").FontSize(FontSizeSmall - 1).FontFamily(FontFamily);
                     c.Item().PaddingLeft(2).Text(_nfe.infNFe.Id.Substring(3)).FontSize(FontSizeNormal).FontFamily(FontFamily).Bold();
+                });
+                r.RelativeItem(3).BorderLeft(0.5f).Column(c =>
+                {
+                    c.Item().BorderBottom(0.5f).PaddingLeft(2).Text("Nº DA NOTA FISCAL / SÉRIE").FontSize(FontSizeSmall - 1).FontFamily(FontFamily);
+                    c.Item().PaddingLeft(2).Text($"{_nfe.infNFe.ide.nNF:000000000}/{_nfe.infNFe.ide.serie}").FontSize(FontSizeNormal).FontFamily(FontFamily).Bold();
                 });
             });
 

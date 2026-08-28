@@ -65,7 +65,8 @@ namespace Repository
                     .Where(x =>
                     (string.IsNullOrEmpty(filters.TextOption) ||x.Numero.ToString()==filters.TextOption)
                     && x.CompanyId == filters.IdCompany
-                    && (filters.StatusNfe==null|| x.StatusNfe==filters.StatusNfe))
+                    && (filters.StatusNfe==null|| x.StatusNfe==filters.StatusNfe)
+                   && (filters.TipoDocumento==null|| x.TipoDocumento==filters.TipoDocumento))
                     .AsNoTracking()
                     .GetPagedAsync(filters.PageNumber,filters.PageSize);
         }

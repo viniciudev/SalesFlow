@@ -1,6 +1,7 @@
 ﻿using Model.Moves;
 using Model.Registrations;
 using System;
+using Model.Enums;
 
 namespace Model
 {
@@ -27,6 +28,7 @@ namespace Model
 		public FinancialType? FinancialType { get; set; }
 		public FinancialStatus? FinancialStatus { get; set; }
 		public StatusNfe? StatusNfe { get; set; }
+		public TipoDocumentoEnum ?TipoDocumento { get; set; }
 		public string? StartDate { get; set; }      // Formato: "yyyy-MM-dd"
 		public string? EndDate { get; set; }        // Formato: "yyyy-MM-dd"
 		public int? ClientId { get; set; }
