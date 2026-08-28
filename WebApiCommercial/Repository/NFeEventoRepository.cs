@@ -19,6 +19,7 @@ namespace Repository
 		{
 			return await _dbContext.Set<NFeEvento>()
 				.Where(x => x.NFeEmissionId == nfeEmissionId)
+				.Include(x=>x.Company).ThenInclude(x=>x.FiscalConfiguration)
 				.OrderByDescending(x => x.CreatedAt)
 				.AsNoTracking()
 				.ToListAsync();
