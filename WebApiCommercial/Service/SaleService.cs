@@ -302,8 +302,10 @@ namespace Service
 					if (!sale.SalesOrder)
 					{
 						var fin = await _financialService.GetByIdSaleAsync(sale.Id);
+						
 						foreach (var item in fin)
 						{
+							
 							foreach (var forms in item.FinancialPaymentMethods)
 							{
 								await _financialPaymentMethodRepository.DeleteAsync(forms.Id);

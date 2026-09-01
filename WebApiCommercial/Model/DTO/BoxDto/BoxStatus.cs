@@ -9,7 +9,7 @@ namespace Model.DTO.BoxDto
 {
     public class BoxStatus
     {
-        public Box CaixaAberto { get; set; }
+        public Box ?CaixaAberto { get; set; }
         public decimal TotalAbertoHoje { get; set; }
         public decimal TotalFechadoHoje { get; set; }
     }
