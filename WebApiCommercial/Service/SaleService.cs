@@ -258,6 +258,168 @@ namespace Service
 				return date.AddDays(1);
 			return date;
 		}
+
+		/// <summary>
+		/// Atualização inteligente das parcelas financeiras de uma venda.
+		/// Recebe a lista de financials com IDs vindos do frontend (id=0 para novos),
+		/// atualiza os existentes, cria os novos e deleta/cancela os que sumiram da lista.
+		/// Preserva BoxId, histórico e evita deletar/recriar.
+		/// </summary>
+		private async Task UpdateSaleFinancialsAsync(SaleDto sale, int saleId)
+		{
+			if (sale.Financials == null)
+				return;
+
+			var existingFinancials = await _financialService.GetByIdSaleAsync(saleId);
+			var existingById = existingFinancials.ToDictionary(f => f.Id);
+
+			var caixaAberto = await _boxRepository.GetByStatus(CaixaStatus.ABERTO, sale.IdCompany);
+			var listCostCenter = await _costCenterRepository.GetByIdCompany(sale.IdCompany);
+			var costCenterId = listCostCenter.FirstOrDefault()?.Id;
+
+			var receivedIds = new HashSet<int>();
+
+			foreach (var dto in sale.Financials)
+			{
+				if (dto == null)
+					continue;
+
+				if (dto.Id > 0)
+				{
+					// Valida a posse: o ID só pode ser de um financial desta venda
+					if (!existingById.TryGetValue(dto.Id, out var existing))
+						throw new Exception($"A parcela ID {dto.Id} não pertence à venda {saleId} e não pode ser alterada.");
+
+					receivedIds.Add(dto.Id);
+					await UpdateExistingFinancialAsync(existing, dto, sale.BankAccountId);
+				}
+				else
+				{
+					await CreateFinancialFromDtoAsync(dto, sale, saleId, caixaAberto?.Id, costCenterId);
+				}
+			}
+
+			foreach (var existing in existingFinancials)
+			{
+				if (receivedIds.Contains(existing.Id))
+					continue;
+
+				if (existing.FinancialStatus == FinancialStatus.pending)
+				{
+					foreach (var fpm in existing.FinancialPaymentMethods)
+						await _financialPaymentMethodRepository.DeleteAsync(fpm.Id);
+					await _financialService.DeleteAsync(existing.Id);
+				}
+				else if (existing.FinancialStatus == FinancialStatus.paid)
+				{
+					// Parcela paga não pode ser deletada: preserva o histórico marcando como cancelada.
+					// Mantém a coleção de FPMs intacta para não órfão no tracker do EF.
+					existing.FinancialStatus = FinancialStatus.Canceled;
+					await _financialService.Alter(existing);
+				}
+				// Parcelas renegociadas/canceladas são preservadas (histórico de renegociação)
+			}
+		}
+
+		private async Task UpdateExistingFinancialAsync(Financial existing, SaleFinancialDto dto, int? saleBankAccountId)
+		{
+			var fpm = existing.FinancialPaymentMethods.FirstOrDefault();
+
+			// Parcela paga é imutável (valor, vencimento e método de pagamento)
+			if (existing.FinancialStatus == FinancialStatus.paid)
+			{
+				bool changed = existing.Value != dto.Value
+					|| existing.DueDate.Date != dto.DueDate.Date
+					|| fpm?.PaymentMethodId != dto.PaymentMethodId;
+				if (changed)
+					throw new Exception("Não é possível alterar uma parcela já paga.");
+
+				return;
+			}
+
+			// Atualiza campos editáveis (parcelas pendentes)
+			existing.Value = dto.Value;
+			existing.DueDate = dto.DueDate;
+			if (!string.IsNullOrWhiteSpace(dto.Description))
+				existing.Description = dto.Description;
+
+			// Conta bancária pertence ao nível da venda; propaga a alteração
+			if (saleBankAccountId.HasValue && existing.BankAccountId != saleBankAccountId.Value)
+				existing.BankAccountId = saleBankAccountId.Value;
+
+			// Padrão do AlterFinancial: apaga as FPMs existentes e atribui uma nova.
+			// NÃO misturar UpdateAsync/CreateAsync separado antes do Alter — o EF passaria
+			// a rastrear o dependente e, ao reanexar o Financial com a coleção trocada,
+			// detectaria o relacionamento "severed" com FK não nula e lançaria o erro
+			// de conceptual null (InvalidOperationException).
+			if (existing.FinancialPaymentMethods != null)
+			{
+				foreach (var item in existing.FinancialPaymentMethods)
+					await _financialPaymentMethodRepository.DeleteAsync(item.Id);
+			}
+
+			existing.FinancialPaymentMethods = new List<FinancialPaymentMethod>
+			{
+				new FinancialPaymentMethod
+				{
+					PaymentMethodId = dto.PaymentMethodId,
+					FinancialId = existing.Id,
+					Amount = dto.Value,
+					Installments = 1
+				}
+			};
+
+			await _financialService.Alter(existing);
+		}
+
+		private async Task CreateFinancialFromDtoAsync(SaleFinancialDto dto, SaleDto sale, int saleId, int? boxId, int? costCenterId)
+		{
+			var paymentMethod = await _paymentMethodRepository.GetByIdAsync(dto.PaymentMethodId);
+			if (paymentMethod == null)
+				throw new Exception($"Método de pagamento ID {dto.PaymentMethodId} não encontrado.");
+
+			int installments = dto.TotalInstallments ?? 1;
+			bool isPaid = paymentMethod.IsImmediateSettlement && installments == 1;
+
+			string description = !string.IsNullOrWhiteSpace(dto.Description)
+				? dto.Description
+				: installments > 1
+					? $"Parcela {dto.InstallmentNumber ?? 1}/{installments} - {paymentMethod.Name} - Venda #{saleId}"
+					: $"{paymentMethod.Name} - Venda #{saleId}";
+
+			var financial = new Financial
+			{
+				Id = 0,
+				FinancialStatus = isPaid ? FinancialStatus.paid : FinancialStatus.pending,
+				FinancialType = FinancialType.recipe,
+				Origin = OriginFinancial.financial,
+				IdSale = saleId,
+				CreationDate = DateTime.Now,
+				DueDate = dto.DueDate,
+				SettlementDate = isPaid ? DateTime.Now.ToString() : null,
+				IdCompany = sale.IdCompany,
+				BoxId = boxId,
+				Description = description,
+				IdCostCenter = costCenterId,
+				IdClient = sale.IdClient,
+				Value = dto.Value,
+				Troco = null,
+				BankAccountId = dto.BankAccountId ?? sale.BankAccountId,
+				FinancialPaymentMethods = new List<FinancialPaymentMethod>
+				{
+					new FinancialPaymentMethod
+					{
+						PaymentMethodId = dto.PaymentMethodId,
+						FinancialId = 0,
+						Amount = dto.Value,
+						Installments = 1
+					}
+				}
+			};
+
+			await _financialService.Create(financial);
+		}
+
 		public async Task<int> PutWithItems(SaleDto sale)
 		{
 			using (var transaction = await repository.CreateTransactionAsync())
@@ -301,20 +463,27 @@ namespace Service
 					}
 					if (!sale.SalesOrder)
 					{
-						var fin = await _financialService.GetByIdSaleAsync(sale.Id);
-						
-						foreach (var item in fin)
+						if (sale.Financials != null)
 						{
-							
-							foreach (var forms in item.FinancialPaymentMethods)
-							{
-								await _financialPaymentMethodRepository.DeleteAsync(forms.Id);
-							}
-							await _financialService.DeleteAsync(item.Id);
+							await UpdateSaleFinancialsAsync(sale, s.Id);
 						}
+						else
+						{
+							var fin = await _financialService.GetByIdSaleAsync(sale.Id);
 
-						await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany,
-							sale.IdClient, sale.BankAccountId, sale.Troco);
+							foreach (var item in fin)
+							{
+
+								foreach (var forms in item.FinancialPaymentMethods)
+								{
+									await _financialPaymentMethodRepository.DeleteAsync(forms.Id);
+								}
+								await _financialService.DeleteAsync(item.Id);
+							}
+
+							await GenerateFinancial(sale.FormPaymentSales, s.Id, sale.IdCompany,
+								sale.IdClient, sale.BankAccountId, sale.Troco);
+						}
 					}
 
 					if (sale.SalesOrder && sale.SalePayments != null && sale.SalePayments.Any())

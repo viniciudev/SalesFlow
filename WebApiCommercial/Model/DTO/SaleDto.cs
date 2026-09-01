@@ -28,6 +28,11 @@ namespace Model.DTO
 		[NotMapped]
 		public decimal ValueSale { get; set; }
 		public ICollection<FormPaymentSale> FormPaymentSales { get; set; }
+		/// <summary>
+		/// Parcelas financeiras com IDs vindos do frontend (id=0 para novos registros).
+		/// Quando informado, o PutWithItems faz atualização inteligente em vez de deletar/recriar.
+		/// </summary>
+		public ICollection<SaleFinancialDto> Financials { get; set; }
 		public ICollection<SalePayment> SalePayments { get; set; }
 		public ICollection<NFeEmission> NFeEmissions { get; set; } = new List<NFeEmission>();
 		public int Id { get; set; }
