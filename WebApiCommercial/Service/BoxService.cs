@@ -54,10 +54,14 @@ namespace Service
 			// Calcular saldo total das movimentações
 			var totalEntradas = caixa.Movimentacoes
 					.Where(m => m.FinancialType == FinancialType.recipe)
+					.Where(m => m.FinancialStatus != FinancialStatus.Canceled)
+					.Where(x=>x.FinancialPaymentMethods.Any(p => p.PaymentMethod.Name.ToLower(). Contains("dinheiro")))
 					.Sum(x => x.Value);
 
 			var totalSaidas = caixa.Movimentacoes
 					.Where(m => m.FinancialType == FinancialType.expense)
+					.Where(m => m.FinancialStatus != FinancialStatus.Canceled)
+					.Where(x=>x.FinancialPaymentMethods.Any(p => p.PaymentMethod.Name.ToLower(). Contains("dinheiro")))
 					.Sum(m => m.Value);
 
 			var saldoCalculado = caixa.ValorInicial + totalEntradas - totalSaidas;
@@ -84,10 +88,14 @@ namespace Service
 			// Calcular saldo total das movimentações
 			var totalEntradas = caixa.Movimentacoes
 					.Where(m => m.FinancialType == FinancialType.recipe)
+					.Where(m => m.FinancialStatus != FinancialStatus.Canceled)
+					.Where(x=>x.FinancialPaymentMethods.Any(p => p.PaymentMethod.Name.ToLower(). Contains("dinheiro")))
 					.Sum(x => x.Value);
 
 			var totalSaidas = caixa.Movimentacoes
 					.Where(m => m.FinancialType == FinancialType.expense)
+					.Where(m => m.FinancialStatus != FinancialStatus.Canceled)
+					.Where(x=>x.FinancialPaymentMethods.Any(p => p.PaymentMethod.Name.ToLower(). Contains("dinheiro")))
 					.Sum(m => m.Value);
 
 			var saldoCalculado = caixa.ValorInicial + totalEntradas - totalSaidas;
@@ -104,12 +112,48 @@ namespace Service
 
 			return new ResponseGeneric { Message = "Caixa fechado!", Success = true, Data = caixa };
 		}
+		public async Task<ResponseGeneric> AjustarCaixaEdicaoVendaAsync(int caixaId)
+		{
+			Box caixa = await (repository as IBoxRepository).GetByIdBox(caixaId);
+
+			//if (caixa == null || caixa.Status == CaixaStatus.FECHADO)
+			//	return new ResponseGeneric { Message = "Caixa não encontrado ou já fechado", Success = false };
+
+			// Calcular saldo total das movimentações
+			var totalEntradas = caixa.Movimentacoes
+				.Where(m => m.FinancialType == FinancialType.recipe)
+				.Where(m => m.FinancialStatus != FinancialStatus.Canceled)
+				.Where(x=>x.FinancialPaymentMethods.Any(p => p.PaymentMethod.Name.ToLower(). Contains("dinheiro")))
+				.Sum(x => x.Value);
+
+			var totalSaidas = caixa.Movimentacoes
+				.Where(m => m.FinancialType == FinancialType.expense)
+				.Where(m => m.FinancialStatus != FinancialStatus.Canceled)
+				.Where(x=>x.FinancialPaymentMethods.Any(p => p.PaymentMethod.Name.ToLower(). Contains("dinheiro")))
+				.Sum(m => m.Value);
+
+			var saldoCalculado = caixa.ValorInicial + totalEntradas - totalSaidas;
+			var diferenca = saldoCalculado- saldoCalculado;
+
+			caixa.DataFechamento = DateTime.UtcNow;
+			caixa.ValorFinal = saldoCalculado;
+			caixa.SaldoCalculado = saldoCalculado;
+			caixa.Diferenca = diferenca;
+			caixa.Status = CaixaStatus.FECHADO;
+			caixa.Observacoes = "Caixa foi ajustado devido edição na venda!";
+			await repository.SaveChangesAsync();
+			return new ResponseGeneric { Message = "Caixa fechado!", Success = true, Data = caixa };
+		}
 		public async Task<List<Financial>>? MovimentosDocaixa(int caixaId)
 		{
 			Box caixa = await (repository as IBoxRepository).GetByIdBox(caixaId);
 			if (caixa != null && caixa.Movimentacoes.Count() > 0)
 			{
-				return caixa.Movimentacoes.ToList();
+				return caixa.Movimentacoes
+					.Where(x => x.FinancialStatus != FinancialStatus.Canceled
+					            && x.FinancialPaymentMethods.Any(p => p.PaymentMethod.Name.ToLower(). Contains("dinheiro")))
+					.ToList();
+
 			}
 			else
 			{
@@ -135,6 +179,6 @@ namespace Service
 		Task<BoxStatus> GetStatusByCompany(int tenantid);
 		Task<List<Financial>>? MovimentosDocaixa(int caixaId);
 		Task<ResponseGeneric> AjustarCaixaAsync(int caixaId, CloseBoxDto dto);
-
+		Task<ResponseGeneric> AjustarCaixaEdicaoVendaAsync(int caixaId);
 	}
 }

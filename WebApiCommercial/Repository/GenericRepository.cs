@@ -65,7 +65,10 @@ namespace Repository
         {
             return await _dbContext.Database.BeginTransactionAsync();
         }
-   
+        public async Task SaveChangesAsync()
+        {
+            await _dbContext.SaveChangesAsync();
+        }
 
     }
 
@@ -80,6 +83,6 @@ namespace Repository
         Task<bool> Exists(int id);
         Task<IDbContextTransaction> CreateTransactionAsync();
         DbContext GetDbContext();
-       
+        Task SaveChangesAsync();
     }
 }

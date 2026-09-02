@@ -26,6 +26,8 @@ namespace Repository
         {
             return await _dbContext.Set<Box>()
                    .Include(c => c.Movimentacoes)
+                   .ThenInclude(x=>x.FinancialPaymentMethods)
+                   .ThenInclude(x=>x.PaymentMethod)
                    .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == BoxId);
         }
