@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace Service
 {
@@ -141,7 +142,11 @@ namespace Service
 			caixa.Diferenca = diferenca;
 			caixa.Status = CaixaStatus.FECHADO;
 			caixa.Observacoes = "Caixa foi ajustado devido edição na venda!";
-			await repository.SaveChangesAsync();
+			// FORÇAR o estado para Modified
+			var _dbContext= repository.GetDbContext();
+			_dbContext.Entry(caixa).State = EntityState.Modified;
+			_dbContext.SaveChanges();
+			// await repository.SaveChangesAsync();
 			return new ResponseGeneric { Message = "Caixa fechado!", Success = true, Data = caixa };
 		}
 		public async Task<List<Financial>>? MovimentosDocaixa(int caixaId)
@@ -153,7 +158,6 @@ namespace Service
 					.Where(x => x.FinancialStatus != FinancialStatus.Canceled
 					            && x.FinancialPaymentMethods.Any(p => p.PaymentMethod.Name.ToLower(). Contains("dinheiro")))
 					.ToList();
-
 			}
 			else
 			{
