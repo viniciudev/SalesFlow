@@ -45,6 +45,7 @@ namespace Service
 				Code = model.Code,
 				Reference = model.Reference,
 				CostPrice = model.CostPrice,
+				PesoUnitario = model.PesoUnitario,
 				Observation = model.Observation,
 				Ncm = model.Ncm,
 				Cest = model.Cest,

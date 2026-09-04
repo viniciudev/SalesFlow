@@ -372,6 +372,7 @@ namespace Repository
 				entity.Property(c => c.NaturezaOperacaoOrigemId).HasColumnName("NaturezaOperacaoOrigemId").IsRequired(false);
 				entity.Property(c => c.DataAtualizacaoTributaria).HasColumnName("DataAtualizacaoTributaria").IsRequired(false);
                         entity.Property(c => c.SituacaoTributariaId).HasColumnName("SituacaoTributariaId").IsRequired(false);
+                        entity.Property(c => c.PesoUnitario).HasColumnName("PesoUnitario").IsRequired(false).HasColumnType("numeric(18,4)");
 
 				// Owned type ConfiguracaoTributaria
 				entity.OwnsOne(e => e.ConfiguracaoTributaria, tb =>
@@ -1003,6 +1004,24 @@ namespace Repository
 				entity.Property(c => c.Id).ValueGeneratedOnAdd();
 				entity.Property(c => c.ChaveNfe).HasMaxLength(44).IsRequired();
 				entity.Property(c => c.ValorTotal).HasColumnType("decimal(18,2)");
+
+				// Detalhamento de custos/impostos (nullable)
+				entity.Property(c => c.ValorProdutos).HasColumnType("decimal(18,2)");
+				entity.Property(c => c.ValorFrete).HasColumnType("decimal(18,2)");
+				entity.Property(c => c.ValorSeguro).HasColumnType("decimal(18,2)");
+				entity.Property(c => c.ValorDesconto).HasColumnType("decimal(18,2)");
+				entity.Property(c => c.ValorIPI).HasColumnType("decimal(18,2)");
+				entity.Property(c => c.ValorPIS).HasColumnType("decimal(18,2)");
+				entity.Property(c => c.ValorCOFINS).HasColumnType("decimal(18,2)");
+				entity.Property(c => c.ValorICMS).HasColumnType("decimal(18,2)");
+				entity.Property(c => c.ValorIBS).HasColumnType("decimal(18,2)");
+				entity.Property(c => c.ValorCBS).HasColumnType("decimal(18,2)");
+				entity.Property(c => c.BaseCalculoICMS).HasColumnType("decimal(18,2)");
+				entity.Property(c => c.BaseCalculoIBSCBS).HasColumnType("decimal(18,2)");
+				entity.Property(c => c.ValorNotaFiscal).HasColumnType("decimal(18,2)");
+				entity.Property(c => c.ValorTotalTributos).HasColumnType("decimal(18,2)");
+				entity.Property(c => c.CustosExtrasJson).HasColumnType("text").IsRequired(false);
+				entity.Property(c => c.Observacao).HasColumnType("text").IsRequired(false);
 			});
 			builder.Entity<Purchase>()
 					.HasOne(dc => dc.Company)
@@ -1030,6 +1049,12 @@ namespace Repository
 				entity.Property(c => c.ValorUnitario).HasColumnType("decimal(18,4)");
 				entity.Property(c => c.Desconto).HasColumnType("decimal(18,2)");
 				entity.Property(c => c.ValorTotal).HasColumnType("decimal(18,2)");
+
+				// Fator de conversao (origem da linha no XML)
+				entity.Property(c => c.Unidade).HasMaxLength(6).IsRequired(false);
+				entity.Property(c => c.QuantidadeXml).HasColumnType("decimal(18,3)").IsRequired(false);
+				entity.Property(c => c.ValorUnitarioXml).HasColumnType("decimal(18,4)").IsRequired(false);
+				entity.Property(c => c.FatorConversao).HasColumnType("decimal(18,6)").IsRequired(false);
 			});
 			builder.Entity<PurchaseItem>()
 					.HasOne(dc => dc.Compra)

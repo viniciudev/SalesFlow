@@ -592,10 +592,19 @@ namespace Repository.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal?>("BaseCalculoIBSCBS")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("BaseCalculoICMS")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("ChaveNfe")
                         .IsRequired()
                         .HasMaxLength(44)
                         .HasColumnType("character varying(44)");
+
+                    b.Property<string>("CustosExtrasJson")
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("DataCadastro")
                         .HasColumnType("timestamp without time zone");
@@ -612,7 +621,46 @@ namespace Repository.Migrations
                     b.Property<int>("IdCompany")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Observacao")
+                        .HasColumnType("text");
+
+                    b.Property<decimal?>("ValorCBS")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("ValorCOFINS")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("ValorDesconto")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("ValorFrete")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("ValorIBS")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("ValorICMS")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("ValorIPI")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("ValorNotaFiscal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("ValorPIS")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("ValorProdutos")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("ValorSeguro")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("ValorTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("ValorTotalTributos")
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
@@ -646,16 +694,29 @@ namespace Repository.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<decimal?>("FatorConversao")
+                        .HasColumnType("decimal(18,6)");
+
                     b.Property<int?>("ProdutoId")
                         .HasColumnType("integer");
 
                     b.Property<decimal>("Quantidade")
                         .HasColumnType("decimal(18,3)");
 
+                    b.Property<decimal?>("QuantidadeXml")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("Unidade")
+                        .HasMaxLength(6)
+                        .HasColumnType("character varying(6)");
+
                     b.Property<decimal>("ValorTotal")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("ValorUnitario")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal?>("ValorUnitarioXml")
                         .HasColumnType("decimal(18,4)");
 
                     b.HasKey("Id");
@@ -1903,6 +1964,10 @@ namespace Repository.Migrations
 
                     b.Property<string>("Observation")
                         .HasColumnType("text");
+
+                    b.Property<decimal?>("PesoUnitario")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("PesoUnitario");
 
                     b.Property<decimal>("Quantity")
                         .HasColumnType("numeric");

@@ -27,6 +27,13 @@ namespace Model.Registrations
 		public string Ncm { get; set; }
 		public ICollection<PurchaseItem> PurchaseItems { get; set; }
 
+		/// <summary>
+		/// Peso (kg) de UMA unidade do produto. Usado na importacao de XML
+		/// para converter compras emitidas em KG/G/TON para a unidade do sistema (UNID).
+		/// Ex.: 0.5 significa 500g por unidade.
+		/// </summary>
+		public decimal? PesoUnitario { get; set; }
+
 		// ========== MATRIZ TRIBUTARIA ==========
 
 		/// <summary>

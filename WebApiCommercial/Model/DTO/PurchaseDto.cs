@@ -16,6 +16,12 @@ namespace Model.DTO
 		public List<FormPaymentPurchase> FormPayment { get; set; } = new();
 		public decimal? Troco { get; set; }
 		public int? BankAccountId { get; set; }
+
+		/// <summary>Detalhamento de custos/impostos da NF-e de entrada.</summary>
+		public PurchaseCostsDto? Custos { get; set; }
+
+		/// <summary>Observacao / resumo legivel dos custos (gravado na compra).</summary>
+		public string? Observacao { get; set; }
 	}
 
 	public class PurchaseItemDto
@@ -29,6 +35,12 @@ namespace Model.DTO
 		public decimal ValorUnitario { get; set; }
 		public decimal Desconto { get; set; }
 		public decimal ValorTotal { get; set; }
+
+		// ===== FATOR DE CONVERSAO (origem da linha) =====
+		public string? Unidade { get; set; }
+		public decimal? QuantidadeXml { get; set; }
+		public decimal? ValorUnitarioXml { get; set; }
+		public decimal? FatorConversao { get; set; }
 	}
 
 	public class PurchaseListDto

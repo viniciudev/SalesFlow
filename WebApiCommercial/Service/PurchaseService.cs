@@ -7,6 +7,7 @@ using Repository;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Service
@@ -84,6 +85,7 @@ namespace Service
 						DataCadastro = DateTime.Now
 					};
 
+					AplicarCustosCompra(compra, purchaseDto);
 					await base.Save(compra);
 
 					foreach (var item in purchaseDto.PurchaseItems)
@@ -97,7 +99,11 @@ namespace Service
 							Quantidade = item.Quantidade,
 							ValorUnitario = item.ValorUnitario,
 							Desconto = item.Desconto,
-							ValorTotal = item.ValorTotal
+							ValorTotal = item.ValorTotal,
+							Unidade = string.IsNullOrWhiteSpace(item.Unidade) ? null : item.Unidade,
+							QuantidadeXml = item.QuantidadeXml ?? item.Quantidade,
+							ValorUnitarioXml = item.ValorUnitarioXml ?? item.ValorUnitario,
+							FatorConversao = item.FatorConversao ?? 1
 						};
 
 						await _dbContext.Set<PurchaseItem>().AddAsync(purchaseItem);
@@ -170,6 +176,7 @@ namespace Service
 						DataCadastro = DateTime.Now
 					};
 
+					AplicarCustosCompra(compra, purchaseDto);
 					await base.Alter(compra);
 
 					var existingItems = await _dbContext.Set<PurchaseItem>()
@@ -208,7 +215,11 @@ namespace Service
 							Quantidade = item.Quantidade,
 							ValorUnitario = item.ValorUnitario,
 							Desconto = item.Desconto,
-							ValorTotal = item.ValorTotal
+							ValorTotal = item.ValorTotal,
+							Unidade = string.IsNullOrWhiteSpace(item.Unidade) ? null : item.Unidade,
+							QuantidadeXml = item.QuantidadeXml ?? item.Quantidade,
+							ValorUnitarioXml = item.ValorUnitarioXml ?? item.ValorUnitario,
+							FatorConversao = item.FatorConversao ?? 1
 						};
 
 						await _dbContext.Set<PurchaseItem>().AddAsync(purchaseItem);
@@ -238,6 +249,37 @@ namespace Service
 				}
 			}
 		}
+		/// <summary>
+		/// Copia o detalhamento de custos/impostos (PurchaseCostsDto) para as colunas da Purchase.
+		/// ValorTotal da compra permanece a soma dos itens (regra atual) - os campos abaixo sao informativos.
+		/// </summary>
+		private static void AplicarCustosCompra(Purchase compra, PurchaseDto dto)
+		{
+			compra.Observacao = string.IsNullOrWhiteSpace(dto.Observacao) ? null : dto.Observacao.Trim();
+
+			if (dto.Custos == null)
+				return;
+
+			compra.ValorProdutos = dto.Custos.ValorProdutos;
+			compra.ValorFrete = dto.Custos.ValorFrete;
+			compra.ValorSeguro = dto.Custos.ValorSeguro;
+			compra.ValorDesconto = dto.Custos.ValorDesconto;
+			compra.ValorIPI = dto.Custos.ValorIPI;
+			compra.ValorPIS = dto.Custos.ValorPIS;
+			compra.ValorCOFINS = dto.Custos.ValorCOFINS;
+			compra.ValorICMS = dto.Custos.ValorICMS;
+			compra.ValorIBS = dto.Custos.ValorIBS;
+			compra.ValorCBS = dto.Custos.ValorCBS;
+			compra.BaseCalculoICMS = dto.Custos.BaseCalculoICMS;
+			compra.BaseCalculoIBSCBS = dto.Custos.BaseCalculoIBSCBS;
+			compra.ValorNotaFiscal = dto.Custos.ValorTotal;
+			compra.ValorTotalTributos = dto.Custos.ValorTotalTributos;
+
+			compra.CustosExtrasJson = dto.Custos.OutrosCustos != null && dto.Custos.OutrosCustos.Count > 0
+				? JsonSerializer.Serialize(dto.Custos.OutrosCustos)
+				: null;
+		}
+
 		private async Task GenerateFinancial(
 			ICollection<FormPaymentPurchase> formPayment,
 			int IdPurchase, int IdCompany,
