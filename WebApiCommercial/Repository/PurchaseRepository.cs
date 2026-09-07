@@ -46,6 +46,9 @@ namespace Repository
         public async Task<Purchase> GetByIdWithItems(int id)
         {
             return await _dbContext.Set<Purchase>()
+                .Include(x => x.Fornecedor)
+                .Include(x => x.PurchaseItems)
+                .Include(x=>x.Financials).ThenInclude(x=>x.FinancialPaymentMethods)
                 .Where(x => x.Id == id)
                 .Select(p => new Purchase
                 {
@@ -58,6 +61,21 @@ namespace Repository
                     ValorTotal = p.ValorTotal,
                     DataCadastro = p.DataCadastro,
                     NomeFornecedor = p.Fornecedor.nome,
+                    ValorProdutos = p.ValorProdutos,
+                    ValorFrete = p.ValorFrete,
+                    ValorSeguro = p.ValorSeguro,
+                    ValorDesconto = p.ValorDesconto,
+                    ValorIPI = p.ValorIPI,
+                    ValorPIS = p.ValorPIS,
+                    ValorCOFINS = p.ValorCOFINS,
+                    ValorICMS = p.ValorICMS,
+                    ValorCBS = p.ValorCBS,
+                    ValorIBS = p.ValorIBS,
+                    BaseCalculoIBSCBS = p.BaseCalculoIBSCBS,
+                    ValorNotaFiscal = p.ValorNotaFiscal,
+                    ValorTotalTributos = p.ValorTotalTributos,
+                    BaseCalculoICMS = p.BaseCalculoICMS,
+                    Observacao = p.Observacao,
                     Fornecedor = new Provider
                     {
                         Id = p.Fornecedor.Id,

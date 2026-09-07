@@ -46,6 +46,7 @@ namespace Repository
                       SituacaoTributariaId = p.SituacaoTributariaId,
                       ConfiguracaoTributaria = p.ConfiguracaoTributaria,
                       Cest=p.Cest,
+                      PesoUnitario = p.PesoUnitario
                    })
                    .WithCaseInsensitive()
                  .AsNoTracking()

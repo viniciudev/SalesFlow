@@ -314,6 +314,10 @@ namespace WebAppCommercial
 			services.AddTransient<IGenericRepository<Purchase>, PurchaseRepository>();
 			services.AddTransient<IPurchaseRepository, PurchaseRepository>();
 			services.AddTransient<IBaseService<Purchase>, PurchaseService>();
+			//Item
+			services.AddTransient<IGenericRepository<PurchaseItem>, PurchaseItemRepository>();
+			services.AddTransient<IPurchaseItemRepository, PurchaseItemRepository>();
+	
 			//Importacao de XML de NF-e de compra
 			services.AddTransient<IPurchaseXmlImportService, PurchaseXmlImportService>();
 			//regras fiscais 
