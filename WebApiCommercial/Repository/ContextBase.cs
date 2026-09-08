@@ -296,6 +296,7 @@ namespace Repository
 				user.Property(c => c.Name).HasMaxLength(100);
 				user.Property(c => c.Password).HasMaxLength(150);
 				user.Property(c => c.Email).HasMaxLength(100);
+				user.Property(c => c.IsDeleted).HasDefaultValue(false);
 			});
 			builder.Entity<User>()
 			 .HasOne(dc => dc.Company)

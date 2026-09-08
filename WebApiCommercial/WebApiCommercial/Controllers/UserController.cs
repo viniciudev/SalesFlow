@@ -147,10 +147,14 @@ namespace WebAppCommercial.Controllers
             }
         }
 
-        // DELETE api/values/5
+        // DELETE api/user/{id} - exclusão lógica (soft delete)
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
+            var result = await userService.SoftDeleteUser(id);
+            if (!result.Success)
+                return NotFound(new { message = result.Message });
+            return Ok(result);
         }
 
         [AllowAnonymous]

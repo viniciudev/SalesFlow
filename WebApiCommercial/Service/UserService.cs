@@ -243,7 +243,27 @@ namespace Service
                 Message = "Alterado com sucesso!"
             };
         }
-       
+
+        public async Task<ResponseGeneric> SoftDeleteUser(int id)
+        {
+            User user = await base.GetByIdAsync(id);
+            if (user == null)
+                return new ResponseGeneric
+                {
+                    Success = false,
+                    Message = "Usuário não encontrado!"
+                };
+
+            // Exclusão lógica: mantém o registro, mas impede login e oculta da listagem.
+            user.IsDeleted = true;
+            await base.Alter(user);
+            return new ResponseGeneric
+            {
+                Success = true,
+                Message = "Usuário excluído com sucesso!"
+            };
+        }
+
 
         public async Task SendResetPasswordEmail(EmailRequest request, string resetUrl)
         {
@@ -307,7 +327,8 @@ namespace Service
 
      
         Task<User> GetUserByEmail(string email);
-      
+        Task<ResponseGeneric> SoftDeleteUser(int id);
+
         Task SendResetPasswordEmail(EmailRequest request, string resetUrl);
     }
 
