@@ -87,7 +87,9 @@ namespace Repository
             // e seja sarg�vel (usa �ndice) em vez de comparar Month/Year por linha.
             var timeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
             var startLocal = new DateTime(ano, mes, 1, 0, 0, 0, DateTimeKind.Unspecified);
-            var endLocal = startLocal.AddMonths(1);
+            var lastDay = DateTime.DaysInMonth(ano, mes);
+            var endLocal = new DateTime(ano, mes, lastDay, 23, 59, 59, DateTimeKind.Unspecified);
+            // var endLocal = startLocal.AddMonths(1);
             var startUtc = TimeZoneInfo.ConvertTimeToUtc(startLocal, timeZone);
             var endUtc = TimeZoneInfo.ConvertTimeToUtc(endLocal, timeZone);
 

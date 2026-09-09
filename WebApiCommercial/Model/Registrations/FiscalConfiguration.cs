@@ -66,6 +66,7 @@ namespace Model.Registrations
         public Contato EmitenteContato { get; set; } = new();
         public Endereco EmitenteEndereco { get; set; } = new();
         public RegimeTributario RegimeTributario { get; set; } = new();
+        public byte[] ?Logo { get; set; }
     }
 
     public class Contato

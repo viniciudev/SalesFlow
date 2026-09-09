@@ -2,8 +2,10 @@
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Model.DTO;
+using Model.Registrations;
 using Service;
 using System;
 using System.IO;
@@ -20,6 +22,8 @@ namespace WebApiCommercial.Controllers
 		private readonly IFiscalConfigurationService _service;
 		private readonly IWebHostEnvironment _env;
 
+		private const long MaxLogoBytes = 2 * 1024 * 1024;
+
 		public FiscalConfigurationController(IFiscalConfigurationService service, IWebHostEnvironment env)
 		{
 			_service = service;
@@ -35,6 +39,17 @@ namespace WebApiCommercial.Controllers
 			{
 				var caminho = await SaveCertificadoAsync(request.CertificadoDigital);
 				request.CertificadoDigital.Arquivo = caminho;
+			}
+
+			// Logo da empresa: valida e converte o arquivo enviado para byte[]
+			var (logoBytes, erroLogo) = await ConverterLogoAsync(request.LogoFile);
+			if (erroLogo != null)
+				return BadRequest(new ResponseGeneric { Success = false, Message = erroLogo });
+
+			if (logoBytes != null)
+			{
+				request.Emitente ??= new Emitente();
+				request.Emitente.Logo = logoBytes;
 			}
 
 			// mapear DTO para entidade
@@ -60,6 +75,19 @@ namespace WebApiCommercial.Controllers
 				// se não enviou novo arquivo, manter o caminho existente
 				request.CertificadoDigital.Arquivo = existing.CertificadoDigital?.Arquivo;
 			}
+
+			// Logo da empresa: valida e converte o arquivo enviado para byte[]
+			// (remocao via request.RemoverLogo e tratada no service)
+			var (logoBytes, erroLogo) = await ConverterLogoAsync(request.LogoFile);
+			if (erroLogo != null)
+				return BadRequest(new ResponseGeneric { Success = false, Message = erroLogo });
+
+			if (logoBytes != null)
+			{
+				request.Emitente ??= new Emitente();
+				request.Emitente.Logo = logoBytes;
+			}
+
 			var model=await _service.UpdateEntityManually(existing, request);
 			await _service.Alter(existing);
 			return Ok(new ResponseGeneric { Success = true });
@@ -143,6 +171,23 @@ namespace WebApiCommercial.Controllers
 					inner = ex.InnerException?.Message
 				});
 			}
+		}
+
+		// Helper: converte a logo enviada (IFormFile) para byte[], validando formato (JPG/PNG/SVG) e tamanho (max 2MB).
+		private async Task<(byte[]? Bytes, string? Erro)> ConverterLogoAsync(IFormFile? arquivo)
+		{
+			if (arquivo == null || arquivo.Length == 0) return (null, null);
+
+			if (arquivo.Length > MaxLogoBytes)
+				return (null, "A logo deve ter no máximo 2MB.");
+
+			var ext = Path.GetExtension(arquivo.FileName).ToLowerInvariant();
+			if (ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".svg")
+				return (null, "Formato de logo inválido. Utilize JPG, PNG ou SVG.");
+
+			using var ms = new MemoryStream();
+			await arquivo.CopyToAsync(ms);
+			return (ms.ToArray(), null);
 		}
 
 		// Helper: salva o arquivo TSX enviado (IFormFile) ou decodifica base64 e grava no disco.

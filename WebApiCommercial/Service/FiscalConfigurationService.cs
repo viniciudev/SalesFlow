@@ -111,6 +111,12 @@ namespace Service
 				if (!string.IsNullOrEmpty(request.Emitente.Fantasia))
 					existing.Emitente.Fantasia = request.Emitente.Fantasia;
 
+				// Logo: remove quando solicitado; grava somente quando um novo arquivo foi enviado
+				if (request.RemoverLogo)
+					existing.Emitente.Logo = null;
+				else if (request.Emitente.Logo != null)
+					existing.Emitente.Logo = request.Emitente.Logo;
+
 				// Contato
 				if (request.Emitente.EmitenteContato != null)
 				{
@@ -231,7 +237,8 @@ namespace Service
 					Cpf = request.Emitente.Cpf,
 					InscricaoEstadual = request.Emitente.InscricaoEstadual,
 					RazaoSocial = request.Emitente.RazaoSocial,
-					Fantasia = request.Emitente.Fantasia
+					Fantasia = request.Emitente.Fantasia,
+					Logo = request.Emitente.Logo
 				};
 
 				// Contato

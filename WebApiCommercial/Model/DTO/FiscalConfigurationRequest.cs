@@ -22,6 +22,12 @@ namespace WebApiCommercial.Dtos
         public bool AutorizacaoASO { get; set; }
 		public int TenantId { get; set; }
 
+		// Logo da empresa enviada via multipart/form-data
+		public IFormFile? LogoFile { get; set; }
+
+		// Sinaliza remoção da logo existente no PUT (sem novo arquivo)
+		public bool RemoverLogo { get; set; }
+
 		// Converte DTO para entidade do Model
 
 	}

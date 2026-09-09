@@ -862,6 +862,7 @@ namespace Repository
 						em.Property(p => p.InscricaoEstadual).HasColumnName("Emitente_InscricaoEstadual").HasMaxLength(100);
 						em.Property(p => p.RazaoSocial).HasColumnName("Emitente_RazaoSocial").HasMaxLength(250);
 						em.Property(p => p.Fantasia).HasColumnName("Emitente_Fantasia").HasMaxLength(250);
+						em.Property(p => p.Logo).HasColumnName("Emitente_Logo").HasColumnType("bytea");
 
 						em.OwnsOne(p => p.EmitenteContato, ct =>
 									{

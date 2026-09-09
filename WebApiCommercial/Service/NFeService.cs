@@ -2025,8 +2025,8 @@ namespace Service
 
 				if (nFeEmission.TipoDocumento == TipoDocumentoEnum.NFE)
 				{
-					var configuracaoDanfeNfe = new NFe.Danfe.Base.NFe.ConfiguracaoDanfeNfe(null, true, false, true);
-					var danfeDocument = new DanfeNfeDocument(arquivo, null/*logoBytes*/, configuracaoDanfeNfe);
+					var configuracaoDanfeNfe = new NFe.Danfe.Base.NFe.ConfiguracaoDanfeNfe(fiscalConfiguration?.Emitente?.Logo??null, true, false, true);
+					var danfeDocument = new DanfeNfeDocument(arquivo,fiscalConfiguration?.Emitente?.Logo??null, configuracaoDanfeNfe);
 					var pdfBytes = danfeDocument.GerarPdfBytes();
 					return pdfBytes;
 				}
