@@ -64,9 +64,10 @@ namespace Repository
             return await _dbContext.Set<NFeEmission>()
                     .Where(x =>
                     (string.IsNullOrEmpty(filters.TextOption) ||x.Numero.ToString()==filters.TextOption)
-                    && x.CompanyId == filters.IdCompany
+                    && (x.CompanyId == filters.IdCompany)
                     && (filters.StatusNfe==null|| x.StatusNfe==filters.StatusNfe)
-                   && (filters.TipoDocumento==null|| x.TipoDocumento==filters.TipoDocumento))
+                   && (filters.TipoDocumento==null|| x.TipoDocumento==filters.TipoDocumento)
+                    )
                     .AsNoTracking()
                     .GetPagedAsync(filters.PageNumber,filters.PageSize);
         }

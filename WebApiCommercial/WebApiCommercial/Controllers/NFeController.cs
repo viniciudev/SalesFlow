@@ -270,33 +270,7 @@ namespace WebApiCommercial.Controllers
             }
         }
 
-        // POST api/nfe/{id}/resend
-        // Retorna o payload salvo para reenvio e incrementa contador de tentativas
-        //[HttpPost("{id:int}/resend")]
-        //public async Task<IActionResult> Resend(int id)
-        //{
-        //    var existing = await _nfeService.GetByIdAsync(id);
-        //    if (existing == null) return NotFound();
-
-        //    try
-        //    {
-        //        // incrementa TryCount utilizando UpdateResultAsync mantendo os dados atuais
-        //        await _nfeService.UpdateResultAsync(existing.Id, existing.Sent, existing.Numero, existing.ResponseJson, existing.ErrorMessage);
-
-        //        // Retorna o payload salvo para o processo que far� o reenvio
-        //        return Ok(new
-        //        {
-        //            id = existing.Id,
-        //            tipoDocumento = existing.TipoDocumento,
-        //            serie = existing.Serie,
-        //            payload = existing.RequestPayloadJson
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(new { error = ex.Message });
-        //    }
-        //}
+        
 
         // GET api/nfe/last-number?serie=XXX&tipo=NFE
         [HttpGet("last-number")]
