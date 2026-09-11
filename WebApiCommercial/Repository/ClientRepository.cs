@@ -29,6 +29,41 @@ namespace Repository
                .GetPagedAsync(clientFilter.PageNumber, clientFilter.PageSize);
             return paged;
         }
+        /// <summary>
+        /// RN01/RN11 — verifica se o CPF/CNPJ já existe nesta empresa.
+        /// Usado antes de inserir/alterar, para devolver um erro tratado em vez
+        /// de estourar a violação do índice único IX_tb_client_IdCompany_Document.
+        /// </summary>
+        public async Task<bool> DocumentExists(int idCompany, string document, int? ignoreId = null)
+        {
+            if (string.IsNullOrWhiteSpace(document))
+            {
+                // Cadastro simplificado grava Document vazio e é isento da regra
+                // (o índice único tem filtro justamente para isso).
+                return false;
+            }
+
+            return await _dbContext.Set<Client>()
+                .AsNoTracking()
+                .AnyAsync(x => x.IdCompany == idCompany
+                    && x.Document == document
+                    && (ignoreId == null || x.Id != ignoreId.Value));
+        }
+
+        /// <summary>
+        /// Carrega um cliente pelo Id, restrito a empresa (tenant).
+        /// O Include de DriverLicense e obrigatorio: sem ele a tela de edicao
+        /// receberia o cliente sem os dados de CNH e, ao salvar, gravaria o
+        /// objeto vazio — apagando a CNH existente.
+        /// </summary>
+        public async Task<Client> GetById(int id, int idCompany)
+        {
+            return await _dbContext.Set<Client>()
+                .Include(x => x.DriverLicense)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id && x.IdCompany == idCompany);
+        }
+
         public async Task<List<Client>> GetByName(Filters clientFilter)
         {
             var data = await _dbContext.Set<Client>()
@@ -158,10 +193,12 @@ namespace Repository
     public interface IClientRepository : IGenericRepository<Client>
     {
         Task<ClientInfoResponse> GetByMonthAllClients(Filters filters);
+        Task<Client> GetById(int id, int idCompany);
         Task<PagedResult<Client>> GetAllPaged(Filters clientFilter);
         Task<List<Client>> GetByName(Filters clientFilter);
         Task<List<Client>> GetAllList(Filters clientFilter);
         Task<List<Client>> GetByFilter(Filters filter);
+        Task<bool> DocumentExists(int idCompany, string document, int? ignoreId = null);
         Task<MonthlyClientsComparisonResult> GetMonthlyClientsWithComparisonByIdCompany(int idCompany);
     }
 }

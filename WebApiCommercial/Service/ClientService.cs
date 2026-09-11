@@ -1,5 +1,6 @@
 ﻿using Model;
 using Model.DTO;
+using Model.Registrations;
 using Repository;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -15,6 +16,15 @@ namespace Service
 		public async Task<PagedResult<Client>> GetAllPaged(Filters clientFilter)
 		{
 			return await (repository as IClientRepository).GetAllPaged(clientFilter);
+		}
+		/// <summary>
+		/// RN09/edicao — carrega um parceiro pelo Id para a tela de edicao.
+		/// Retorna null quando nao existe (ou pertence a outra empresa), e o
+		/// controller traduz isso em 404.
+		/// </summary>
+		public async Task<Client> GetById(int id, int idCompany)
+		{
+			return await (repository as IClientRepository).GetById(id, idCompany);
 		}
 		public async Task<List<Client>> GetByName(Filters clientFilter)
 		{
@@ -32,6 +42,15 @@ namespace Service
 		{
 			return await (repository as IClientRepository).GetByFilter(filter);
 		}
+		/// <summary>
+		/// RN01/RN11 — já existe um cliente com este CPF/CNPJ nesta empresa?
+		/// </summary>
+		public async Task<bool> DocumentExists(int idCompany, string document, int? ignoreId = null)
+		{
+			return await (repository as IClientRepository)
+				.DocumentExists(idCompany, document, ignoreId);
+		}
+
 		public async Task SaveClient(ClientDto model)
 		{
 			var client = new Client
@@ -58,10 +77,40 @@ namespace Service
 				CodPais = string.IsNullOrEmpty(model.CodPais) ? "1058" : model.CodPais,
 				BirthDate = model.BirthDate,
 				Status = model.Status,
-				CreatDate = model.CreatDate
+				CreatDate = model.CreatDate,
+
+				// Novos campos: sem este mapeamento eles seriam silenciosamente
+				// descartados, porque este método monta o Client campo a campo.
+				Profiles = model.Profiles,
+				DriverLicense = MapDriverLicense(model.DriverLicense)
 			};
 
 			await base.Save(client);
+		}
+
+		/// <summary>
+		/// Copia os dados de CNH do DTO para uma entidade nova.
+		/// O vínculo (Id/IdClient) é resolvido pelo EF via navegação — por isso
+		/// os identificadores vindos do payload são ignorados de propósito.
+		/// </summary>
+		private static DriverLicense? MapDriverLicense(DriverLicense? source)
+		{
+			if (source == null)
+			{
+				return null;
+			}
+
+			return new DriverLicense
+			{
+				NumeroCnh = source.NumeroCnh,
+				CategoriaCnh = source.CategoriaCnh,
+				DataEmissaoCnh = source.DataEmissaoCnh,
+				DataValidadeCnh = source.DataValidadeCnh,
+				PrimeiraHabilitacao = source.PrimeiraHabilitacao,
+				UfEmissaoCnh = source.UfEmissaoCnh,
+				PossuiEar = source.PossuiEar,
+				ObservacoesCnh = source.ObservacoesCnh
+			};
 		}
 	}
 	public interface IClientService : IBaseService<Client>
@@ -70,7 +119,9 @@ namespace Service
 		Task<List<Client>> GetByName(Filters clientFilter);
 		Task<List<Client>> GetAllList(Filters clientFilter);
 		Task<ClientInfoResponse> GetByMonthAllClients(Filters filters);
+		Task<Client> GetById(int id, int idCompany);
 		Task<List<Client>> GetByFilter(Filters filter);
+		Task<bool> DocumentExists(int idCompany, string document, int? ignoreId = null);
 		Task SaveClient(ClientDto model);
 	}
 }

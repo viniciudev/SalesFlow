@@ -39,6 +39,7 @@
 
 //}
 // Model/Client.cs
+using Model.Enums;
 using Model.Moves;
 using Model.Registrations;
 using System;
@@ -123,43 +124,6 @@ namespace Model
 
         [StringLength(4)]
         public string CodPais { get; set; } = "1058";
-
-        // Campos existentes (mantidos para compatibilidade)
-        //[Obsolete("Use NomeRazao instead")]
-        //public string Name
-        //{
-        //    get => NomeRazao;
-        //    set => NomeRazao = value;
-        //}
-
-        //[Obsolete("Use Document instead")]
-        //public string Document
-        //{
-        //    get => CpfCnpj;
-        //    set => CpfCnpj = value;
-        //}
-
-        //[Obsolete("Use Address instead")]
-        //public string Address
-        //{
-        //    get => Logradouro;
-        //    set => Logradouro = value;
-        //}
-
-        //[Obsolete("Use CellPhone instead")]
-        //public string CellPhone
-        //{
-        //    get => Telefone;
-        //    set => Telefone = value;
-        //}
-
-        //[Obsolete("Use ZipCode instead")]
-        //public string ZipCode
-        //{
-        //    get => Cep;
-        //    set => Cep = value;
-        //}
-
         [Obsolete("Use NameCity instead")]
         public string NameCity
         {
@@ -173,6 +137,23 @@ namespace Model
             get ;
             set ;
         }
+
+        /// <summary>
+        /// Classificações do parceiro (Cliente, Fornecedor, Transportadora,
+        /// Motorista, Outros) — multi-seleção via enum [Flags], persistido como
+        /// integer em tb_client.Profiles.
+        ///
+        /// NOTA: "Fornecedor" aqui é uma classificação do parceiro comercial.
+        /// Já existe a entidade <see cref="Provider"/> com o mesmo sentido no
+        /// fluxo de compras — são fontes de verdade sobrepostas, mantidas
+        /// separadas de propósito. Unificar é decisão de produto, não técnica.
+        /// </summary>
+        public PartnerProfile Profiles { get; set; } = PartnerProfile.Cliente;
+
+        /// <summary>
+        /// Dados de CNH — preenchidos apenas quando Profiles inclui Motorista.
+        /// </summary>
+        public DriverLicense? DriverLicense { get; set; }
 
         // Relacionamentos
         public DateTime? BirthDate { get; set; }

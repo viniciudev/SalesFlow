@@ -52,11 +52,41 @@ namespace WebAppCommercial.Controllers
         }
 
     
+        /// <summary>
+        /// Carrega um parceiro pelo Id (tela de edicao).
+        /// A restricao ":int" evita ambiguidade com as rotas literais deste
+        /// controller ("filters", "exists", "GetByMonthAllClients").
+        /// </summary>
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<Client>> GetById(int id, [FromHeader] int tenantid)
+        {
+            var client = await clientService.GetById(id, tenantid);
+
+            if (client == null)
+            {
+                return NotFound(new { message = "Cliente nao encontrado." });
+            }
+
+            return Ok(client);
+        }
+
         [HttpPost]
         public async Task<ActionResult<dynamic>> Post([FromBody] ClientDto model, [FromHeader] int tenantid)
         {
             model.IdCompany = tenantid;
             model.CreatDate = DateTime.Now;
+
+            // RN01/RN11 — não duplicar pessoa na mesma empresa. O índice único
+            // em tb_client é a garantia real; esta checagem existe para devolver
+            // uma mensagem tratada em vez de um erro de constraint do Postgres.
+            if (await clientService.DocumentExists(tenantid, model.Document))
+            {
+                return Conflict(new
+                {
+                    message = "Ja existe um parceiro cadastrado com este CPF/CNPJ nesta empresa."
+                });
+            }
+
             await clientService.SaveClient(model);
             return Ok(model);
         }
@@ -66,11 +96,32 @@ namespace WebAppCommercial.Controllers
         [HttpPut()]
         public async Task<ActionResult<dynamic>> Put([FromBody] Client model)
         {
+            if (await clientService.DocumentExists(model.IdCompany, model.Document, model.Id))
+            {
+                return Conflict(new
+                {
+                    message = "Ja existe um parceiro cadastrado com este CPF/CNPJ nesta empresa."
+                });
+            }
 
             await clientService.Alter(model);
 
             return true;
 
+        }
+
+        /// <summary>
+        /// RN01/RN11 — consulta de existência de CPF/CNPJ por empresa.
+        /// Usado pelo front para validar duplicidade antes de salvar.
+        /// </summary>
+        [HttpGet("exists")]
+        public async Task<ActionResult<dynamic>> Exists(
+            [FromQuery] string document,
+            [FromQuery] int? ignoreId,
+            [FromHeader] int tenantid)
+        {
+            var exists = await clientService.DocumentExists(tenantid, document, ignoreId);
+            return Ok(new { exists });
         }
 
         // DELETE api/<ClientController>/5

@@ -23,6 +23,7 @@ namespace Repository
 		public virtual DbSet<User> User { get; set; }
 		public virtual DbSet<Provider> Provider { get; set; }
 		public virtual DbSet<Purchase> Purchase { get; set; }
+		public virtual DbSet<DriverLicense> DriverLicense { get; set; }
             public virtual DbSet<SituacaoTributaria> SituacaoTributaria { get; set; }
             public virtual DbSet<RegraFiscal> RegraFiscal { get; set; }
 		public virtual DbSet<PurchaseItem> PurchaseItem { get; set; }
@@ -315,11 +316,60 @@ namespace Repository
 				client.Property(c => c.Id).ValueGeneratedOnAdd();
 				client.Property(c => c.Email).HasMaxLength(100);
 				client.Property(c => c.Bairro).HasMaxLength(100);
+
+				// Enum [Flags] persistido como integer (bitmask).
+				client.Property(c => c.Profiles).HasConversion<int>();
+
+				// Índice da FK IdCompany, declarado explicitamente para que o EF
+				// não o remova ao detectar o índice composto abaixo.
+				//
+				// Isso importa: o índice único é PARCIAL (tem filtro), e o
+				// Postgres só usa um índice parcial quando a consulta implica o
+				// predicado. Ou seja, ele NÃO serve para as buscas que filtram
+				// apenas por IdCompany — que são praticamente todas as consultas
+				// de cliente do repositório.
+				client.HasIndex(c => c.IdCompany);
+
+				// RN01/RN11 — não duplicar pessoa na mesma empresa.
+				//
+				// O filtro é essencial: o cadastro simplificado grava
+				// Document = "" e, sem ele, o segundo registro simplificado
+				// seria rejeitado pelo índice.
+				client.HasIndex(c => new { c.IdCompany, c.Document })
+					.IsUnique()
+					.HasFilter("\"Document\" <> ''")
+					.HasDatabaseName("IX_tb_client_IdCompany_Document");
 			});
 			builder.Entity<Client>()
 .HasOne(dc => dc.Company)
 .WithMany(c => c.Clients)
 .HasForeignKey(dc => dc.IdCompany);
+
+			ConfiguraDriverLicense(builder);
+		}
+
+		private void ConfiguraDriverLicense(ModelBuilder builder)
+		{
+			builder.Entity<DriverLicense>(driverLicense =>
+			{
+				driverLicense.ToTable("tb_driver_license");
+				driverLicense.HasKey(d => d.Id);
+				driverLicense.Property(d => d.Id).ValueGeneratedOnAdd();
+
+				// 1:1 com Client — o índice único em IdClient é o que garante
+				// que um cliente não acumule duas CNHs.
+				driverLicense.HasIndex(d => d.IdClient).IsUnique();
+
+				// Restrict, e não Cascade: além de ser o comportamento desejado
+				// aqui (a CNH não deve sumir por um delete acidental de cliente),
+				// existe uma convenção global em OnModelCreating que rebaixa
+				// todo FK Cascade para Restrict. Declarar explicitamente evita
+				// que este código minta sobre o que acontece.
+				driverLicense.HasOne(d => d.Client)
+					.WithOne(c => c.DriverLicense)
+					.HasForeignKey<DriverLicense>(d => d.IdClient)
+					.OnDelete(DeleteBehavior.Restrict);
+			});
 		}
 		private void ConfiguraCompany(ModelBuilder builder)
 		{

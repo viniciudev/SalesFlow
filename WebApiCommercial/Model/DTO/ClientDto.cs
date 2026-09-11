@@ -1,4 +1,6 @@
 ﻿using Model;
+using Model.Enums;
+using Model.Registrations;
 using System;
 using System.ComponentModel.DataAnnotations;
 
@@ -31,4 +33,18 @@ public class ClientDto
 	public DateTime? BirthDate { get; set; }
 	public Client.statusType Status { get; set; } = Client.statusType.Ativo;
 	public DateTime CreatDate { get; set; } = DateTime.Now;
+
+	/// <summary>
+	/// Classificações do parceiro. Serializado como número (bitmask) — o valor
+	/// padrão "Cliente" (1) preserva o comportamento anterior para payloads
+	/// antigos que ainda não enviam o campo.
+	/// </summary>
+	public PartnerProfile Profiles { get; set; } = PartnerProfile.Cliente;
+
+	/// <summary>
+	/// Dados de CNH. Preenchido apenas quando Profiles inclui Motorista.
+	/// No POST o Id/IdClient são ignorados — o vínculo é feito com o cliente
+	/// recém-criado em <c>ClientService.SaveClient</c>.
+	/// </summary>
+	public DriverLicense? DriverLicense { get; set; }
 }
