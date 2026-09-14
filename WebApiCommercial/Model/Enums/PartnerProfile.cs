@@ -21,7 +21,7 @@ namespace Model.Enums
     {
         None = 0,
         Cliente = 1,
-        Fornecedor = 2,
+        // Fornecedor = 2,
         Transportadora = 4,
         Motorista = 8,
         Outros = 16,

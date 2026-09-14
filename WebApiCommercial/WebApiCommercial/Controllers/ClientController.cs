@@ -104,7 +104,16 @@ namespace WebAppCommercial.Controllers
                 });
             }
 
-            await clientService.Alter(model);
+            try
+            {
+                await clientService.Alter(model);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+  
 
             return true;
 
