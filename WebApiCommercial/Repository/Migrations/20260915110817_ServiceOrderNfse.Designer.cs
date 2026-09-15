@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Repository;
@@ -11,9 +12,11 @@ using Repository;
 namespace Repository.Migrations
 {
     [DbContext(typeof(ContextBase))]
-    partial class ContextBaseModelSnapshot : ModelSnapshot
+    [Migration("20260915110817_ServiceOrderNfse")]
+    partial class ServiceOrderNfse
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3364,11 +3367,6 @@ namespace Repository.Migrations
                                 .HasColumnType("character varying(100)")
                                 .HasColumnName("Emitente_InscricaoEstadual");
 
-                            b1.Property<string>("InscricaoMunicipal")
-                                .HasMaxLength(30)
-                                .HasColumnType("character varying(30)")
-                                .HasColumnName("Emitente_InscricaoMunicipal");
-
                             b1.Property<byte[]>("Logo")
                                 .HasColumnType("bytea")
                                 .HasColumnName("Emitente_Logo");
@@ -3466,10 +3464,6 @@ namespace Repository.Migrations
                                         .HasColumnType("character varying(10)")
                                         .HasColumnName("Emitente_Crt");
 
-                                    b2.Property<int?>("OpcaoSimplesNacional")
-                                        .HasColumnType("integer")
-                                        .HasColumnName("Emitente_OpcaoSimplesNacional");
-
                                     b2.HasKey("EmitenteFiscalConfigurationId");
 
                                     b2.ToTable("tb_fiscalConfiguration");
@@ -3499,28 +3493,6 @@ namespace Repository.Migrations
 
                             b1.WithOwner()
                                 .HasForeignKey("FiscalConfigurationId");
-
-                            b1.OwnsOne("Model.Registrations.NumeracaoItem", "Dps", b2 =>
-                                {
-                                    b2.Property<int>("NumeracaoDocumentosFiscalConfigurationId")
-                                        .HasColumnType("integer");
-
-                                    b2.Property<long>("NumeroInicial")
-                                        .HasColumnType("bigint")
-                                        .HasColumnName("Dps_NumeroInicial");
-
-                                    b2.Property<string>("Serie")
-                                        .HasMaxLength(50)
-                                        .HasColumnType("character varying(50)")
-                                        .HasColumnName("Dps_Serie");
-
-                                    b2.HasKey("NumeracaoDocumentosFiscalConfigurationId");
-
-                                    b2.ToTable("tb_fiscalConfiguration");
-
-                                    b2.WithOwner()
-                                        .HasForeignKey("NumeracaoDocumentosFiscalConfigurationId");
-                                });
 
                             b1.OwnsOne("Model.Registrations.NumeracaoItem", "Nfce", b2 =>
                                 {
@@ -3565,9 +3537,6 @@ namespace Repository.Migrations
                                     b2.WithOwner()
                                         .HasForeignKey("NumeracaoDocumentosFiscalConfigurationId");
                                 });
-
-                            b1.Navigation("Dps")
-                                .IsRequired();
 
                             b1.Navigation("Nfce")
                                 .IsRequired();

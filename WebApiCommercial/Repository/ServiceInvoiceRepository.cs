@@ -29,11 +29,8 @@ namespace Repository
             if (!string.IsNullOrEmpty(filter.EndDate) && System.DateTime.TryParse(filter.EndDate, out var endDate))
                 query = query.Where(x => x.DataCompetencia <= endDate);
 
-            if (filter.StatusNfe.HasValue)
-            {
-                // Map StatusNfe to ServiceInvoiceStatus
-                // 0=Pendente, 1=Emitido, 2=Cancelado
-            }
+            if (filter.ServiceInvoiceStatus.HasValue)
+                query = query.Where(x => x.Status == filter.ServiceInvoiceStatus.Value);
 
             if (!string.IsNullOrEmpty(filter.TextOption))
             {

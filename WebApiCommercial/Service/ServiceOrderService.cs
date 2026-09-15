@@ -57,6 +57,8 @@ namespace Service
                 TenantId = request.TenantId,
                 ClientId = request.ClientId,
                 OrderDate = request.OrderDate,
+                Notes = request.Notes,
+                Competence = request.Competence,
                 Status = ServiceOrderStatus.Aberta,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
@@ -67,17 +69,10 @@ namespace Service
 
             foreach (var item in request.Items)
             {
-                entity.ServiceOrderItems.Add(new ServiceOrderItem
-                {
-                    ServiceProvidedId = item.ServiceProvidedId,
-                    Quantity = item.Quantity,
-                    UnitPrice = item.UnitPrice,
-                    TotalPrice = item.Quantity * item.UnitPrice,
-                    CreatedAt = DateTime.UtcNow
-                });
+                entity.ServiceOrderItems.Add(BuildItem(item));
             }
 
-            entity.TotalValue = entity.ServiceOrderItems.Sum(x => x.TotalPrice);
+            ServiceTotals.Apply(entity);
 
             await repository.CreateAsync(entity);
 
@@ -95,6 +90,8 @@ namespace Service
 
             entity.ClientId = request.ClientId;
             entity.OrderDate = request.OrderDate;
+            entity.Notes = request.Notes;
+            entity.Competence = request.Competence;
             entity.UpdatedAt = DateTime.UtcNow;
             entity.UpdatedBy = userId;
 
@@ -104,23 +101,17 @@ namespace Service
                 var updatedItem = request.Items.FirstOrDefault(x => x.ServiceProvidedId == existing.ServiceProvidedId);
                 if (updatedItem != null)
                 {
-                    existing.Quantity = updatedItem.Quantity;
-                    existing.UnitPrice = updatedItem.UnitPrice;
-                    existing.TotalPrice = updatedItem.Quantity * updatedItem.UnitPrice;
+                    // Copiar TODOS os campos fiscais, não só quantidade e valor: se o
+                    // desconto/alíquota ficasse de fora, editar a OS apagaria a retenção
+                    // que o usuário já tinha configurado na linha.
+                    CopyFields(updatedItem, existing);
                 }
             }
 
             var existingServiceIds = existingItems.Select(x => x.ServiceProvidedId).ToList();
             foreach (var item in request.Items.Where(x => !existingServiceIds.Contains(x.ServiceProvidedId)))
             {
-                entity.ServiceOrderItems.Add(new ServiceOrderItem
-                {
-                    ServiceProvidedId = item.ServiceProvidedId,
-                    Quantity = item.Quantity,
-                    UnitPrice = item.UnitPrice,
-                    TotalPrice = item.Quantity * item.UnitPrice,
-                    CreatedAt = DateTime.UtcNow
-                });
+                entity.ServiceOrderItems.Add(BuildItem(item));
             }
 
             var requestServiceIds = request.Items.Select(x => x.ServiceProvidedId).ToList();
@@ -130,7 +121,7 @@ namespace Service
                 entity.ServiceOrderItems.Remove(item);
             }
 
-            entity.TotalValue = entity.ServiceOrderItems.Sum(x => x.TotalPrice);
+            ServiceTotals.Apply(entity);
 
             await base.Alter(entity);
 
@@ -191,10 +182,41 @@ namespace Service
                 Description = i.ServiceProvided?.Description ?? "",
                 Value = i.UnitPrice,
                 LocationCode = i.ServiceProvided?.LocationCode ?? "",
-                NationalTaxCode = i.ServiceProvided?.NationalTaxCode ?? ""
+                NationalTaxCode = i.ServiceProvided?.NationalTaxCode ?? "",
+                MunicipalTaxCode = i.ServiceProvided?.MunicipalTaxCode,
+                NbsCode = i.ServiceProvided?.NbsCode,
+                SpecialType = i.ServiceProvided?.SpecialType
             }).ToList();
 
             return items;
+        }
+
+        private static ServiceOrderItem BuildItem(ServiceOrderItemRequest item)
+        {
+            var entity = new ServiceOrderItem { CreatedAt = DateTime.UtcNow };
+            CopyFields(item, entity);
+            return entity;
+        }
+
+        /// <summary>Copia os campos do request para o item, incluindo os fiscais.</summary>
+        private static void CopyFields(ServiceOrderItemRequest item, ServiceOrderItem entity)
+        {
+            entity.ServiceProvidedId = item.ServiceProvidedId;
+            entity.Quantity = item.Quantity;
+            entity.UnitPrice = item.UnitPrice;
+            entity.Discount = item.Discount;
+            entity.Description = item.Description;
+            entity.IssqnRate = item.IssqnRate;
+            entity.IssqnRetido = item.IssqnRetido;
+            entity.PisRate = item.PisRate;
+            entity.CofinsRate = item.CofinsRate;
+            entity.IrRate = item.IrRate;
+            entity.CsllRate = item.CsllRate;
+            entity.InssRate = item.InssRate;
+
+            // TotalPrice é sempre derivado, nunca recebido: assim o banco não guarda
+            // um total que diverge da quantidade/valor/desconto gravados na mesma linha.
+            entity.TotalPrice = ServiceTotals.ForItem(entity).Base;
         }
 
         private void ValidateCreate(ServiceOrderCreateRequest request)
@@ -216,6 +238,14 @@ namespace Service
 
                 if (duplicateIds.Any())
                     errors.Add("Não é permitido serviços duplicados na mesma ordem.");
+
+                // Um desconto maior que o bruto deixaria a base do ISS negativa, e a DPS
+                // seria rejeitada pelo SEFIN. Barrar aqui dá uma mensagem melhor.
+                foreach (var item in request.Items)
+                {
+                    if (item.Discount > item.Quantity * item.UnitPrice)
+                        errors.Add($"Desconto do serviço {item.ServiceProvidedId} não pode superar o valor bruto do item.");
+                }
             }
 
             if (errors.Count > 0)
@@ -250,7 +280,14 @@ namespace Service
                 ClientId = entity.ClientId,
                 ClientName = entity.Client?.Name ?? "",
                 OrderDate = entity.OrderDate,
+                Notes = entity.Notes,
+                Competence = entity.Competence,
                 TotalValue = entity.TotalValue,
+                DiscountValue = entity.DiscountValue,
+                IssqnValue = entity.IssqnValue,
+                IssqnRetidoValue = entity.IssqnRetidoValue,
+                RetentionValue = entity.RetentionValue,
+                NetValue = entity.NetValue,
                 Status = entity.Status.ToString(),
                 CreatedAt = entity.CreatedAt,
                 UpdatedAt = entity.UpdatedAt,
@@ -264,8 +301,19 @@ namespace Service
                     ServiceDescription = i.ServiceProvided?.Description ?? "",
                     Quantity = i.Quantity,
                     UnitPrice = i.UnitPrice,
+                    Discount = i.Discount,
+                    Description = i.Description,
                     TotalPrice = i.TotalPrice,
-                    LocationCode = i.ServiceProvided?.LocationCode ?? ""
+                    IssqnRate = i.IssqnRate,
+                    IssqnRetido = i.IssqnRetido,
+                    IssqnValue = ServiceTotals.ForItem(i).Issqn,
+                    PisRate = i.PisRate,
+                    CofinsRate = i.CofinsRate,
+                    IrRate = i.IrRate,
+                    CsllRate = i.CsllRate,
+                    InssRate = i.InssRate,
+                    LocationCode = i.ServiceProvided?.LocationCode ?? "",
+                    NationalTaxCode = i.ServiceProvided?.NationalTaxCode ?? ""
                 }).ToList() ?? new List<ServiceOrderItemResponse>(),
                 Invoices = entity.ServiceInvoices?.Select(i => new ServiceInvoiceBriefResponse
                 {
@@ -273,7 +321,10 @@ namespace Service
                     NumeroDPS = i.NumeroDPS,
                     Status = i.Status.ToString(),
                     TotalValue = i.TotalValue,
-                    EmittedAt = i.EmittedAt
+                    EmittedAt = i.EmittedAt,
+                    ChaveAcesso = i.ChaveAcesso,
+                    Sent = i.Sent,
+                    ErrorMessage = i.ErrorMessage
                 }).ToList() ?? new List<ServiceInvoiceBriefResponse>()
             };
         }

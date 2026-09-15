@@ -9,6 +9,11 @@
     <PackageReference Include="MailKit" Version="4.15.0" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.13" />
+    <!-- NFS-e padrão Nacional (DPS/SEFIN/DANFSe). Versão fixada em 1.4.2 de propósito:
+         o código de emissão foi escrito e conferido contra o fonte desta versão. -->
+    <!-- 1.4.7 e o minimo que corrige os nomes dos elementos de <atvEvento>: ate a 1.4.5 a
+         biblioteca emite <desc>/<id>, e o schema 1.01 so aceita <xNome>/<idAtvEvt>. -->
+    <PackageReference Include="OpenAC.Net.NFSe.Nacional" Version="1.4.7" />
     <PackageReference Include="SendGrid" Version="9.29.3" />
     <PackageReference Include="SkiaSharp" Version="3.119.2" />
     <PackageReference Include="System.Drawing.Common" Version="10.0.3" />

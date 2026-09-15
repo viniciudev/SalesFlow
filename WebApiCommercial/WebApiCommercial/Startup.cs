@@ -281,6 +281,18 @@ namespace WebAppCommercial
 			services.AddTransient<IGenericRepository<NaturezaOperacao>, NaturezaOperacaoRepository>();
 			services.AddTransient<INaturezaOperacaoRepository, NaturezaOperacaoRepository>();
 			services.AddTransient<IBaseService<NaturezaOperacao>, NaturezaOperacaoService>();
+			//ServiceOrder (Ordem de Serviço)
+			services.AddTransient<IServiceOrderService, ServiceOrderService>();
+			services.AddTransient<IGenericRepository<ServiceOrder>, ServiceOrderRepository>();
+			services.AddTransient<IServiceOrderRepository, ServiceOrderRepository>();
+			services.AddTransient<IBaseService<ServiceOrder>, ServiceOrderService>();
+			//ServiceInvoice (NFS-e)
+			services.AddTransient<IServiceInvoiceService, ServiceInvoiceService>();
+			services.AddTransient<IGenericRepository<ServiceInvoice>, ServiceInvoiceRepository>();
+			services.AddTransient<IServiceInvoiceRepository, ServiceInvoiceRepository>();
+			services.AddTransient<IBaseService<ServiceInvoice>, ServiceInvoiceService>();
+			//Nfse (emissao no SEFIN, padrao Nacional) — ServiceInvoiceService depende desta
+			services.AddTransient<INfseService, NfseService>();
 			//FiscalConfiguration
 			services.AddTransient<IFiscalConfigurationService, FiscalConfigurationService>();
 			services.AddTransient<IGenericRepository<FiscalConfiguration>, FiscalConfigurationRepository>();

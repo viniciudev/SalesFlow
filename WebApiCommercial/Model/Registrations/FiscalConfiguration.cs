@@ -35,6 +35,12 @@ namespace Model.Registrations
     {
         public NumeracaoItem Nfe { get; set; } = new();
         public NumeracaoItem Nfce { get; set; } = new();
+
+        /// <summary>
+        /// Série da DPS (NFS-e padrão Nacional). É parte do IdDPS, junto com o
+        /// município emissor, a inscrição federal e o número.
+        /// </summary>
+        public NumeracaoItem Dps { get; set; } = new();
     }
 
     public class NumeracaoItem
@@ -60,6 +66,13 @@ namespace Model.Registrations
     {
         public string? Cnpj { get; set; }
         public string? Cpf { get; set; }
+
+        /// <summary>
+        /// Inscrição Municipal do prestador. Obrigatória na DPS (prest/IM) — sem ela a
+        /// emissão não tem como identificar o contribuinte perante o município.
+        /// </summary>
+        public string? InscricaoMunicipal { get; set; }
+
         public string? InscricaoEstadual { get; set; }
         public string? RazaoSocial { get; set; }
         public string? Fantasia { get; set; }
@@ -89,5 +102,17 @@ namespace Model.Registrations
     public class RegimeTributario
     {
         public string? Crt { get; set; }
+
+        /// <summary>
+        /// Opção pelo Simples Nacional, como o padrão Nacional da NFS-e pede no grupo
+        /// de tributação do prestador: 1 = Não optante, 2 = Optante MEI,
+        /// 3 = Optante ME/EPP.
+        ///
+        /// É um campo separado do CRT de propósito: o CRT (1/2/3/4) diz o REGIME, mas
+        /// não distingue MEI de ME/EPP, e o SEFIN exige essa distinção. Quando fica
+        /// nulo, a emissão deriva do CRT — 1|2 → 3 (ME/EPP), 4 → 2 (MEI), resto → 1 —
+        /// o que acerta o caso comum e fica documentado em vez de adivinhado.
+        /// </summary>
+        public int? OpcaoSimplesNacional { get; set; }
     }
 }

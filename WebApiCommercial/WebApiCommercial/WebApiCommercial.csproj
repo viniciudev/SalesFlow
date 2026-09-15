@@ -34,6 +34,14 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
+    <!-- XSDs do DPS/NFSe do padrão Nacional. Precisam ficar PLANOS nesta pasta:
+         NFSeArquivoConfig.GetSchema monta Path.Combine(PathSchemas, $"DPS_v{versao}.xsd"),
+         sem subpasta de versão. O pacote NuGet traz os XSDs em content\, que NÃO é
+         copiado sob PackageReference — por isso estão versionados aqui. -->
+    <Content Include="DPSchemas\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

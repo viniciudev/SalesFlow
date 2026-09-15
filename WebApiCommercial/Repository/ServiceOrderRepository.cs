@@ -18,6 +18,7 @@ namespace Repository
             var query = _dbContext.Set<ServiceOrder>()
                 .Include(x => x.Client)
                 .Include(x => x.ServiceOrderItems)
+                    .ThenInclude(x => x.ServiceProvided)
                 .Include(x => x.ServiceInvoices)
                 .Where(x => x.TenantId == filter.IdCompany);
 
@@ -30,11 +31,8 @@ namespace Repository
             if (!string.IsNullOrEmpty(filter.EndDate) && DateTime.TryParse(filter.EndDate, out var endDate))
                 query = query.Where(x => x.OrderDate <= endDate);
 
-            if (filter.StatusNfe.HasValue)
-            {
-                // Using StatusNfe filter field for ServiceOrderStatus mapping
-                // StatusNfe is reused here for filtering by service order status
-            }
+            if (filter.ServiceOrderStatus.HasValue)
+                query = query.Where(x => x.Status == filter.ServiceOrderStatus.Value);
 
             if (!string.IsNullOrEmpty(filter.TextOption))
             {

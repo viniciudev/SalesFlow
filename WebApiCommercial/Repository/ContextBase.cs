@@ -115,10 +115,10 @@ namespace Repository
                 ConfiguraSituacaoTributaria(modelBuilder);
                 ConfiguraRegraFiscal(modelBuilder);
 
-			//ConfiguraServiceOrder(modelBuilder);
-			//ConfiguraServiceOrderItem(modelBuilder);
-			//ConfiguraServiceInvoice(modelBuilder);
-			//ConfiguraServiceInvoiceItem(modelBuilder);
+			ConfiguraServiceOrder(modelBuilder);
+			ConfiguraServiceOrderItem(modelBuilder);
+			ConfiguraServiceInvoice(modelBuilder);
+			ConfiguraServiceInvoiceItem(modelBuilder);
 			var cascadeFKs = modelBuilder.Model.GetEntityTypes()
 .SelectMany(t => t.GetForeignKeys())
 .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
@@ -888,6 +888,13 @@ namespace Repository
 								nfce.Property(p => p.Serie).HasColumnName("Nfce_Serie").HasMaxLength(50);
 								nfce.Property(p => p.NumeroInicial).HasColumnName("Nfce_NumeroInicial");
 							});
+
+						// Série da DPS (NFS-e padrão Nacional)
+						nb.OwnsOne(n => n.Dps, dps =>
+									{
+								dps.Property(p => p.Serie).HasColumnName("Dps_Serie").HasMaxLength(50);
+								dps.Property(p => p.NumeroInicial).HasColumnName("Dps_NumeroInicial");
+							});
 					});
 
 				// CertificadoDigital (owned)
@@ -910,6 +917,7 @@ namespace Repository
 						em.Property(p => p.Cnpj).HasColumnName("Emitente_Cnpj").HasMaxLength(20);
 						em.Property(p => p.Cpf).HasColumnName("Emitente_Cpf").HasMaxLength(20);
 						em.Property(p => p.InscricaoEstadual).HasColumnName("Emitente_InscricaoEstadual").HasMaxLength(100);
+						em.Property(p => p.InscricaoMunicipal).HasColumnName("Emitente_InscricaoMunicipal").HasMaxLength(30);
 						em.Property(p => p.RazaoSocial).HasColumnName("Emitente_RazaoSocial").HasMaxLength(250);
 						em.Property(p => p.Fantasia).HasColumnName("Emitente_Fantasia").HasMaxLength(250);
 						em.Property(p => p.Logo).HasColumnName("Emitente_Logo").HasColumnType("bytea");
@@ -934,6 +942,7 @@ namespace Repository
 						em.OwnsOne(p => p.RegimeTributario, rt =>
 									{
 								rt.Property(r => r.Crt).HasColumnName("Emitente_Crt").HasMaxLength(10);
+								rt.Property(r => r.OpcaoSimplesNacional).HasColumnName("Emitente_OpcaoSimplesNacional");
 							});
 					});
 
@@ -1017,6 +1026,194 @@ namespace Repository
 									.OnDelete(DeleteBehavior.Restrict);
 
 				entity.HasIndex(e => new { e.NFeEmissionId, e.TipoEvento, e.Situacao });
+			});
+		}
+
+		// =====================================================================================
+		// Ordem de serviço e NFS-e (padrão Nacional)
+		//
+		// Duas particularidades desta família de tabelas:
+		//
+		// 1. ServiceOrder/ServiceInvoice têm "int TenantId" + navigation "Company", mas NÃO têm
+		//    CompanyId. A FK é o próprio TenantId — por isso o HasForeignKey aponta para ele.
+		//
+		// 2. O loop global em OnModelCreating reescreve toda FK Cascade para Restrict DEPOIS de
+		//    todos os Configura*. Escrever Cascade aqui seria no-op silencioso; o Restrict é
+		//    explícito para que a intenção fique legível.
+		// =====================================================================================
+
+		private void ConfiguraServiceOrder(ModelBuilder builder)
+		{
+			builder.Entity<ServiceOrder>(entity =>
+			{
+				entity.ToTable("tb_serviceOrder");
+				entity.HasKey(e => e.Id);
+				entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+				entity.Property(e => e.OrderDate).HasColumnType("timestamp with time zone");
+				entity.Property(e => e.Competence).HasColumnType("timestamp with time zone");
+				entity.Property(e => e.CreatedAt).HasColumnType("timestamp with time zone");
+				entity.Property(e => e.UpdatedAt).HasColumnType("timestamp with time zone");
+				entity.Property(e => e.ConcludedAt).HasColumnType("timestamp with time zone");
+
+				entity.Property(e => e.Notes).HasColumnType("text");
+				entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30);
+
+				entity.Property(e => e.TotalValue).HasColumnType("decimal(18,2)");
+				entity.Property(e => e.DiscountValue).HasColumnType("decimal(18,2)");
+				entity.Property(e => e.IssqnValue).HasColumnType("decimal(18,2)");
+				entity.Property(e => e.IssqnRetidoValue).HasColumnType("decimal(18,2)");
+				entity.Property(e => e.RetentionValue).HasColumnType("decimal(18,2)");
+				entity.Property(e => e.NetValue).HasColumnType("decimal(18,2)");
+
+				entity.HasOne(e => e.Company)
+					.WithMany()
+					.HasForeignKey(e => e.TenantId)
+					.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasOne(e => e.Client)
+					.WithMany()
+					.HasForeignKey(e => e.ClientId)
+					.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasIndex(e => new { e.TenantId, e.Status });
+				entity.HasIndex(e => e.OrderDate);
+			});
+		}
+
+		private void ConfiguraServiceOrderItem(ModelBuilder builder)
+		{
+			builder.Entity<ServiceOrderItem>(entity =>
+			{
+				entity.ToTable("tb_serviceOrderItem");
+				entity.HasKey(e => e.Id);
+				entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+				entity.Property(e => e.CreatedAt).HasColumnType("timestamp with time zone");
+				entity.Property(e => e.Description).HasMaxLength(2000);
+
+				entity.Property(e => e.Quantity).HasColumnType("decimal(18,4)");
+				entity.Property(e => e.UnitPrice).HasColumnType("decimal(18,2)");
+				entity.Property(e => e.Discount).HasColumnType("decimal(18,2)");
+				entity.Property(e => e.TotalPrice).HasColumnType("decimal(18,2)");
+
+				// Alíquotas em 4 casas: a casa já guarda AliquotaICMS/AliquotaISSQN assim,
+				// e há alíquota de ISS com 4 decimais (ex.: 2,0000 / 4,5000).
+				entity.Property(e => e.IssqnRate).HasColumnType("decimal(18,4)");
+				entity.Property(e => e.PisRate).HasColumnType("decimal(18,4)");
+				entity.Property(e => e.CofinsRate).HasColumnType("decimal(18,4)");
+				entity.Property(e => e.IrRate).HasColumnType("decimal(18,4)");
+				entity.Property(e => e.CsllRate).HasColumnType("decimal(18,4)");
+				entity.Property(e => e.InssRate).HasColumnType("decimal(18,4)");
+
+				entity.HasOne(e => e.ServiceOrder)
+					.WithMany(o => o.ServiceOrderItems)
+					.HasForeignKey(e => e.ServiceOrderId)
+					.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasOne(e => e.ServiceProvided)
+					.WithMany()
+					.HasForeignKey(e => e.ServiceProvidedId)
+					.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasIndex(e => e.ServiceOrderId);
+			});
+		}
+
+		private void ConfiguraServiceInvoice(ModelBuilder builder)
+		{
+			builder.Entity<ServiceInvoice>(entity =>
+			{
+				entity.ToTable("tb_serviceInvoice");
+				entity.HasKey(e => e.Id);
+				entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+				entity.Property(e => e.DhEmissao).HasColumnType("timestamp with time zone");
+				entity.Property(e => e.DataCompetencia).HasColumnType("timestamp with time zone");
+				entity.Property(e => e.CreatedAt).HasColumnType("timestamp with time zone");
+				entity.Property(e => e.UpdatedAt).HasColumnType("timestamp with time zone");
+				entity.Property(e => e.EmittedAt).HasColumnType("timestamp with time zone");
+
+				// ChaveAcesso: 50 dígitos. IdDPS: 45 caracteres. Ambos ficam vazios/nulos
+				// enquanto a fatura está Pendente — daí o índice ser COMUM e nunca único.
+				entity.Property(e => e.ChaveAcesso).HasMaxLength(50);
+				entity.Property(e => e.IdDPS).HasMaxLength(50);
+				entity.Property(e => e.Protocolo).HasMaxLength(50);
+				entity.Property(e => e.CodMunIBGE).HasMaxLength(7);
+				entity.Property(e => e.CancelReason).HasMaxLength(500);
+
+				entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30);
+				entity.Property(e => e.TipoAmbiente).HasConversion<string>().HasMaxLength(30);
+
+				entity.Property(e => e.TotalValue).HasColumnType("decimal(18,2)");
+				entity.Property(e => e.DiscountValue).HasColumnType("decimal(18,2)");
+				entity.Property(e => e.IssqnValue).HasColumnType("decimal(18,2)");
+				entity.Property(e => e.IssqnRetidoValue).HasColumnType("decimal(18,2)");
+				entity.Property(e => e.RetentionValue).HasColumnType("decimal(18,2)");
+				entity.Property(e => e.NetValue).HasColumnType("decimal(18,2)");
+
+				// Diagnóstico da transmissão — mesmo tratamento de tb_nfeEmission.
+				entity.Property(e => e.XmlNfse).HasColumnType("text");
+				entity.Property(e => e.RequestPayloadJson).HasColumnType("text");
+				entity.Property(e => e.ResponseJson).HasColumnType("text");
+				entity.Property(e => e.ErrorMessage).HasColumnType("text");
+
+				entity.HasOne(e => e.ServiceOrder)
+					.WithMany(o => o.ServiceInvoices)
+					.HasForeignKey(e => e.ServiceOrderId)
+					.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasOne(e => e.Company)
+					.WithMany()
+					.HasForeignKey(e => e.TenantId)
+					.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasOne(e => e.Client)
+					.WithMany()
+					.HasForeignKey(e => e.ClientId)
+					.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasIndex(e => new { e.TenantId, e.Status });
+				entity.HasIndex(e => e.ServiceOrderId);
+				entity.HasIndex(e => e.ChaveAcesso);
+				entity.HasIndex(e => e.IdDPS);
+			});
+		}
+
+		private void ConfiguraServiceInvoiceItem(ModelBuilder builder)
+		{
+			builder.Entity<ServiceInvoiceItem>(entity =>
+			{
+				entity.ToTable("tb_serviceInvoiceItem");
+				entity.HasKey(e => e.Id);
+				entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+				entity.Property(e => e.CreatedAt).HasColumnType("timestamp with time zone");
+				entity.Property(e => e.Description).HasMaxLength(2000);
+
+				entity.Property(e => e.Quantity).HasColumnType("decimal(18,4)");
+				entity.Property(e => e.UnitPrice).HasColumnType("decimal(18,2)");
+				entity.Property(e => e.Discount).HasColumnType("decimal(18,2)");
+				entity.Property(e => e.TotalPrice).HasColumnType("decimal(18,2)");
+
+				entity.Property(e => e.IssqnRate).HasColumnType("decimal(18,4)");
+				entity.Property(e => e.PisRate).HasColumnType("decimal(18,4)");
+				entity.Property(e => e.CofinsRate).HasColumnType("decimal(18,4)");
+				entity.Property(e => e.IrRate).HasColumnType("decimal(18,4)");
+				entity.Property(e => e.CsllRate).HasColumnType("decimal(18,4)");
+				entity.Property(e => e.InssRate).HasColumnType("decimal(18,4)");
+
+				entity.HasOne(e => e.ServiceInvoice)
+					.WithMany(i => i.ServiceInvoiceItems)
+					.HasForeignKey(e => e.ServiceInvoiceId)
+					.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasOne(e => e.ServiceProvided)
+					.WithMany()
+					.HasForeignKey(e => e.ServiceProvidedId)
+					.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasIndex(e => e.ServiceInvoiceId);
 			});
 		}
 

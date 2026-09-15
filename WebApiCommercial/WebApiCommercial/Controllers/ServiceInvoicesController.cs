@@ -87,7 +87,9 @@ namespace WebApiCommercial.Controllers
         }
 
         /// <summary>
-        /// Emite uma NFSe (muda status de Pendente para Emitido)
+        /// Emite uma NFSe. Soft-fail: quando a transmissao falha, a fatura continua
+        /// Pendente e reemissivel — por isso o Success e derivado do estado GRAVADO, e nao
+        /// fixo em true. A UI usa esse campo para distinguir "emitida" de "ficou Pendente".
         /// </summary>
         [HttpPatch("{id:int}/emitir")]
         public async Task<ActionResult<ResponseGeneric>> Emitir(int id)
@@ -96,11 +98,58 @@ namespace WebApiCommercial.Controllers
             {
                 var userId = GetUserId();
                 var result = await _service.EmitirAsync(id, userId);
-                return Ok(new ResponseGeneric { Success = true, Message = "NFSe emitida com sucesso.", Data = result });
+
+                var emitida = string.Equals(result.Status, nameof(ServiceInvoiceStatus.Emitido), StringComparison.OrdinalIgnoreCase);
+
+                return Ok(new ResponseGeneric
+                {
+                    Success = emitida,
+                    // Preenchido nos dois casos: autorizada limpa o campo e cai no texto
+                    // padrao; falha de transmissao, sem certificado ou registro local
+                    // trazem o motivo real.
+                    Message = result.ErrorMessage
+                        ?? (emitida ? "NFSe emitida com sucesso." : "A emissao da NFSe falhou."),
+                    Data = result
+                });
             }
             catch (DomainException ex)
             {
                 return Ok(new ResponseGeneric { Success = false, Message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// XML autorizado da NFSe (UTF-8). Sem rede: o XML ja esta na fatura.
+        /// </summary>
+        [HttpGet("{id:int}/xml")]
+        public async Task<IActionResult> Xml(int id)
+        {
+            try
+            {
+                var xml = await _service.ObterXmlAsync(id);
+                return File(System.Text.Encoding.UTF8.GetBytes(xml), "application/xml", $"nfse-{id}.xml");
+            }
+            catch (DomainException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// DANFSe (PDF) da NFSe autorizada. Exige rede: o PDF e baixado do ambiente
+        /// nacional pela chave de acesso.
+        /// </summary>
+        [HttpGet("{id:int}/danfse")]
+        public async Task<IActionResult> Danfse(int id)
+        {
+            try
+            {
+                var pdf = await _service.ObterDanfseAsync(id);
+                return File(pdf, "application/pdf", $"danfse-{id}.pdf");
+            }
+            catch (DomainException ex)
+            {
+                return BadRequest(new { error = ex.Message });
             }
         }
 

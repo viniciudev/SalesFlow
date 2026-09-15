@@ -28,6 +28,12 @@ namespace Model
 		public FinancialType? FinancialType { get; set; }
 		public FinancialStatus? FinancialStatus { get; set; }
 		public StatusNfe? StatusNfe { get; set; }
+
+		// Status da OS e da NFS-e. NÃO reutilizar StatusNfe para isto: ele colide
+		// numericamente com os dois enums abaixo (StatusNfe.pendente=1 bate com
+		// ServiceOrderStatus.Aberta=1), e o filtro passaria a casar pelo valor errado.
+		public ServiceOrderStatus? ServiceOrderStatus { get; set; }
+		public ServiceInvoiceStatus? ServiceInvoiceStatus { get; set; }
 		public TipoDocumentoEnum ?TipoDocumento { get; set; }
 		public string? StartDate { get; set; }      // Formato: "yyyy-MM-dd"
 		public string? EndDate { get; set; }        // Formato: "yyyy-MM-dd"
