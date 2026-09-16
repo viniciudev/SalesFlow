@@ -125,7 +125,7 @@ namespace Model
                     Name = "Editar Financeiro",
                     Category = "Financeiro"
                 },
-                 new Permission
+                new Permission
                 {
                     Id = (int)PermissionEnum.FINANCEIRO_CREATE,
                     Code = PermissionEnum.FINANCEIRO_CREATE,
@@ -148,14 +148,14 @@ namespace Model
                     Name = "Ajustar Estoque",
                     Category = "Estoque"
                 },
-                 new Permission
+                new Permission
                 {
                     Id = (int)PermissionEnum.ESTOQUE_CREATE, 
                     Code = PermissionEnum.ESTOQUE_CREATE,
                     Name = "Criar Estoque",
                     Category = "Estoque"
                 },
-                                  new Permission
+                new Permission
                 {
                     Id = (int)PermissionEnum.ESTOQUE_DELETE,
                     Code = PermissionEnum.ESTOQUE_DELETE,
@@ -226,202 +226,225 @@ namespace Model
                     Name = "Criar conta bancária",
                     Category = "Cadastros"
                 },
-                 new Permission
+                new Permission
                 {
                     Id = (int)PermissionEnum.CONTA_BANCARIA_EDIT,
                     Code = PermissionEnum.CONTA_BANCARIA_EDIT,
                     Name = "editar conta bancária",
                     Category = "Cadastros"
                 },
-                  new Permission
+                new Permission
                 {
                     Id = (int)PermissionEnum.CONTA_BANCARIA_VIEW,
                     Code = PermissionEnum.CONTA_BANCARIA_VIEW,
                     Name = "visualizar conta bancária",
                     Category = "Cadastros"
                 },
-                  //CAIXA
-                    new Permission
+                //CAIXA
+                new Permission
                 {
                     Id = (int)PermissionEnum.CAIXA_VIEW,
                     Code = PermissionEnum.CAIXA_VIEW,
                     Name = "Ver caixa",
                     Category = "Financeiro"
                 },
-                  new Permission
+                new Permission
                 {
                     Id = (int)PermissionEnum.CAIXA_CREATE,
                     Code = PermissionEnum.CAIXA_CREATE,
                     Name = "Abrir caixa",
                     Category = "Financeiro"
                 },
-                  new Permission
-                  {
-                      Id=(int)PermissionEnum.FINANCEIRO_DELETE,
-                      Code = PermissionEnum.FINANCEIRO_DELETE,
-                      Name = "Deletar Financeiro",
-                      Category="Financeiro"
-                  },
+                new Permission
+                {
+                    Id=(int)PermissionEnum.FINANCEIRO_DELETE,
+                    Code = PermissionEnum.FINANCEIRO_DELETE,
+                    Name = "Deletar Financeiro",
+                    Category="Financeiro"
+                },
                  
-                  new Permission
-                  {
-                      Id = (int)PermissionEnum.CONF_NOTA_FISCAL_VIEW,
+                new Permission
+                {
+                    Id = (int)PermissionEnum.CONF_NOTA_FISCAL_VIEW,
                     Code = PermissionEnum.CONF_NOTA_FISCAL_VIEW,
                     Name = "Visualizar Configurações de Nota Fiscal",
                     Category = "Cadastros"
-                  }
-                  ,                  new Permission
-                  {
-                        Id = (int)PermissionEnum.CONF_NOTA_FISCAL_CREATE,
-                        Code = PermissionEnum.CONF_NOTA_FISCAL_CREATE,
-                        Name = "Criar Configurações de Nota Fiscal",
-                        Category = "Cadastros"
-                  },
-                  new Permission
-                  {
-                        Id = (int)PermissionEnum.CONF_NOTA_FISCAL_EDIT,
-                        Code = PermissionEnum.CONF_NOTA_FISCAL_EDIT,
-                        Name = "Editar Configurações de Nota Fiscal",
-                        Category = "Cadastros"
-                  },
-                    new Permission
-                    {
-                            Id = (int)PermissionEnum.CONF_NOTA_FISCAL_DELETE,
-                            Code = PermissionEnum.CONF_NOTA_FISCAL_DELETE,
-                            Name = "Cancelar Configurações de Nota Fiscal",
-                            Category = "Cadastros"
-                    }
-                    ,new Permission
-                    {
-                            Id = (int)PermissionEnum.NOTA_FISCAL_VIEW,
-                            Code = PermissionEnum.NOTA_FISCAL_VIEW,
-                            Name = "Visualizar Notas Fiscais",
-                            Category = "Notas"
-                    },
-                    new Permission
-                    {
-                            Id = (int)PermissionEnum.NOTA_FISCAL_CREATE,
-                            Code = PermissionEnum.NOTA_FISCAL_CREATE,
-                            Name = "Criar Notas Fiscais",
-                            Category = "Notas"
-                    },
-                    new Permission
-                    {
-                            Id = (int)PermissionEnum.NOTA_FISCAL_CANCEL,
-                            Code = PermissionEnum.NOTA_FISCAL_CANCEL,
-                            Name = "Cancelar Notas Fiscais",
-                            Category = "Notas"
-                    },
-                    new Permission
-                    {
-                            Id = (int)PermissionEnum.NOTA_FISCAL_EDIT,
-                            Code = PermissionEnum.NOTA_FISCAL_EDIT,
-                            Name = "Editar Notas Fiscais",
-                            Category = "Notas"
-                    }, new Permission {
-                            Id = (int)PermissionEnum.COMPRA_VIEW,
-                            Code = PermissionEnum.COMPRA_VIEW,
-                            Name = "Visualizar Compras",
-                            Category = "Compras"
-                    },
-                    new Permission {
-                            Id = (int)PermissionEnum.COMPRA_CREATE,
-                            Code = PermissionEnum.COMPRA_CREATE,
-                            Name = "Criar Compras",
-                            Category = "Compras"
-                    },
-                    new Permission {
-                            Id = (int)PermissionEnum.COMPRA_CANCELAR,
-                            Code = PermissionEnum.COMPRA_CANCELAR,
-                            Name = "Cancelar Compras",
-                            Category = "Compras"
-                    },
-                    new Permission {
-                            Id = (int)PermissionEnum.COMPRA_DELETE,
-                            Code = PermissionEnum.COMPRA_DELETE,
-                            Name = "Deletar Compras",
-                            Category = "Compras"
-                    },
-                    new Permission {
-                            Id = (int)PermissionEnum.COMPRA_EDIT,
-                            Code = PermissionEnum.COMPRA_EDIT,
-                            Name = "Editar Compras",
-                            Category = "Compras"
-										},
-                    new Permission {
-                            Id = (int)PermissionEnum.FORNECEDOR_CREATE,
-                            Code = PermissionEnum.FORNECEDOR_CREATE,
-                            Name = "Criar Fornecedor",
-                            Category = "Fornecedores"
-                    },
-                    new Permission {
-                            Id = (int)PermissionEnum.FORNECEDOR_EDIT,
-                            Code = PermissionEnum.FORNECEDOR_EDIT,
-                            Name = "Editar Fornecedor",
-                            Category = "Fornecedores"
-                    },
-                    new Permission {
-                            Id = (int)PermissionEnum.FORNECEDOR_DELETE,
-                            Code = PermissionEnum.FORNECEDOR_DELETE,
-                            Name = "Deletar Fornecedor",
-                            Category = "Fornecedores"
-                    },
-                    new Permission {
-                            Id = (int)PermissionEnum.FORNECEDOR_VIEW,
-                            Code = PermissionEnum.FORNECEDOR_VIEW,
-                            Name = "Visualizar Fornecedor",
-                            Category = "Fornecedores"
-										},
-                    new Permission {
-                            Id = (int)PermissionEnum.CADASTRO_SERVICO_CREATE,
-                            Code = PermissionEnum.CADASTRO_SERVICO_CREATE,
-                            Name = "Criar Serviço Prestado",
-                            Category = "Serviços"
-                    },
-                    new Permission {
-                            Id = (int)PermissionEnum.CADASTRO_SERVICO_EDIT,
-                            Code = PermissionEnum.CADASTRO_SERVICO_EDIT,
-                            Name = "Editar Serviço Prestado",
-                            Category = "Serviços"
-                    },
-                    new Permission {
-                            Id = (int)PermissionEnum.CADASTRO_SERVICO_DELETE,
-                            Code = PermissionEnum.CADASTRO_SERVICO_DELETE,
-                            Name = "Deletar Serviço Prestado",
-                            Category = "Serviços"
-                    },
-                    new Permission {
-                            Id = (int)PermissionEnum.CADASTRO_SERVICO_VIEW,
-                            Code = PermissionEnum.CADASTRO_SERVICO_VIEW,
-                            Name = "Visualizar Serviço Prestado",
-                            Category = "Serviços"
-										},
-                    new Permission {
-                            Id = (int)PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_CREATE,
-                            Code = PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_CREATE,
-                            Name = "Criar Situação Tributária",
-                            Category = "Situação Tributária"
-                    },
-                    new Permission {
-                            Id = (int)PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_EDIT,
-                            Code = PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_EDIT,
-                            Name = "Editar Situação Tributária",
-                            Category = "Situação Tributária"
-                    },
-                    new Permission {
-                            Id = (int)PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_DELETE,
-                            Code = PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_DELETE,
-                            Name = "Deletar Situação Tributária",
-                            Category = "Situação Tributária"
-                    },
-                    new Permission {
-                            Id = (int)PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_VIEW,
-                            Code = PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_VIEW,
-                            Name = "Visualizar Situação Tributária",
-                            Category = "Situação Tributária"
-                            },
-                    
-						};
+                }
+                ,                  new Permission
+                {
+                    Id = (int)PermissionEnum.CONF_NOTA_FISCAL_CREATE,
+                    Code = PermissionEnum.CONF_NOTA_FISCAL_CREATE,
+                    Name = "Criar Configurações de Nota Fiscal",
+                    Category = "Cadastros"
+                },
+                new Permission
+                {
+                    Id = (int)PermissionEnum.CONF_NOTA_FISCAL_EDIT,
+                    Code = PermissionEnum.CONF_NOTA_FISCAL_EDIT,
+                    Name = "Editar Configurações de Nota Fiscal",
+                    Category = "Cadastros"
+                },
+                new Permission
+                {
+                    Id = (int)PermissionEnum.CONF_NOTA_FISCAL_DELETE,
+                    Code = PermissionEnum.CONF_NOTA_FISCAL_DELETE,
+                    Name = "Cancelar Configurações de Nota Fiscal",
+                    Category = "Cadastros"
+                }
+                ,new Permission
+                {
+                    Id = (int)PermissionEnum.NOTA_FISCAL_VIEW,
+                    Code = PermissionEnum.NOTA_FISCAL_VIEW,
+                    Name = "Visualizar Notas Fiscais",
+                    Category = "Notas"
+                },
+                new Permission
+                {
+                    Id = (int)PermissionEnum.NOTA_FISCAL_CREATE,
+                    Code = PermissionEnum.NOTA_FISCAL_CREATE,
+                    Name = "Criar Notas Fiscais",
+                    Category = "Notas"
+                },
+                new Permission
+                {
+                    Id = (int)PermissionEnum.NOTA_FISCAL_CANCEL,
+                    Code = PermissionEnum.NOTA_FISCAL_CANCEL,
+                    Name = "Cancelar Notas Fiscais",
+                    Category = "Notas"
+                },
+                new Permission
+                {
+                    Id = (int)PermissionEnum.NOTA_FISCAL_EDIT,
+                    Code = PermissionEnum.NOTA_FISCAL_EDIT,
+                    Name = "Editar Notas Fiscais",
+                    Category = "Notas"
+                }, new Permission {
+                    Id = (int)PermissionEnum.COMPRA_VIEW,
+                    Code = PermissionEnum.COMPRA_VIEW,
+                    Name = "Visualizar Compras",
+                    Category = "Compras"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.COMPRA_CREATE,
+                    Code = PermissionEnum.COMPRA_CREATE,
+                    Name = "Criar Compras",
+                    Category = "Compras"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.COMPRA_CANCELAR,
+                    Code = PermissionEnum.COMPRA_CANCELAR,
+                    Name = "Cancelar Compras",
+                    Category = "Compras"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.COMPRA_DELETE,
+                    Code = PermissionEnum.COMPRA_DELETE,
+                    Name = "Deletar Compras",
+                    Category = "Compras"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.COMPRA_EDIT,
+                    Code = PermissionEnum.COMPRA_EDIT,
+                    Name = "Editar Compras",
+                    Category = "Compras"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.FORNECEDOR_CREATE,
+                    Code = PermissionEnum.FORNECEDOR_CREATE,
+                    Name = "Criar Fornecedor",
+                    Category = "Fornecedores"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.FORNECEDOR_EDIT,
+                    Code = PermissionEnum.FORNECEDOR_EDIT,
+                    Name = "Editar Fornecedor",
+                    Category = "Fornecedores"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.FORNECEDOR_DELETE,
+                    Code = PermissionEnum.FORNECEDOR_DELETE,
+                    Name = "Deletar Fornecedor",
+                    Category = "Fornecedores"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.FORNECEDOR_VIEW,
+                    Code = PermissionEnum.FORNECEDOR_VIEW,
+                    Name = "Visualizar Fornecedor",
+                    Category = "Fornecedores"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.CADASTRO_SERVICO_CREATE,
+                    Code = PermissionEnum.CADASTRO_SERVICO_CREATE,
+                    Name = "Criar Serviço Prestado",
+                    Category = "Serviços"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.CADASTRO_SERVICO_EDIT,
+                    Code = PermissionEnum.CADASTRO_SERVICO_EDIT,
+                    Name = "Editar Serviço Prestado",
+                    Category = "Serviços"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.CADASTRO_SERVICO_DELETE,
+                    Code = PermissionEnum.CADASTRO_SERVICO_DELETE,
+                    Name = "Deletar Serviço Prestado",
+                    Category = "Serviços"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.CADASTRO_SERVICO_VIEW,
+                    Code = PermissionEnum.CADASTRO_SERVICO_VIEW,
+                    Name = "Visualizar Serviço Prestado",
+                    Category = "Serviços"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_CREATE,
+                    Code = PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_CREATE,
+                    Name = "Criar Situação Tributária",
+                    Category = "Situação Tributária"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_EDIT,
+                    Code = PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_EDIT,
+                    Name = "Editar Situação Tributária",
+                    Category = "Situação Tributária"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_DELETE,
+                    Code = PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_DELETE,
+                    Name = "Deletar Situação Tributária",
+                    Category = "Situação Tributária"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_VIEW,
+                    Code = PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_VIEW,
+                    Name = "Visualizar Situação Tributária",
+                    Category = "Situação Tributária"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.ORDEM_SERVICE_VIEW,
+                    Code = PermissionEnum.ORDEM_SERVICE_VIEW,
+                    Name = "Visualizar Ordem de Serviço",
+                    Category = "Ordem de serviço"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.ORDEM_SERVICE_CREATE,
+                    Code = PermissionEnum.ORDEM_SERVICE_CREATE,
+                    Name = "Criar Ordem de Serviço",
+                    Category = "Ordem de serviço"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.ORDEM_SERVICE_EDIT,
+                    Code = PermissionEnum.ORDEM_SERVICE_EDIT,
+                    Name = "Editar Ordem de Serviço",
+                    Category = "Ordem de serviço"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.ORDEM_SERVICE_DELETE,
+                    Code = PermissionEnum.ORDEM_SERVICE_DELETE,
+                    Name = "Deletar Ordem de Serviço",
+                    Category = "Ordem de serviço"
+                },
+            };
         }
     }
 }
