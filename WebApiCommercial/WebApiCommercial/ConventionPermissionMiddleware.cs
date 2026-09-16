@@ -53,7 +53,7 @@ public class ConventionPermissionMiddleware
         {"ServiceProvided", "SERVICO" },
         {  "SituacaoTributaria", "SITUACAO_TRIBUTARIA"   },
 		
-        {  "ServiceOrders", "ORDEM_SERVICE"   },
+        {  "ServiceOrders", "ORDEM_SERVICO"   },
     };
 
     // 🔥 Controllers que NÃO exigem permissão (públicos)
@@ -185,6 +185,11 @@ public class ConventionPermissionMiddleware
     {
         if (string.IsNullOrEmpty(controller)) return null;
 
+        if (controller=="ServiceOrders")
+        {
+          var eee=  _controllerPermissionMap.TryGetValue(controller, out var prefixe);
+          
+        }
         // === PASSO 1: OBTÉM O PREFIXO DO CONTROLLER ===
         if (!_controllerPermissionMap.TryGetValue(controller, out var prefix))
         {
@@ -318,10 +323,10 @@ public class ConventionPermissionMiddleware
             PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_EDIT => "Editar situação tributária",
             PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_VIEW => "Visualizar situação tributária",
             PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_DELETE => "Deletar situação tributária",
-            PermissionEnum.ORDEM_SERVICE_CREATE => "Criar service",
-            PermissionEnum.ORDEM_SERVICE_EDIT => "Editar service",
-            PermissionEnum.ORDEM_SERVICE_DELETE => "Deletar service",
-            PermissionEnum.ORDEM_SERVICE_VIEW=> "Visualizar service",
+            PermissionEnum.ORDEM_SERVICO_CREATE => "Criar service",
+            PermissionEnum.ORDEM_SERVICO_EDIT => "Editar service",
+            PermissionEnum.ORDEM_SERVICO_DELETE => "Deletar service",
+            PermissionEnum.ORDEM_SERVICO_VIEW=> "Visualizar service",
             _ => permission.ToString().Replace("_", " ")
         };
     }

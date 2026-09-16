@@ -421,26 +421,26 @@ namespace Model
                     Category = "Situação Tributária"
                 },
                 new Permission {
-                    Id = (int)PermissionEnum.ORDEM_SERVICE_VIEW,
-                    Code = PermissionEnum.ORDEM_SERVICE_VIEW,
+                    Id = (int)PermissionEnum.ORDEM_SERVICO_VIEW,
+                    Code = PermissionEnum.ORDEM_SERVICO_VIEW,
                     Name = "Visualizar Ordem de Serviço",
                     Category = "Ordem de serviço"
                 },
                 new Permission {
-                    Id = (int)PermissionEnum.ORDEM_SERVICE_CREATE,
-                    Code = PermissionEnum.ORDEM_SERVICE_CREATE,
+                    Id = (int)PermissionEnum.ORDEM_SERVICO_CREATE,
+                    Code = PermissionEnum.ORDEM_SERVICO_CREATE,
                     Name = "Criar Ordem de Serviço",
                     Category = "Ordem de serviço"
                 },
                 new Permission {
-                    Id = (int)PermissionEnum.ORDEM_SERVICE_EDIT,
-                    Code = PermissionEnum.ORDEM_SERVICE_EDIT,
+                    Id = (int)PermissionEnum.ORDEM_SERVICO_EDIT,
+                    Code = PermissionEnum.ORDEM_SERVICO_EDIT,
                     Name = "Editar Ordem de Serviço",
                     Category = "Ordem de serviço"
                 },
                 new Permission {
-                    Id = (int)PermissionEnum.ORDEM_SERVICE_DELETE,
-                    Code = PermissionEnum.ORDEM_SERVICE_DELETE,
+                    Id = (int)PermissionEnum.ORDEM_SERVICO_DELETE,
+                    Code = PermissionEnum.ORDEM_SERVICO_DELETE,
                     Name = "Deletar Ordem de Serviço",
                     Category = "Ordem de serviço"
                 },
