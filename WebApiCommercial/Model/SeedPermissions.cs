@@ -421,28 +421,52 @@ namespace Model
                     Category = "Situação Tributária"
                 },
                 new Permission {
-                    Id = (int)PermissionEnum.ORDEM_SERVICO_VIEW,
-                    Code = PermissionEnum.ORDEM_SERVICO_VIEW,
+                    Id = (int)PermissionEnum.SERVICO_ORDEM_VIEW,
+                    Code = PermissionEnum.SERVICO_ORDEM_VIEW,
                     Name = "Visualizar Ordem de Serviço",
                     Category = "Ordem de serviço"
                 },
                 new Permission {
-                    Id = (int)PermissionEnum.ORDEM_SERVICO_CREATE,
-                    Code = PermissionEnum.ORDEM_SERVICO_CREATE,
+                    Id = (int)PermissionEnum.SERVICO_ORDEM_CREATE,
+                    Code = PermissionEnum.SERVICO_ORDEM_CREATE,
                     Name = "Criar Ordem de Serviço",
                     Category = "Ordem de serviço"
                 },
                 new Permission {
-                    Id = (int)PermissionEnum.ORDEM_SERVICO_EDIT,
-                    Code = PermissionEnum.ORDEM_SERVICO_EDIT,
+                    Id = (int)PermissionEnum.SERVICO_ORDEM_EDIT,
+                    Code = PermissionEnum.SERVICO_ORDEM_EDIT,
                     Name = "Editar Ordem de Serviço",
                     Category = "Ordem de serviço"
                 },
                 new Permission {
-                    Id = (int)PermissionEnum.ORDEM_SERVICO_DELETE,
-                    Code = PermissionEnum.ORDEM_SERVICO_DELETE,
+                    Id = (int)PermissionEnum.SERVICO_ORDEM_DELETE,
+                    Code = PermissionEnum.SERVICO_ORDEM_DELETE,
                     Name = "Deletar Ordem de Serviço",
                     Category = "Ordem de serviço"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.SERVICO_NFSE_CREATE,
+                    Code = PermissionEnum.SERVICO_NFSE_CREATE,
+                    Name = "Criar nota de serviço",
+                    Category = "Nota de serviço"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.SERVICO_NFSE_VIEW,
+                    Code = PermissionEnum.SERVICO_NFSE_VIEW,
+                    Name = "Visualizar nota de serviço",
+                    Category = "Nota de serviço"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.SERVICO_NFSE_EDIT,
+                    Code = PermissionEnum.SERVICO_NFSE_EDIT,
+                    Name = "Editar nota de serviço",
+                    Category = "Nota de serviço"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.SERVICO_NFSE_DELETE,
+                    Code = PermissionEnum.SERVICO_NFSE_DELETE,
+                    Name = "Deletar nota de serviço",
+                    Category = "Nota de serviço"
                 },
             };
         }

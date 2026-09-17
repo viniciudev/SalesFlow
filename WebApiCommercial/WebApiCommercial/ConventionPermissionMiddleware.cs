@@ -53,7 +53,8 @@ public class ConventionPermissionMiddleware
         {"ServiceProvided", "SERVICO" },
         {  "SituacaoTributaria", "SITUACAO_TRIBUTARIA"   },
 		
-        {  "ServiceOrders", "ORDEM_SERVICO"   },
+        {"ServiceOrders", "SERVICO_ORDEM"},
+        {"ServiceInvoices","SERVICO_NFSE"}
     };
 
     // 🔥 Controllers que NÃO exigem permissão (públicos)
@@ -62,7 +63,6 @@ public class ConventionPermissionMiddleware
         "SearchZipCode",
         "Email",
         "Home",
-
     };
 
     // 🔥 Ações que NÃO exigem permissão (endpoints públicos)
@@ -184,12 +184,7 @@ public class ConventionPermissionMiddleware
     private PermissionEnum? DetermineRequiredPermission(string controller, string action, string httpMethod)
     {
         if (string.IsNullOrEmpty(controller)) return null;
-
-        if (controller=="ServiceOrders")
-        {
-          var eee=  _controllerPermissionMap.TryGetValue(controller, out var prefixe);
-          
-        }
+       
         // === PASSO 1: OBTÉM O PREFIXO DO CONTROLLER ===
         if (!_controllerPermissionMap.TryGetValue(controller, out var prefix))
         {
@@ -323,10 +318,14 @@ public class ConventionPermissionMiddleware
             PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_EDIT => "Editar situação tributária",
             PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_VIEW => "Visualizar situação tributária",
             PermissionEnum.CADASTRO_SITUACAO_TRIBUTARIA_DELETE => "Deletar situação tributária",
-            PermissionEnum.ORDEM_SERVICO_CREATE => "Criar service",
-            PermissionEnum.ORDEM_SERVICO_EDIT => "Editar service",
-            PermissionEnum.ORDEM_SERVICO_DELETE => "Deletar service",
-            PermissionEnum.ORDEM_SERVICO_VIEW=> "Visualizar service",
+            PermissionEnum.SERVICO_ORDEM_CREATE => "Criar service",
+            PermissionEnum.SERVICO_ORDEM_EDIT => "Editar service",
+            PermissionEnum.SERVICO_ORDEM_DELETE => "Deletar service",
+            PermissionEnum.SERVICO_ORDEM_VIEW=> "Visualizar service",
+            PermissionEnum.SERVICO_NFSE_CREATE=> "Criar service",
+            PermissionEnum.SERVICO_NFSE_EDIT => "Editar service",
+            PermissionEnum.SERVICO_NFSE_VIEW => "Visualizar service",
+            PermissionEnum.SERVICO_NFSE_DELETE  => "Deletar service",
             _ => permission.ToString().Replace("_", " ")
         };
     }

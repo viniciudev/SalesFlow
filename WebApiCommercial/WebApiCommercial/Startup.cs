@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -35,580 +34,580 @@ using Settings = ProfControl.WebApi.Settings;
 
 namespace WebAppCommercial
 {
-	public class Startup
-	{
-		public Startup(IConfiguration configuration)
-		{
-			Configuration = configuration;
-		}
+    public class Startup
+    {
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
 
-		public IConfiguration Configuration { get; }
+        public IConfiguration Configuration { get; }
 
-		public void ConfigureServices(IServiceCollection services)
-		{
+        public void ConfigureServices(IServiceCollection services)
+        {
 	
-			ConfigureSkiaSharp();
+            ConfigureSkiaSharp();
 
-			QuestPDF.Settings.License = LicenseType.Community;
+            QuestPDF.Settings.License = LicenseType.Community;
 
-			// For�a a n�o depend�ncia de Windows Forms
-			AppContext.SetSwitch("System.Drawing.EnableUnixSupport", true);
-			// ===== FIM DA CONFIGURA��O FASTREPORT =====
+            // For�a a n�o depend�ncia de Windows Forms
+            AppContext.SetSwitch("System.Drawing.EnableUnixSupport", true);
+            // ===== FIM DA CONFIGURA��O FASTREPORT =====
 
-			// ?? CONFIGURA��O SSL GLOBAL
-			// Configuração para resolver problemas de SSL no Windows
-			ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
-			System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, cert, chain, errors) =>
-			{
-				if (errors == System.Net.Security.SslPolicyErrors.None)
-					return true;
+            // ?? CONFIGURA��O SSL GLOBAL
+            // Configuração para resolver problemas de SSL no Windows
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+            System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, cert, chain, errors) =>
+            {
+                if (errors == System.Net.Security.SslPolicyErrors.None)
+                    return true;
 
-				Console.WriteLine($"?? SSL Error: {errors}");
-				Console.WriteLine($"Cert: {cert?.Subject}");
-				return true; // Aceita todos para homologa��o
-			};
+                Console.WriteLine($"?? SSL Error: {errors}");
+                Console.WriteLine($"Cert: {cert?.Subject}");
+                return true; // Aceita todos para homologa��o
+            };
 
-			// For�a o uso do handler antigo
-			AppContext.SetSwitch("System.Net.Http.UseSocketsHttpHandler", false);
-			// ===== FIM CONFIGURA��O SSL =====
-			services.AddControllers().AddNewtonsoftJson(options =>
-						{
-							options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-							options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-							options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
-							// Garante serialização consistente de DateTime entre Windows e Linux/Docker
-							options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
-						});
+            // For�a o uso do handler antigo
+            AppContext.SetSwitch("System.Net.Http.UseSocketsHttpHandler", false);
+            // ===== FIM CONFIGURA��O SSL =====
+            services.AddControllers().AddNewtonsoftJson(options =>
+            {
+                options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+                options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+                // Garante serialização consistente de DateTime entre Windows e Linux/Docker
+                options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
+            });
 
-			services.AddDbContext<ContextBase>(options =>
-					 options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddDbContext<ContextBase>(options =>
+                options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
 
-			AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-			services.Configure<GzipCompressionProviderOptions>(options =>
-			{
-				options.Level = CompressionLevel.Optimal;
-			});
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+            services.Configure<GzipCompressionProviderOptions>(options =>
+            {
+                options.Level = CompressionLevel.Optimal;
+            });
 
-			services.AddResponseCompression(options =>
-			{
-				IEnumerable<string> MimeTypes = new[]
-							{
-    // General
-    "text/plain",
-		"text/html",
-		"text/css",
-		"font/woff2",
-		"application/javascript",
-		"image/x-icon",
-		"image/png"
-};
+            services.AddResponseCompression(options =>
+            {
+                IEnumerable<string> MimeTypes = new[]
+                {
+                    // General
+                    "text/plain",
+                    "text/html",
+                    "text/css",
+                    "font/woff2",
+                    "application/javascript",
+                    "image/x-icon",
+                    "image/png"
+                };
 
-				options.EnableForHttps = true;
-				options.MimeTypes = MimeTypes;
-				options.Providers.Add<GzipCompressionProvider>();
-			});
+                options.EnableForHttps = true;
+                options.MimeTypes = MimeTypes;
+                options.Providers.Add<GzipCompressionProvider>();
+            });
 
-			#region Registions
-			//Usu�rio
-			services.AddTransient<IUserService, UserService>();
-			services.AddTransient<IGenericRepository<User>, UserRepository>();
-			services.AddTransient<IUserRepository, UserRepository>();
-			services.AddTransient<IBaseService<User>, UserService>();
-			//Client
-			services.AddTransient<IClientService, ClientService>();
-			services.AddTransient<IGenericRepository<Client>, ClientRepository>();
-			services.AddTransient<IClientRepository, ClientRepository>();
-			services.AddTransient<IBaseService<Client>, ClientService>();
-			//File
-			services.AddTransient<IFileService, FileService>();
-			services.AddTransient<IGenericRepository<Model.Registrations.File>, FileRepository>();
-			services.AddTransient<IFileRepository, FileRepository>();
-			services.AddTransient<IBaseService<Model.Registrations.File>, FileService>();
-			//company
-			services.AddTransient<ICompanyService, CompanyService>();
-			services.AddTransient<IGenericRepository<Company>, CompanyRepository>();
-			services.AddTransient<ICompanyRepository, CompanyRepository>();
-			services.AddTransient<IBaseService<Company>, CompanyService>();
-			//DescriptionFiles
-			services.AddTransient<IDescriptionFilesService, DescriptionFilesService>();
-			services.AddTransient<IGenericRepository<DescriptionFiles>, DescriptionFilesRepository>();
-			services.AddTransient<IDescriptionFilesRepository, DescriptionFilesRepository>();
-			services.AddTransient<IBaseService<DescriptionFiles>, DescriptionFilesService>();
-			//PlanCompany
-			services.AddTransient<IPlanCompanyService, PlanCompanyService>();
-			services.AddTransient<IGenericRepository<PlanCompany>, PlanCompanyRepository>();
-			services.AddTransient<IPlanCompanyRepository, PlanCompanyRepository>();
-			services.AddTransient<IBaseService<PlanCompany>, PlanCompanyService>();
-			//ServiceProvided
-			services.AddTransient<IServiceProvidedService, ServiceProvidedService>();
-			services.AddTransient<IGenericRepository<ServiceProvided>, ServiceProvidedRepository>();
-			services.AddTransient<IServiceProvidedRepository, ServiceProvidedRepository>();
-			services.AddTransient<IBaseService<ServiceProvided>, ServiceProvidedService>();
-			//Budget
-			services.AddTransient<IBudgetService, BudgetService>();
-			services.AddTransient<IGenericRepository<Budget>, BudgetRepository>();
-			services.AddTransient<IBudgetRepository, BudgetRepository>();
-			services.AddTransient<IBaseService<Budget>, BudgetService>();
-			//BudgetItems
-			services.AddTransient<IBudgetItemsService, BudgetItemsService>();
-			services.AddTransient<IGenericRepository<BudgetItems>, BudgetItemsRepository>();
-			services.AddTransient<IBudgetItemsRepository, BudgetItemsRepository>();
-			services.AddTransient<IBaseService<BudgetItems>, BudgetItemsService>();
-			//ServicesProvision
-			services.AddTransient<IServicesProvisionService, ServicesProvisionService>();
-			services.AddTransient<IGenericRepository<ServicesProvision>, ServicesProvisionRepository>();
-			services.AddTransient<IServicesProvisionRepository, ServicesProvisionRepository>();
-			services.AddTransient<IBaseService<ServicesProvision>, ServicesProvisionService>();
-			//ServicesProvisionItems
-			services.AddTransient<IServicesProvisionItemsService, ServicesProvisionItemsService>();
-			services.AddTransient<IGenericRepository<ServicesProvisionItems>, ServicesProvisionItemsRepository>();
-			services.AddTransient<IServicesProvisionItemsRepository, ServicesProvisionItemsRepository>();
-			services.AddTransient<IBaseService<ServicesProvisionItems>, ServicesProvisionItemsService>();
+            #region Registions
+            //Usu�rio
+            services.AddTransient<IUserService, UserService>();
+            services.AddTransient<IGenericRepository<User>, UserRepository>();
+            services.AddTransient<IUserRepository, UserRepository>();
+            services.AddTransient<IBaseService<User>, UserService>();
+            //Client
+            services.AddTransient<IClientService, ClientService>();
+            services.AddTransient<IGenericRepository<Client>, ClientRepository>();
+            services.AddTransient<IClientRepository, ClientRepository>();
+            services.AddTransient<IBaseService<Client>, ClientService>();
+            //File
+            services.AddTransient<IFileService, FileService>();
+            services.AddTransient<IGenericRepository<Model.Registrations.File>, FileRepository>();
+            services.AddTransient<IFileRepository, FileRepository>();
+            services.AddTransient<IBaseService<Model.Registrations.File>, FileService>();
+            //company
+            services.AddTransient<ICompanyService, CompanyService>();
+            services.AddTransient<IGenericRepository<Company>, CompanyRepository>();
+            services.AddTransient<ICompanyRepository, CompanyRepository>();
+            services.AddTransient<IBaseService<Company>, CompanyService>();
+            //DescriptionFiles
+            services.AddTransient<IDescriptionFilesService, DescriptionFilesService>();
+            services.AddTransient<IGenericRepository<DescriptionFiles>, DescriptionFilesRepository>();
+            services.AddTransient<IDescriptionFilesRepository, DescriptionFilesRepository>();
+            services.AddTransient<IBaseService<DescriptionFiles>, DescriptionFilesService>();
+            //PlanCompany
+            services.AddTransient<IPlanCompanyService, PlanCompanyService>();
+            services.AddTransient<IGenericRepository<PlanCompany>, PlanCompanyRepository>();
+            services.AddTransient<IPlanCompanyRepository, PlanCompanyRepository>();
+            services.AddTransient<IBaseService<PlanCompany>, PlanCompanyService>();
+            //ServiceProvided
+            services.AddTransient<IServiceProvidedService, ServiceProvidedService>();
+            services.AddTransient<IGenericRepository<ServiceProvided>, ServiceProvidedRepository>();
+            services.AddTransient<IServiceProvidedRepository, ServiceProvidedRepository>();
+            services.AddTransient<IBaseService<ServiceProvided>, ServiceProvidedService>();
+            //Budget
+            services.AddTransient<IBudgetService, BudgetService>();
+            services.AddTransient<IGenericRepository<Budget>, BudgetRepository>();
+            services.AddTransient<IBudgetRepository, BudgetRepository>();
+            services.AddTransient<IBaseService<Budget>, BudgetService>();
+            //BudgetItems
+            services.AddTransient<IBudgetItemsService, BudgetItemsService>();
+            services.AddTransient<IGenericRepository<BudgetItems>, BudgetItemsRepository>();
+            services.AddTransient<IBudgetItemsRepository, BudgetItemsRepository>();
+            services.AddTransient<IBaseService<BudgetItems>, BudgetItemsService>();
+            //ServicesProvision
+            services.AddTransient<IServicesProvisionService, ServicesProvisionService>();
+            services.AddTransient<IGenericRepository<ServicesProvision>, ServicesProvisionRepository>();
+            services.AddTransient<IServicesProvisionRepository, ServicesProvisionRepository>();
+            services.AddTransient<IBaseService<ServicesProvision>, ServicesProvisionService>();
+            //ServicesProvisionItems
+            services.AddTransient<IServicesProvisionItemsService, ServicesProvisionItemsService>();
+            services.AddTransient<IGenericRepository<ServicesProvisionItems>, ServicesProvisionItemsRepository>();
+            services.AddTransient<IServicesProvisionItemsRepository, ServicesProvisionItemsRepository>();
+            services.AddTransient<IBaseService<ServicesProvisionItems>, ServicesProvisionItemsService>();
 
-			//BudgetPerformed
-			services.AddTransient<IBudgetPerformedService, BudgetPerformedService>();
-			services.AddTransient<IGenericRepository<BudgetPerformed>, BudgetPerformedRepository>();
-			services.AddTransient<IBudgetPerformedRepository, BudgetPerformedRepository>();
-			services.AddTransient<IBaseService<BudgetPerformed>, BudgetPerformedService>();
+            //BudgetPerformed
+            services.AddTransient<IBudgetPerformedService, BudgetPerformedService>();
+            services.AddTransient<IGenericRepository<BudgetPerformed>, BudgetPerformedRepository>();
+            services.AddTransient<IBudgetPerformedRepository, BudgetPerformedRepository>();
+            services.AddTransient<IBaseService<BudgetPerformed>, BudgetPerformedService>();
 
-			//Salesman
-			services.AddTransient<ISalesmanService, SalesmanService>();
-			services.AddTransient<IGenericRepository<Salesman>, SalesmanRepository>();
-			services.AddTransient<ISalesmanRepository, SalesmanRepository>();
-			services.AddTransient<IBaseService<Salesman>, SalesmanService>();
-			//Sale
-			services.AddTransient<ISaleService, SaleService>();
-			services.AddTransient<IGenericRepository<Sale>, SaleRepository>();
-			services.AddTransient<ISaleRepository, SaleRepository>();
-			services.AddTransient<IBaseService<Sale>, SaleService>();
-			//SaleItems
-			services.AddTransient<ISaleItemsService, SaleItemsService>();
-			services.AddTransient<IGenericRepository<SaleItems>, SaleItemsRepository>();
-			services.AddTransient<ISaleItemsRepository, SaleItemsRepository>();
-			services.AddTransient<IBaseService<SaleItems>, SaleItemsService>();
-			//Commission
-			services.AddTransient<ICommissionService, CommissionService>();
-			services.AddTransient<IGenericRepository<Commission>, CommissionRepository>();
-			services.AddTransient<ICommissionRepository, CommissionRepository>();
-			services.AddTransient<IBaseService<Commission>, CommissionService>();
-			//CostCenter
-			services.AddTransient<ICostCenterService, CostCenterService>();
-			services.AddTransient<IGenericRepository<CostCenter>, CostCenterRepository>();
-			services.AddTransient<ICostCenterRepository, CostCenterRepository>();
-			services.AddTransient<IBaseService<CostCenter>, CostCenterService>();
-			//Financial
-			services.AddTransient<IFinancialService, FinancialService>();
-			services.AddTransient<IGenericRepository<Financial>, FinancialRepository>();
-			services.AddTransient<IFinancialRepository, FinancialRepository>();
-			services.AddTransient<IBaseService<Financial>, FinancialService>();
-			//Prospects
-			services.AddTransient<IProspectsService, ProspectsService>();
-			services.AddTransient<IGenericRepository<Prospects>, ProspectsRepository>();
-			services.AddTransient<IProspectsRepository, ProspectsRepository>();
-			services.AddTransient<IBaseService<Prospects>, ProspectsService>();
-			// PhasesProspects
-			services.AddTransient<IPhasesProspectsService, PhasesProspectsService>();
-			services.AddTransient<IGenericRepository<PhasesProspects>, PhasesProspectsRepository>();
-			services.AddTransient<IPhasesProspectsRepository, PhasesProspectsRepository>();
-			services.AddTransient<IBaseService<PhasesProspects>, PhasesProspectsService>();
-			//Product
-			services.AddTransient<IProductService, ProductService>();
-			services.AddTransient<IGenericRepository<Product>, ProductRepository>();
-			services.AddTransient<IProductRepository, ProductRepository>();
-			services.AddTransient<IBaseService<Product>, ProductService>();
-			//SharedCommission
-			services.AddTransient<ISharedCommissionService, SharedCommissionService>();
-			services.AddTransient<IGenericRepository<SharedCommission>, SharedCommissionRepository>();
-			services.AddTransient<ISharedCommissionRepository, SharedCommissionRepository>();
-			services.AddTransient<IBaseService<SharedCommission>, SharedCommissionService>();
-			//Closures
-			services.AddTransient<IClosuresService, ClosuresService>();
-			services.AddTransient<IGenericRepository<Closures>, ClosuresRepository>();
-			services.AddTransient<IClosuresRepository, ClosuresRepository>();
-			services.AddTransient<IBaseService<Closures>, ClosuresService>();
-			//ClosureDetail
-			services.AddTransient<IClosuresDetailService, ClosuresDetailService>();
-			services.AddTransient<IGenericRepository<ClosuresDetail>, ClosuresDetailRepository>();
-			services.AddTransient<IClosuresDetailRepository, ClosuresDetailRepository>();
-			services.AddTransient<IBaseService<ClosuresDetail>, ClosuresDetailService>();
-			#endregion
-			services.AddHttpContextAccessor();
-			services.AddScoped<IEmailService, EmailService>();
-			services.Configure<EmailSettings>(Configuration.GetSection("EmailSettings"));
-			//Stock
-			services.AddTransient<IStockService, StockService>();
-			services.AddTransient<IGenericRepository<Stock>, StockRepository>();
-			services.AddTransient<IStockRepository, StockRepository>();
-			services.AddTransient<IBaseService<Stock>, StockService>();
-			//Dashboard
-			services.AddTransient<IDashboardService, DashboardService>();
-			//providertenantid
-			services.AddScoped<ITenantProvider, HeaderTenantProvider>();
-			//Box
-			services.AddTransient<IBoxService, BoxService>();
-			services.AddTransient<IGenericRepository<Box>, BoxRepository>();
-			services.AddTransient<IBoxRepository, BoxRepository>();
-			services.AddTransient<IBaseService<Box>, BoxService>();
-			//FinancialResource
-			//services.AddTransient<IFinancialResourceService, FinancialResourceService>();
-			services.AddTransient<IGenericRepository<FinancialResources>, FinancialResourceRepository>();
-			services.AddTransient<IFinancialResourceRepository, FinancialResourceRepository>();
-			//services.AddTransient<IBaseService<FinancialResource>, FinancialResourceService>();
-			//PaymentMethod
-			//services.AddTransient<IPaymentMethodService, PaymentMethodService>();
-			services.AddTransient<IGenericRepository<PaymentMethod>, PaymentMethodRepository>();
-			services.AddTransient<IPaymentMethodRepository, PaymentMethodRepository>();
-			//services.AddTransient<IBaseService<PaymentMethod>, PaymentMethodService>();
+            //Salesman
+            services.AddTransient<ISalesmanService, SalesmanService>();
+            services.AddTransient<IGenericRepository<Salesman>, SalesmanRepository>();
+            services.AddTransient<ISalesmanRepository, SalesmanRepository>();
+            services.AddTransient<IBaseService<Salesman>, SalesmanService>();
+            //Sale
+            services.AddTransient<ISaleService, SaleService>();
+            services.AddTransient<IGenericRepository<Sale>, SaleRepository>();
+            services.AddTransient<ISaleRepository, SaleRepository>();
+            services.AddTransient<IBaseService<Sale>, SaleService>();
+            //SaleItems
+            services.AddTransient<ISaleItemsService, SaleItemsService>();
+            services.AddTransient<IGenericRepository<SaleItems>, SaleItemsRepository>();
+            services.AddTransient<ISaleItemsRepository, SaleItemsRepository>();
+            services.AddTransient<IBaseService<SaleItems>, SaleItemsService>();
+            //Commission
+            services.AddTransient<ICommissionService, CommissionService>();
+            services.AddTransient<IGenericRepository<Commission>, CommissionRepository>();
+            services.AddTransient<ICommissionRepository, CommissionRepository>();
+            services.AddTransient<IBaseService<Commission>, CommissionService>();
+            //CostCenter
+            services.AddTransient<ICostCenterService, CostCenterService>();
+            services.AddTransient<IGenericRepository<CostCenter>, CostCenterRepository>();
+            services.AddTransient<ICostCenterRepository, CostCenterRepository>();
+            services.AddTransient<IBaseService<CostCenter>, CostCenterService>();
+            //Financial
+            services.AddTransient<IFinancialService, FinancialService>();
+            services.AddTransient<IGenericRepository<Financial>, FinancialRepository>();
+            services.AddTransient<IFinancialRepository, FinancialRepository>();
+            services.AddTransient<IBaseService<Financial>, FinancialService>();
+            //Prospects
+            services.AddTransient<IProspectsService, ProspectsService>();
+            services.AddTransient<IGenericRepository<Prospects>, ProspectsRepository>();
+            services.AddTransient<IProspectsRepository, ProspectsRepository>();
+            services.AddTransient<IBaseService<Prospects>, ProspectsService>();
+            // PhasesProspects
+            services.AddTransient<IPhasesProspectsService, PhasesProspectsService>();
+            services.AddTransient<IGenericRepository<PhasesProspects>, PhasesProspectsRepository>();
+            services.AddTransient<IPhasesProspectsRepository, PhasesProspectsRepository>();
+            services.AddTransient<IBaseService<PhasesProspects>, PhasesProspectsService>();
+            //Product
+            services.AddTransient<IProductService, ProductService>();
+            services.AddTransient<IGenericRepository<Product>, ProductRepository>();
+            services.AddTransient<IProductRepository, ProductRepository>();
+            services.AddTransient<IBaseService<Product>, ProductService>();
+            //SharedCommission
+            services.AddTransient<ISharedCommissionService, SharedCommissionService>();
+            services.AddTransient<IGenericRepository<SharedCommission>, SharedCommissionRepository>();
+            services.AddTransient<ISharedCommissionRepository, SharedCommissionRepository>();
+            services.AddTransient<IBaseService<SharedCommission>, SharedCommissionService>();
+            //Closures
+            services.AddTransient<IClosuresService, ClosuresService>();
+            services.AddTransient<IGenericRepository<Closures>, ClosuresRepository>();
+            services.AddTransient<IClosuresRepository, ClosuresRepository>();
+            services.AddTransient<IBaseService<Closures>, ClosuresService>();
+            //ClosureDetail
+            services.AddTransient<IClosuresDetailService, ClosuresDetailService>();
+            services.AddTransient<IGenericRepository<ClosuresDetail>, ClosuresDetailRepository>();
+            services.AddTransient<IClosuresDetailRepository, ClosuresDetailRepository>();
+            services.AddTransient<IBaseService<ClosuresDetail>, ClosuresDetailService>();
+            #endregion
+            services.AddHttpContextAccessor();
+            services.AddScoped<IEmailService, EmailService>();
+            services.Configure<EmailSettings>(Configuration.GetSection("EmailSettings"));
+            //Stock
+            services.AddTransient<IStockService, StockService>();
+            services.AddTransient<IGenericRepository<Stock>, StockRepository>();
+            services.AddTransient<IStockRepository, StockRepository>();
+            services.AddTransient<IBaseService<Stock>, StockService>();
+            //Dashboard
+            services.AddTransient<IDashboardService, DashboardService>();
+            //providertenantid
+            services.AddScoped<ITenantProvider, HeaderTenantProvider>();
+            //Box
+            services.AddTransient<IBoxService, BoxService>();
+            services.AddTransient<IGenericRepository<Box>, BoxRepository>();
+            services.AddTransient<IBoxRepository, BoxRepository>();
+            services.AddTransient<IBaseService<Box>, BoxService>();
+            //FinancialResource
+            //services.AddTransient<IFinancialResourceService, FinancialResourceService>();
+            services.AddTransient<IGenericRepository<FinancialResources>, FinancialResourceRepository>();
+            services.AddTransient<IFinancialResourceRepository, FinancialResourceRepository>();
+            //services.AddTransient<IBaseService<FinancialResource>, FinancialResourceService>();
+            //PaymentMethod
+            //services.AddTransient<IPaymentMethodService, PaymentMethodService>();
+            services.AddTransient<IGenericRepository<PaymentMethod>, PaymentMethodRepository>();
+            services.AddTransient<IPaymentMethodRepository, PaymentMethodRepository>();
+            //services.AddTransient<IBaseService<PaymentMethod>, PaymentMethodService>();
 
-			//Permission
-			services.AddTransient<IPermissionService, PermissionService>();
-			services.AddTransient<IGenericRepository<Permission>, PermissionRepository>();
-			services.AddTransient<IPermissionRepository, PermissionRepository>();
-			services.AddTransient<IBaseService<Permission>, PermissionService>();
+            //Permission
+            services.AddTransient<IPermissionService, PermissionService>();
+            services.AddTransient<IGenericRepository<Permission>, PermissionRepository>();
+            services.AddTransient<IPermissionRepository, PermissionRepository>();
+            services.AddTransient<IBaseService<Permission>, PermissionService>();
 
-			//UserPermission
-			//services.AddTransient<IUserPermissionService, UserPermissionService>();
-			services.AddTransient<IGenericRepository<UserPermission>, UserPermissionRepository>();
-			services.AddTransient<IUserPermissionRepository, UserPermissionRepository>();
-			//services.AddTransient<IBaseService<UserPermission>, UserPermissionService>();
-			//BankAccount
-			services.AddTransient<IBankAccountService, BankAccountService>();
-			services.AddTransient<IGenericRepository<BankAccount>, BankAccountRepository>();
-			services.AddTransient<IBankAccountRepository, BankAccountRepository>();
-			services.AddTransient<IBaseService<BankAccount>, BankAccountService>();
-			//NaturezaOperacao
-			services.AddTransient<INaturezaOperacaoService, NaturezaOperacaoService>();
-			services.AddTransient<IGenericRepository<NaturezaOperacao>, NaturezaOperacaoRepository>();
-			services.AddTransient<INaturezaOperacaoRepository, NaturezaOperacaoRepository>();
-			services.AddTransient<IBaseService<NaturezaOperacao>, NaturezaOperacaoService>();
-			//ServiceOrder (Ordem de Serviço)
-			services.AddTransient<IServiceOrderService, ServiceOrderService>();
-			services.AddTransient<IGenericRepository<ServiceOrder>, ServiceOrderRepository>();
-			services.AddTransient<IServiceOrderRepository, ServiceOrderRepository>();
-			services.AddTransient<IBaseService<ServiceOrder>, ServiceOrderService>();
-			//ServiceInvoice (NFS-e)
-			services.AddTransient<IServiceInvoiceService, ServiceInvoiceService>();
-			services.AddTransient<IGenericRepository<ServiceInvoice>, ServiceInvoiceRepository>();
-			services.AddTransient<IServiceInvoiceRepository, ServiceInvoiceRepository>();
-			services.AddTransient<IBaseService<ServiceInvoice>, ServiceInvoiceService>();
-			//Nfse (emissao no SEFIN, padrao Nacional) — ServiceInvoiceService depende desta
-			services.AddTransient<INfseService, NfseService>();
-			//FiscalConfiguration
-			services.AddTransient<IFiscalConfigurationService, FiscalConfigurationService>();
-			services.AddTransient<IGenericRepository<FiscalConfiguration>, FiscalConfigurationRepository>();
-			services.AddTransient<IFiscalConfigurationRepository, FiscalConfigurationRepository>();
-			services.AddTransient<IBaseService<FiscalConfiguration>, FiscalConfigurationService>();
-			//NFe
-			services.AddTransient<INFeService, NFeService>();
-			services.AddTransient<IGenericRepository<NFeEmission>, NFeRepository>();
-			services.AddTransient<INFeRepository, NFeRepository>();
-			services.AddTransient<IBaseService<NFeEmission>, NFeService>();
-			//Eventos de NFe (ex.: Carta de Correção - CC-e)
-			services.AddTransient<INFeEventoRepository, NFeEventoRepository>();
-			services.AddTransient<IGenericRepository<NFeEvento>, NFeEventoRepository>();
-				//TributacaoResolver (cache de configuracoes tributarias)
-				services.AddMemoryCache();
-				services.AddTransient<ITributacaoResolverService, TributacaoResolverService>();
-				//SalePayment
-				services.AddTransient<ISalePaymentRepository, SalePaymentRepository>();
-				services.AddTransient<IGenericRepository<SalePayment>, SalePaymentRepository>();
+            //UserPermission
+            //services.AddTransient<IUserPermissionService, UserPermissionService>();
+            services.AddTransient<IGenericRepository<UserPermission>, UserPermissionRepository>();
+            services.AddTransient<IUserPermissionRepository, UserPermissionRepository>();
+            //services.AddTransient<IBaseService<UserPermission>, UserPermissionService>();
+            //BankAccount
+            services.AddTransient<IBankAccountService, BankAccountService>();
+            services.AddTransient<IGenericRepository<BankAccount>, BankAccountRepository>();
+            services.AddTransient<IBankAccountRepository, BankAccountRepository>();
+            services.AddTransient<IBaseService<BankAccount>, BankAccountService>();
+            //NaturezaOperacao
+            services.AddTransient<INaturezaOperacaoService, NaturezaOperacaoService>();
+            services.AddTransient<IGenericRepository<NaturezaOperacao>, NaturezaOperacaoRepository>();
+            services.AddTransient<INaturezaOperacaoRepository, NaturezaOperacaoRepository>();
+            services.AddTransient<IBaseService<NaturezaOperacao>, NaturezaOperacaoService>();
+            //ServiceOrder (Ordem de Serviço)
+            services.AddTransient<IServiceOrderService, ServiceOrderService>();
+            services.AddTransient<IGenericRepository<ServiceOrder>, ServiceOrderRepository>();
+            services.AddTransient<IServiceOrderRepository, ServiceOrderRepository>();
+            services.AddTransient<IBaseService<ServiceOrder>, ServiceOrderService>();
+            //ServiceInvoice (NFS-e)
+            services.AddTransient<IServiceInvoiceService, ServiceInvoiceService>();
+            services.AddTransient<IGenericRepository<ServiceInvoice>, ServiceInvoiceRepository>();
+            services.AddTransient<IServiceInvoiceRepository, ServiceInvoiceRepository>();
+            services.AddTransient<IBaseService<ServiceInvoice>, ServiceInvoiceService>();
+            //Nfse (emissao no SEFIN, padrao Nacional) — ServiceInvoiceService depende desta
+            services.AddTransient<INfseService, NfseService>();
+            //FiscalConfiguration
+            services.AddTransient<IFiscalConfigurationService, FiscalConfigurationService>();
+            services.AddTransient<IGenericRepository<FiscalConfiguration>, FiscalConfigurationRepository>();
+            services.AddTransient<IFiscalConfigurationRepository, FiscalConfigurationRepository>();
+            services.AddTransient<IBaseService<FiscalConfiguration>, FiscalConfigurationService>();
+            //NFe
+            services.AddTransient<INFeService, NFeService>();
+            services.AddTransient<IGenericRepository<NFeEmission>, NFeRepository>();
+            services.AddTransient<INFeRepository, NFeRepository>();
+            services.AddTransient<IBaseService<NFeEmission>, NFeService>();
+            //Eventos de NFe (ex.: Carta de Correção - CC-e)
+            services.AddTransient<INFeEventoRepository, NFeEventoRepository>();
+            services.AddTransient<IGenericRepository<NFeEvento>, NFeEventoRepository>();
+            //TributacaoResolver (cache de configuracoes tributarias)
+            services.AddMemoryCache();
+            services.AddTransient<ITributacaoResolverService, TributacaoResolverService>();
+            //SalePayment
+            services.AddTransient<ISalePaymentRepository, SalePaymentRepository>();
+            services.AddTransient<IGenericRepository<SalePayment>, SalePaymentRepository>();
 
-			//FinancialPaymentMethod
-			services.AddTransient<IGenericRepository<FinancialPaymentMethod>, FinancialPaymentMethodRepository>();
-			services.AddTransient<IFinancialPaymentMethodRepository, FinancialPaymentMethodRepository>();
-			//Provider
-			services.AddTransient<IProviderService, ProviderService>();
-			services.AddTransient<IGenericRepository<Provider>, ProviderRepository>();
-			services.AddTransient<IProviderRepository, ProviderRepository>();
-			services.AddTransient<IBaseService<Provider>, ProviderService>();
-			//Purchase
-			services.AddTransient<IPurchaseService, PurchaseService>();
-			services.AddTransient<IGenericRepository<Purchase>, PurchaseRepository>();
-			services.AddTransient<IPurchaseRepository, PurchaseRepository>();
-			services.AddTransient<IBaseService<Purchase>, PurchaseService>();
-			//Item
-			services.AddTransient<IGenericRepository<PurchaseItem>, PurchaseItemRepository>();
-			services.AddTransient<IPurchaseItemRepository, PurchaseItemRepository>();
+            //FinancialPaymentMethod
+            services.AddTransient<IGenericRepository<FinancialPaymentMethod>, FinancialPaymentMethodRepository>();
+            services.AddTransient<IFinancialPaymentMethodRepository, FinancialPaymentMethodRepository>();
+            //Provider
+            services.AddTransient<IProviderService, ProviderService>();
+            services.AddTransient<IGenericRepository<Provider>, ProviderRepository>();
+            services.AddTransient<IProviderRepository, ProviderRepository>();
+            services.AddTransient<IBaseService<Provider>, ProviderService>();
+            //Purchase
+            services.AddTransient<IPurchaseService, PurchaseService>();
+            services.AddTransient<IGenericRepository<Purchase>, PurchaseRepository>();
+            services.AddTransient<IPurchaseRepository, PurchaseRepository>();
+            services.AddTransient<IBaseService<Purchase>, PurchaseService>();
+            //Item
+            services.AddTransient<IGenericRepository<PurchaseItem>, PurchaseItemRepository>();
+            services.AddTransient<IPurchaseItemRepository, PurchaseItemRepository>();
 	
-			//Importacao de XML de NF-e de compra
-			services.AddTransient<IPurchaseXmlImportService, PurchaseXmlImportService>();
-			//regras fiscais 
-			services.AddTransient<IGenericRepository<RegraFiscal>, RegrasFiscalRepository>();
-			services.AddTransient<IRegrasFiscalRepository, RegrasFiscalRepository>();
-			//services.AddCors(options =>
-			//{
-			//    options.AddPolicy("EnableCORS", builder =>
-			//    {
-			//        builder.AllowAnyOrigin().AllowAnyHeader().WithOrigins(
-			//          new[] {"http://localhost:3000", "http://localhost:3001",
-			//"http://appservicebox.link","https://appservicebox.link",
-			//"https://tractuscommissions.com.br",
-			//              "http://localhost:9002",
-			//              "https://studio-to69.onrender.com"}
-			//          ).AllowAnyMethod().Build();
-			//    });
-			//});
-			services.AddCors(options =>
-			{
-				options.AddPolicy("AllowSpecificOrigin",
-									builder =>
-									{
-										builder.WithOrigins(
-																	"http://localhost:3000",
-																	"http://localhost:9002",
-																	"https://localhost:44365",
-																	"https://studio-to69.onrender.com"// Adicione tamb�m o pr�prio backend
-															)
-															.AllowAnyHeader()
-															.AllowAnyMethod()
-															.AllowCredentials(); // Importante para cookies/auth
-									});
-			});
+            //Importacao de XML de NF-e de compra
+            services.AddTransient<IPurchaseXmlImportService, PurchaseXmlImportService>();
+            //regras fiscais 
+            services.AddTransient<IGenericRepository<RegraFiscal>, RegrasFiscalRepository>();
+            services.AddTransient<IRegrasFiscalRepository, RegrasFiscalRepository>();
+            //services.AddCors(options =>
+            //{
+            //    options.AddPolicy("EnableCORS", builder =>
+            //    {
+            //        builder.AllowAnyOrigin().AllowAnyHeader().WithOrigins(
+            //          new[] {"http://localhost:3000", "http://localhost:3001",
+            //"http://appservicebox.link","https://appservicebox.link",
+            //"https://tractuscommissions.com.br",
+            //              "http://localhost:9002",
+            //              "https://studio-to69.onrender.com"}
+            //          ).AllowAnyMethod().Build();
+            //    });
+            //});
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowSpecificOrigin",
+                    builder =>
+                    {
+                        builder.WithOrigins(
+                                "http://localhost:3000",
+                                "http://localhost:9002",
+                                "https://localhost:44365",
+                                "https://studio-to69.onrender.com"// Adicione tamb�m o pr�prio backend
+                            )
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials(); // Importante para cookies/auth
+                    });
+            });
 
-			var key = Encoding.ASCII.GetBytes(Settings.Secret);
-			services.AddAuthentication(x =>
-			{
-				x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-				x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-			})
-			.AddJwtBearer(x =>
-			{
-				x.RequireHttpsMetadata = false;
-				x.SaveToken = true;
-				x.TokenValidationParameters = new TokenValidationParameters
-				{
-					ValidateIssuerSigningKey = true,
-					IssuerSigningKey = new SymmetricSecurityKey(key),
-					ValidateIssuer = false,
-					ValidateAudience = false
-				};
-			});
+            var key = Encoding.ASCII.GetBytes(Settings.Secret);
+            services.AddAuthentication(x =>
+                {
+                    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(x =>
+                {
+                    x.RequireHttpsMetadata = false;
+                    x.SaveToken = true;
+                    x.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(key),
+                        ValidateIssuer = false,
+                        ValidateAudience = false
+                    };
+                });
 
-			// CONFIGURA��O DO SWAGGER CORRIGIDA
-			services.AddEndpointsApiExplorer();
-			services.AddSwaggerGen(c =>
-			{
-				c.SwaggerDoc("v1", new OpenApiInfo
-				{
-					Version = "v1",
-					Title = "Sales flow",
-					Description = "API para gest�o comercial",
-					TermsOfService = new Uri("https://example.com/terms"),
-					Contact = new OpenApiContact
-					{
-						Name = "Suporte",
-						Url = new Uri("https://example.com/contact")
-					},
-					License = new OpenApiLicense
-					{
-						Name = "Licen�a",
-						Url = new Uri("https://example.com/license")
-					}
-				});
+            // CONFIGURA��O DO SWAGGER CORRIGIDA
+            services.AddEndpointsApiExplorer();
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Version = "v1",
+                    Title = "Sales flow",
+                    Description = "API para gest�o comercial",
+                    TermsOfService = new Uri("https://example.com/terms"),
+                    Contact = new OpenApiContact
+                    {
+                        Name = "Suporte",
+                        Url = new Uri("https://example.com/contact")
+                    },
+                    License = new OpenApiLicense
+                    {
+                        Name = "Licen�a",
+                        Url = new Uri("https://example.com/license")
+                    }
+                });
 
-				// Adicionar suporte para JWT no Swagger
-				c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-				{
-					Name = "Authorization",
-					Type = SecuritySchemeType.ApiKey,
-					Scheme = "Bearer",
-					BearerFormat = "JWT",
-					In = ParameterLocation.Header,
-					Description = "JWT Authorization header using the Bearer scheme."
-				});
+                // Adicionar suporte para JWT no Swagger
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "JWT Authorization header using the Bearer scheme."
+                });
 
-				c.AddSecurityRequirement(new OpenApiSecurityRequirement
-	{
-					{
-						new OpenApiSecurityScheme
-						{
-							Reference = new OpenApiReference
-							{
-								Type = ReferenceType.SecurityScheme,
-								Id = "Bearer"
-							}
-						},
-						new string[] {}
-					}
-	});
-			});
-			ConfigurePermissionMappings();
-		}
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new string[] {}
+                    }
+                });
+            });
+            ConfigurePermissionMappings();
+        }
 
-		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-		{
-			var cultureInfo = new CultureInfo("pt-BR");
-			CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
-			CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            var cultureInfo = new CultureInfo("pt-BR");
+            CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+            CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
-			if (env.IsDevelopment())
-			{
-				app.UseDeveloperExceptionPage();
-			}
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
 
-			// Configura��o do Swagger
-			app.UseSwagger();
-			app.UseSwaggerUI(c =>
-			{
-				c.SwaggerEndpoint("/swagger/v1/swagger.json", "ProfControl API v1");
-				c.RoutePrefix = "swagger"; // Isso faz com que acesse em /swagger
-				c.DocumentTitle = "ProfControl API Documentation";
-			});
-			app.UseCors("AllowSpecificOrigin");
-			app.UseMiddleware<ExceptionMiddleware>();
+            // Configura��o do Swagger
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "ProfControl API v1");
+                c.RoutePrefix = "swagger"; // Isso faz com que acesse em /swagger
+                c.DocumentTitle = "ProfControl API Documentation";
+            });
+            app.UseCors("AllowSpecificOrigin");
+            app.UseMiddleware<ExceptionMiddleware>();
 
-			app.UseHttpsRedirection();
-			app.UseRouting();
-			app.UseAuthentication();
-			app.UseAuthorization();
-			app.UseMiddleware<ConventionPermissionMiddleware>();
+            app.UseHttpsRedirection();
+            app.UseRouting();
+            app.UseAuthentication();
+            app.UseAuthorization();
+            app.UseMiddleware<ConventionPermissionMiddleware>();
 
-			app.UseResponseCompression();
-			app.UseStaticFiles();
+            app.UseResponseCompression();
+            app.UseStaticFiles();
 
-			app.UseEndpoints(endpoints =>
-			{
-				endpoints.MapControllers();
-				// Opcional: redirecionar rota raiz para o Swagger
-				endpoints.MapGet("/", context =>
-							{
-								context.Response.Redirect("/swagger");
-								return Task.CompletedTask;
-							}
-							);
-			});
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+                // Opcional: redirecionar rota raiz para o Swagger
+                endpoints.MapGet("/", context =>
+                    {
+                        context.Response.Redirect("/swagger");
+                        return Task.CompletedTask;
+                    }
+                );
+            });
 
-			UpdateDatabase(app);
+            UpdateDatabase(app);
 
-		}
-		private static void ConfigurePermissionMappings()
-		{
-			// === CONTROLLERS DE CADASTRO ===
-			ConventionPermissionMiddleware.RegisterControllerPermission("Client", "CADASTRO_CLIENTE");
-			ConventionPermissionMiddleware.RegisterControllerPermission("Product", "CADASTRO_PRODUTO");
-			ConventionPermissionMiddleware.RegisterControllerPermission("Company", "CADASTRO_EMPRESA");
-			ConventionPermissionMiddleware.RegisterControllerPermission("PaymentMethod", "FORMA_PAGAMENTO");
-			ConventionPermissionMiddleware.RegisterControllerPermission("ServiceProvided", "CADASTRO_SERVICO");
+        }
+        private static void ConfigurePermissionMappings()
+        {
+            // === CONTROLLERS DE CADASTRO ===
+            ConventionPermissionMiddleware.RegisterControllerPermission("Client", "CADASTRO_CLIENTE");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Product", "CADASTRO_PRODUTO");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Company", "CADASTRO_EMPRESA");
+            ConventionPermissionMiddleware.RegisterControllerPermission("PaymentMethod", "FORMA_PAGAMENTO");
+            ConventionPermissionMiddleware.RegisterControllerPermission("ServiceProvided", "CADASTRO_SERVICO");
 
-			// === CONTROLLERS DE USU�RIOS ===
-			ConventionPermissionMiddleware.RegisterControllerPermission("User", "USUARIO");
-			ConventionPermissionMiddleware.RegisterControllerPermission("UserPermissions", "USUARIO_PERMISSION");
-			ConventionPermissionMiddleware.RegisterControllerPermission("Permission", "USUARIO_PERMISSION");
+            // === CONTROLLERS DE USU�RIOS ===
+            ConventionPermissionMiddleware.RegisterControllerPermission("User", "USUARIO");
+            ConventionPermissionMiddleware.RegisterControllerPermission("UserPermissions", "USUARIO_PERMISSION");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Permission", "USUARIO_PERMISSION");
 
-			// === CONTROLLERS OPERACIONAIS ===
-			ConventionPermissionMiddleware.RegisterControllerPermission("Sale", "VENDA");
-			ConventionPermissionMiddleware.RegisterControllerPermission("Financial", "FINANCEIRO");
-			ConventionPermissionMiddleware.RegisterControllerPermission("Stock", "ESTOQUE");
-			ConventionPermissionMiddleware.RegisterControllerPermission("Box", "CAIXA");
-			ConventionPermissionMiddleware.RegisterControllerPermission("Budget", "ORCAMENTO");
-			ConventionPermissionMiddleware.RegisterControllerPermission("Commission", "COMISSAO");
-			ConventionPermissionMiddleware.RegisterControllerPermission("Dashboard", "DASHBOARD");
-			ConventionPermissionMiddleware.RegisterControllerPermission("Closures", "FECHAMENTO");
-			ConventionPermissionMiddleware.RegisterControllerPermission("ServicesProvision", "SERVICO");
-				ConventionPermissionMiddleware.RegisterControllerPermission("ServiceOrders", "SERVICO_ORDEM");
-				ConventionPermissionMiddleware.RegisterControllerPermission("ServiceInvoices", "SERVICO_NFSE");
-			ConventionPermissionMiddleware.RegisterControllerPermission("Prospects", "PROSPECCAO");
-			ConventionPermissionMiddleware.RegisterControllerPermission("Salesman", "VENDEDOR");
+            // === CONTROLLERS OPERACIONAIS ===
+            ConventionPermissionMiddleware.RegisterControllerPermission("Sale", "VENDA");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Financial", "FINANCEIRO");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Stock", "ESTOQUE");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Box", "CAIXA");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Budget", "ORCAMENTO");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Commission", "COMISSAO");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Dashboard", "DASHBOARD");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Closures", "FECHAMENTO");
+            ConventionPermissionMiddleware.RegisterControllerPermission("ServicesProvision", "SERVICO");
+            ConventionPermissionMiddleware.RegisterControllerPermission("ServiceOrders", "SERVICO_ORDEM");
+            ConventionPermissionMiddleware.RegisterControllerPermission("ServiceInvoices", "SERVICO_NFSE");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Prospects", "PROSPECCAO");
+            ConventionPermissionMiddleware.RegisterControllerPermission("Salesman", "VENDEDOR");
 
-			// === CONTROLLERS P�BLICOS ===
-			ConventionPermissionMiddleware.RegisterPublicController("SearchZipCode");
-                                ConventionPermissionMiddleware.RegisterPublicController("SituacaoTributaria");
-			ConventionPermissionMiddleware.RegisterPublicController("Email");
-			ConventionPermissionMiddleware.RegisterPublicController("Home");
+            // === CONTROLLERS P�BLICOS ===
+            ConventionPermissionMiddleware.RegisterPublicController("SearchZipCode");
+            ConventionPermissionMiddleware.RegisterPublicController("SituacaoTributaria");
+            ConventionPermissionMiddleware.RegisterPublicController("Email");
+            ConventionPermissionMiddleware.RegisterPublicController("Home");
 
-			// === A��ES P�BLICAS (endpoints sem autentica��o) ===
-			ConventionPermissionMiddleware.RegisterPublicAction("verify-email");
-			ConventionPermissionMiddleware.RegisterPublicAction("forgot-password");
-			ConventionPermissionMiddleware.RegisterPublicAction("reset-password");
-			ConventionPermissionMiddleware.RegisterPublicAction("authenticate");
+            // === A��ES P�BLICAS (endpoints sem autentica��o) ===
+            ConventionPermissionMiddleware.RegisterPublicAction("verify-email");
+            ConventionPermissionMiddleware.RegisterPublicAction("forgot-password");
+            ConventionPermissionMiddleware.RegisterPublicAction("reset-password");
+            ConventionPermissionMiddleware.RegisterPublicAction("authenticate");
 
-			Console.WriteLine("? Permission mappings configured successfully!");
-		}
-		// ?? M�TODO DE CONFIGURA��O DO SKIASHARP
-		private void ConfigureSkiaSharp()
-		{
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-			{
-				try
-				{
-					Console.WriteLine("=== CONFIGURANDO SKIASHARP PARA LINUX ===");
+            Console.WriteLine("? Permission mappings configured successfully!");
+        }
+        // ?? M�TODO DE CONFIGURA��O DO SKIASHARP
+        private void ConfigureSkiaSharp()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                try
+                {
+                    Console.WriteLine("=== CONFIGURANDO SKIASHARP PARA LINUX ===");
 
-					// Pula a verifica��o de compatibilidade
-					Environment.SetEnvironmentVariable("SKIA_SHARP_SKIP_NATIVE_LOADER_CHECK", "true");
+                    // Pula a verifica��o de compatibilidade
+                    Environment.SetEnvironmentVariable("SKIA_SHARP_SKIP_NATIVE_LOADER_CHECK", "true");
 
-					// For�a o uso da native lib embutida
-					var basePath = AppDomain.CurrentDomain.BaseDirectory;
-					var nativePaths = new List<string>();
+                    // For�a o uso da native lib embutida
+                    var basePath = AppDomain.CurrentDomain.BaseDirectory;
+                    var nativePaths = new List<string>();
 
-					// Procura pelas native libs em v�rias poss�veis localiza��es
-					var possiblePaths = new[]
-					{
-								Path.Combine(basePath, "runtimes", "linux-x64", "native"),
-								Path.Combine(basePath, "runtimes", "linux", "native"),
-								Path.Combine(basePath, "native"),
-								basePath,
-								"/usr/lib",
-								"/usr/local/lib"
-						};
+                    // Procura pelas native libs em v�rias poss�veis localiza��es
+                    var possiblePaths = new[]
+                    {
+                        Path.Combine(basePath, "runtimes", "linux-x64", "native"),
+                        Path.Combine(basePath, "runtimes", "linux", "native"),
+                        Path.Combine(basePath, "native"),
+                        basePath,
+                        "/usr/lib",
+                        "/usr/local/lib"
+                    };
 
-					foreach (var path in possiblePaths)
-					{
-						if (Directory.Exists(path))
-						{
-							nativePaths.Add(path);
-							Console.WriteLine($"? Native library path found: {path}");
-						}
-					}
+                    foreach (var path in possiblePaths)
+                    {
+                        if (Directory.Exists(path))
+                        {
+                            nativePaths.Add(path);
+                            Console.WriteLine($"? Native library path found: {path}");
+                        }
+                    }
 
-					if (nativePaths.Any())
-					{
-						var ldPath = string.Join(":", nativePaths);
-						Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", ldPath);
-						Console.WriteLine($"? LD_LIBRARY_PATH set to: {ldPath}");
-					}
-					else
-					{
-						Console.WriteLine("?? No native library paths found!");
-					}
+                    if (nativePaths.Any())
+                    {
+                        var ldPath = string.Join(":", nativePaths);
+                        Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", ldPath);
+                        Console.WriteLine($"? LD_LIBRARY_PATH set to: {ldPath}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("?? No native library paths found!");
+                    }
 
-					// Verifica se as native libs existem
-					var skiaLibs = Directory.GetFiles(basePath, "libSkiaSharp*", SearchOption.AllDirectories);
-					if (skiaLibs.Any())
-					{
-						Console.WriteLine($"? Found SkiaSharp libs: {string.Join(", ", skiaLibs.Select(p => Path.GetFileName(p)))}");
-					}
-					else
-					{
-						Console.WriteLine("?? WARNING: No SkiaSharp native libraries found in publish directory!");
+                    // Verifica se as native libs existem
+                    var skiaLibs = Directory.GetFiles(basePath, "libSkiaSharp*", SearchOption.AllDirectories);
+                    if (skiaLibs.Any())
+                    {
+                        Console.WriteLine($"? Found SkiaSharp libs: {string.Join(", ", skiaLibs.Select(p => Path.GetFileName(p)))}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("?? WARNING: No SkiaSharp native libraries found in publish directory!");
 
-						// Tenta encontrar em outros locais
-						var systemSkiaLibs = Directory.GetFiles("/usr/lib", "libSkiaSharp*", SearchOption.AllDirectories);
-						if (systemSkiaLibs.Any())
-						{
-							Console.WriteLine($"?? Found system SkiaSharp libs: {string.Join(", ", systemSkiaLibs.Select(p => Path.GetFileName(p)))}");
-							Console.WriteLine("?? These may be incompatible versions!");
-						}
-					}
+                        // Tenta encontrar em outros locais
+                        var systemSkiaLibs = Directory.GetFiles("/usr/lib", "libSkiaSharp*", SearchOption.AllDirectories);
+                        if (systemSkiaLibs.Any())
+                        {
+                            Console.WriteLine($"?? Found system SkiaSharp libs: {string.Join(", ", systemSkiaLibs.Select(p => Path.GetFileName(p)))}");
+                            Console.WriteLine("?? These may be incompatible versions!");
+                        }
+                    }
 
-					Console.WriteLine("=== CONFIGURA��O SKIASHARP COMPLETADA ===");
-				}
-				catch (Exception ex)
-				{
-					Console.WriteLine($"? Error configuring SkiaSharp: {ex.Message}");
-				}
-			}
-		}
-		private static void UpdateDatabase(IApplicationBuilder app)
-		{
-			using (var serviceScope = app.ApplicationServices
-					.GetRequiredService<IServiceScopeFactory>()
-					.CreateScope())
-			{
-				using (var context = serviceScope.ServiceProvider.GetService<ContextBase>())
-				{
-					context.Database.Migrate();
-				}
-			}
-		}
-	}
+                    Console.WriteLine("=== CONFIGURA��O SKIASHARP COMPLETADA ===");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"? Error configuring SkiaSharp: {ex.Message}");
+                }
+            }
+        }
+        private static void UpdateDatabase(IApplicationBuilder app)
+        {
+            using (var serviceScope = app.ApplicationServices
+                       .GetRequiredService<IServiceScopeFactory>()
+                       .CreateScope())
+            {
+                using (var context = serviceScope.ServiceProvider.GetService<ContextBase>())
+                {
+                    context.Database.Migrate();
+                }
+            }
+        }
+    }
 }
