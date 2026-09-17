@@ -16,14 +16,17 @@ namespace Service
     {
         private readonly IServiceOrderRepository _orderRepo;
         private readonly IServiceInvoiceRepository _invoiceRepo;
+        private readonly IFinancialService _financialService;
 
         public ServiceOrderService(
             IGenericRepository<ServiceOrder> repository,
             IServiceOrderRepository orderRepo,
-            IServiceInvoiceRepository invoiceRepo) : base(repository)
+            IServiceInvoiceRepository invoiceRepo,
+            IFinancialService financialService) : base(repository)
         {
             _orderRepo = orderRepo;
             _invoiceRepo = invoiceRepo;
+            _financialService = financialService;
         }
 
         public async Task<PagedResult<ServiceOrderResponse>> GetAllPaged(Filters filter)
@@ -45,38 +48,61 @@ namespace Service
             var entity = await _orderRepo.GetByIdWithDetails(id);
             if (entity == null)
                 throw new DomainException("Ordem de serviço não encontrada.");
-            return MapToResponse(entity);
+
+            var response = MapToResponse(entity);
+            response.Financials = await LoadFinancialsAsync(id);
+            return response;
         }
 
         public async Task<ServiceOrderResponse> CreateAsync(ServiceOrderCreateRequest request, Guid userId)
         {
             ValidateCreate(request);
 
-            var entity = new ServiceOrder
+            using (var transaction = await repository.CreateTransactionAsync())
             {
-                TenantId = request.TenantId,
-                ClientId = request.ClientId,
-                OrderDate = request.OrderDate,
-                Notes = request.Notes,
-                Competence = request.Competence,
-                Status = ServiceOrderStatus.Aberta,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                CreatedBy = userId,
-                UpdatedBy = userId,
-                ServiceOrderItems = new List<ServiceOrderItem>()
-            };
+                try
+                {
+                    var entity = new ServiceOrder
+                    {
+                        TenantId = request.TenantId,
+                        ClientId = request.ClientId,
+                        OrderDate = request.OrderDate,
+                        Notes = request.Notes,
+                        Competence = request.Competence,
+                        Status = ServiceOrderStatus.Aberta,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        CreatedBy = userId,
+                        UpdatedBy = userId,
+                        ServiceOrderItems = new List<ServiceOrderItem>()
+                    };
 
-            foreach (var item in request.Items)
-            {
-                entity.ServiceOrderItems.Add(BuildItem(item));
+                    foreach (var item in request.Items)
+                    {
+                        entity.ServiceOrderItems.Add(BuildItem(item));
+                    }
+
+                    ServiceTotals.Apply(entity);
+
+                    await repository.CreateAsync(entity);
+
+                    // Ao contrário de vendas, o financeiro aqui é opcional: sem formas de
+                    // pagamento informadas o gerador não cria nada e a OS segue normalmente.
+                    await _financialService.GenerateFinancialCentral(request.FormPaymentSales, entity.TenantId,
+                        idServiceOrder: entity.Id, idClient: entity.ClientId, descricaoOrigem: "Ordem de Serviço");
+
+                    transaction.Commit();
+
+                    var response = MapToResponse(entity);
+                    response.Financials = await LoadFinancialsAsync(entity.Id);
+                    return response;
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
             }
-
-            ServiceTotals.Apply(entity);
-
-            await repository.CreateAsync(entity);
-
-            return MapToResponse(entity);
         }
 
         public async Task<ServiceOrderResponse> UpdateAsync(int id, ServiceOrderUpdateRequest request, Guid userId)
@@ -88,44 +114,62 @@ namespace Service
             if (entity.Status == ServiceOrderStatus.Concluida || entity.Status == ServiceOrderStatus.Cancelada)
                 throw new DomainException("Não é possível editar uma ordem de serviço concluída ou cancelada.");
 
-            entity.ClientId = request.ClientId;
-            entity.OrderDate = request.OrderDate;
-            entity.Notes = request.Notes;
-            entity.Competence = request.Competence;
-            entity.UpdatedAt = DateTime.UtcNow;
-            entity.UpdatedBy = userId;
-
-            var existingItems = entity.ServiceOrderItems.ToList();
-            foreach (var existing in existingItems)
+            using (var transaction = await repository.CreateTransactionAsync())
             {
-                var updatedItem = request.Items.FirstOrDefault(x => x.ServiceProvidedId == existing.ServiceProvidedId);
-                if (updatedItem != null)
+                try
                 {
-                    // Copiar TODOS os campos fiscais, não só quantidade e valor: se o
-                    // desconto/alíquota ficasse de fora, editar a OS apagaria a retenção
-                    // que o usuário já tinha configurado na linha.
-                    CopyFields(updatedItem, existing);
+                    entity.ClientId = request.ClientId;
+                    entity.OrderDate = request.OrderDate;
+                    entity.Notes = request.Notes;
+                    entity.Competence = request.Competence;
+                    entity.UpdatedAt = DateTime.UtcNow;
+                    entity.UpdatedBy = userId;
+
+                    var existingItems = entity.ServiceOrderItems.ToList();
+                    foreach (var existing in existingItems)
+                    {
+                        var updatedItem = request.Items.FirstOrDefault(x => x.ServiceProvidedId == existing.ServiceProvidedId);
+                        if (updatedItem != null)
+                        {
+                            // Copiar TODOS os campos fiscais, não só quantidade e valor: se o
+                            // desconto/alíquota ficasse de fora, editar a OS apagaria a retenção
+                            // que o usuário já tinha configurado na linha.
+                            CopyFields(updatedItem, existing);
+                        }
+                    }
+
+                    var existingServiceIds = existingItems.Select(x => x.ServiceProvidedId).ToList();
+                    foreach (var item in request.Items.Where(x => !existingServiceIds.Contains(x.ServiceProvidedId)))
+                    {
+                        entity.ServiceOrderItems.Add(BuildItem(item));
+                    }
+
+                    var requestServiceIds = request.Items.Select(x => x.ServiceProvidedId).ToList();
+                    var itemsToRemove = existingItems.Where(x => !requestServiceIds.Contains(x.ServiceProvidedId)).ToList();
+                    foreach (var item in itemsToRemove)
+                    {
+                        entity.ServiceOrderItems.Remove(item);
+                    }
+
+                    ServiceTotals.Apply(entity);
+
+                    await base.Alter(entity);
+
+                    await _financialService.ReplaceServiceOrderFinancials(id, entity.TenantId, entity.ClientId,
+                        request.FormPaymentSales);
+
+                    transaction.Commit();
+
+                    var response = MapToResponse(entity);
+                    response.Financials = await LoadFinancialsAsync(id);
+                    return response;
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
                 }
             }
-
-            var existingServiceIds = existingItems.Select(x => x.ServiceProvidedId).ToList();
-            foreach (var item in request.Items.Where(x => !existingServiceIds.Contains(x.ServiceProvidedId)))
-            {
-                entity.ServiceOrderItems.Add(BuildItem(item));
-            }
-
-            var requestServiceIds = request.Items.Select(x => x.ServiceProvidedId).ToList();
-            var itemsToRemove = existingItems.Where(x => !requestServiceIds.Contains(x.ServiceProvidedId)).ToList();
-            foreach (var item in itemsToRemove)
-            {
-                entity.ServiceOrderItems.Remove(item);
-            }
-
-            ServiceTotals.Apply(entity);
-
-            await base.Alter(entity);
-
-            return MapToResponse(entity);
         }
 
         public async Task<ServiceOrderResponse> ChangeStatusAsync(int id, ServiceOrderStatus newStatus, Guid userId)
@@ -150,7 +194,26 @@ namespace Service
             if (newStatus == ServiceOrderStatus.Concluida)
                 entity.ConcludedAt = DateTime.UtcNow;
 
-            await base.Alter(entity);
+            using (var transaction = await repository.CreateTransactionAsync())
+            {
+                try
+                {
+                    await base.Alter(entity);
+
+                    // Cancelar por aqui também precisa anular os recebíveis: esta é a única
+                    // transição que alcança Cancelada a partir de Concluida, então há parcelas
+                    // já pagas que ficariam pendentes no financeiro.
+                    if (newStatus == ServiceOrderStatus.Cancelada)
+                        await _financialService.CancelServiceOrderFinancials(id);
+
+                    transaction.Commit();
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
 
             return MapToResponse(entity);
         }
@@ -164,9 +227,26 @@ namespace Service
             if (entity.Status == ServiceOrderStatus.Concluida)
                 throw new DomainException("Não é possível cancelar uma ordem de serviço concluída.");
 
-            entity.Status = ServiceOrderStatus.Cancelada;
-            entity.UpdatedAt = DateTime.UtcNow;
-            await base.Alter(entity);
+            using (var transaction = await repository.CreateTransactionAsync())
+            {
+                try
+                {
+                    entity.Status = ServiceOrderStatus.Cancelada;
+                    entity.UpdatedAt = DateTime.UtcNow;
+                    await base.Alter(entity);
+
+                    // A OS e a anulação do financeiro sobem juntas ou não sobem: sem isto uma
+                    // falha no financeiro deixaria a OS cancelada com recebíveis em aberto.
+                    await _financialService.CancelServiceOrderFinancials(id);
+
+                    transaction.Commit();
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
         }
 
         public async Task<List<AvailableServiceResponse>> GetAvailableServices(int orderId)
@@ -269,6 +349,32 @@ namespace Service
 
             if (validTransitions.ContainsKey(current) && !validTransitions[current].Contains(next))
                 throw new DomainException($"Transição de status de '{current}' para '{next}' não é permitida.");
+        }
+
+        /// <summary>
+        /// Parcelas financeiras da OS no formato que a tela de edição espera. Parcelas
+        /// canceladas ficam de fora: elas existem só como histórico do que já foi recebido.
+        /// </summary>
+        private async Task<List<ServiceOrderFinancialResponse>> LoadFinancialsAsync(int orderId)
+        {
+            var financials = await _financialService.GetByIdServiceOrderAsync(orderId);
+
+            return financials
+                .Where(f => f.FinancialStatus != FinancialStatus.Canceled)
+                .Select(f =>
+                {
+                    var paymentMethod = f.FinancialPaymentMethods?.FirstOrDefault();
+                    return new ServiceOrderFinancialResponse
+                    {
+                        Id = f.Id,
+                        PaymentMethodId = paymentMethod?.PaymentMethodId ?? 0,
+                        PaymentMethodName = paymentMethod?.PaymentMethod?.Name ?? "",
+                        Value = f.Value,
+                        DueDate = f.DueDate,
+                        Status = f.FinancialStatus
+                    };
+                })
+                .ToList();
         }
 
         private ServiceOrderResponse MapToResponse(ServiceOrder entity)

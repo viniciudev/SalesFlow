@@ -56,5 +56,8 @@ namespace Model.Moves
 
         public ICollection<ServiceOrderItem> ServiceOrderItems { get; set; } = new List<ServiceOrderItem>();
         public ICollection<ServiceInvoice> ServiceInvoices { get; set; } = new List<ServiceInvoice>();
+
+        /// <summary>Parcelas financeiras geradas a partir das formas de pagamento da OS.</summary>
+        public ICollection<Financial> Financials { get; set; } = new List<Financial>();
     }
 }

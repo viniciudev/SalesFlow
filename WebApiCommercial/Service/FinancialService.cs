@@ -18,17 +18,22 @@ namespace Service
         private readonly IFinancialPaymentMethodRepository _financialPaymentMethodRepository;
         private readonly IPaymentMethodRepository _paymentMethodRepository;
         private readonly IBoxRepository _boxRepository;
-		
+        private readonly IBoxService _boxService;
+
         public FinancialService(IGenericRepository<Financial> repository,
             ICostCenterRepository costCenterRepository,
             IFinancialResourceRepository financialResourceRepository,
             IFinancialPaymentMethodRepository financialPaymentMethodRepository,
-            IPaymentMethodRepository paymentMethodRepository) : base(repository)
+            IPaymentMethodRepository paymentMethodRepository,
+            IBoxRepository boxRepository,
+            IBoxService boxService) : base(repository)
         {
             _costCenterRepository = costCenterRepository;
             _financialResourceRepository = financialResourceRepository;
             _financialPaymentMethodRepository = financialPaymentMethodRepository;
             _paymentMethodRepository = paymentMethodRepository;
+            _boxRepository = boxRepository;
+            _boxService = boxService;
         }
         public async Task<List<Financial>> SearchBySaleItemsId(int id, TypeItem typeItem, int idItem)
         {
@@ -344,45 +349,42 @@ namespace Service
                 throw;
             }
         }
-        public async Task GenerateFinancialCentral(ICollection<FormPaymentSale> formPaymentSales, int IdSale, int IdCompany,
-            int? IdClient = null, int? BankAccountId = null, decimal? troco = null,string ?descricaoOrigem=null)
+        /// <summary>
+        /// Gera os lançamentos financeiros (uma parcela por <see cref="Financial"/>) a partir das
+        /// formas de pagamento informadas. Serve tanto para vendas (<paramref name="idSale"/>) quanto
+        /// para ordens de serviço (<paramref name="idServiceOrder"/>) — sempre exatamente um dos dois.
+        /// Não faz nada quando a coleção vem vazia.
+        /// </summary>
+        public async Task GenerateFinancialCentral(ICollection<FormPaymentSale> formPaymentSales, int idCompany,
+            int? idSale = null, int? idServiceOrder = null, int? idClient = null, int? bankAccountId = null,
+            string? descricaoOrigem = null)
         {
             if (formPaymentSales == null || !formPaymentSales.Any())
                 return;
 
-            var caixaAberto = await _boxRepository.GetByStatus(CaixaStatus.ABERTO, IdCompany);
+            var caixaAberto = await _boxRepository.GetByStatus(CaixaStatus.ABERTO, idCompany);
 
-            var listCostCenter = await _costCenterRepository.GetByIdCompany(IdCompany);
+            var listCostCenter = await _costCenterRepository.GetByIdCompany(idCompany);
             var costCenterId = listCostCenter.FirstOrDefault()?.Id;
 
             var paymentMethods = new Dictionary<int, PaymentMethod>();
-            decimal totalValue = 0;
-            bool hasPendingPayment = false;
 
             foreach (var m in formPaymentSales)
             {
-                totalValue += m.Value;
-
                 var paymentMethod = await _paymentMethodRepository.GetByIdAsync(m.PaymentMethodId);
                 if (paymentMethod == null)
                     throw new Exception($"Método de pagamento ID {m.PaymentMethodId} não encontrado");
 
                 paymentMethods[m.PaymentMethodId] = paymentMethod;
 
-                if (!paymentMethod.IsImmediateSettlement)
-                    hasPendingPayment = true;
-
-                if (m.Installments.HasValue && m.Installments.Value > 1)
-                {
-                    hasPendingPayment = true;
-                }
-                else
-                {
+                // Sem parcelamento informado, normaliza para 1 (o valor é mutado no DTO de entrada).
+                if (!m.Installments.HasValue || m.Installments.Value <= 1)
                     m.Installments = 1;
-                }
             }
 
-            decimal finalValue = troco.HasValue ? totalValue - troco.Value : totalValue;
+            // Usado no texto da descrição: "Venda #12" / "Ordem de Serviço #34".
+            string referencia = descricaoOrigem ?? "Venda";
+            int? referenciaId = idSale ?? idServiceOrder;
 
             foreach (var m in formPaymentSales)
             {
@@ -425,20 +427,21 @@ namespace Service
                         FinancialStatus = status,
                         FinancialType = FinancialType.recipe,
                         Origin = OriginFinancial.financial,
-                        IdSale = IdSale,
+                        IdSale = idSale,
+                        IdServiceOrder = idServiceOrder,
                         CreationDate = DateTime.Now,
                         DueDate = dueDate,
                         SettlementDate = isPaid ? DateTime.Now.ToString() : null,
-                        IdCompany = IdCompany,
+                        IdCompany = idCompany,
                         BoxId = caixaAberto?.Id,
                         Description = installments > 1
-                            ? $"Parcela {i + 1}/{installments} - {paymentMethod.Name} - {descricaoOrigem} #{IdSale}"
-                            : $"{paymentMethod.Name} - {descricaoOrigem} #{IdSale}",
+                            ? $"Parcela {i + 1}/{installments} - {paymentMethod.Name} - {referencia} #{referenciaId}"
+                            : $"{paymentMethod.Name} - {referencia} #{referenciaId}",
                         IdCostCenter = costCenterId,
-                        IdClient = IdClient,
+                        IdClient = idClient,
                         Value = currentValue,
                         Troco = null,
-                        BankAccountId = BankAccountId,
+                        BankAccountId = bankAccountId,
                         FinancialPaymentMethods = new List<FinancialPaymentMethod>
                         {
                             new FinancialPaymentMethod
@@ -455,6 +458,92 @@ namespace Service
                 }
             }
         }
+        /// <summary>
+        /// Reconcilia o financeiro de uma ordem de serviço com as formas de pagamento informadas.
+        /// A estratégia é regenerar: as parcelas pendentes são removidas (com reajuste do caixa,
+        /// quando lançadas nele) e as já pagas viram <see cref="FinancialStatus.Canceled"/>, para
+        /// preservar o histórico em vez de apagar um recebimento que de fato ocorreu.
+        /// Ao final, gera as parcelas novas a partir de <paramref name="payments"/>.
+        /// </summary>
+        public async Task ReplaceServiceOrderFinancials(int idServiceOrder, int idCompany, int? idClient,
+            ICollection<FormPaymentSale> payments)
+        {
+            var existing = await (repository as IFinancialRepository).GetByIdServiceOrderAsync(idServiceOrder);
+
+            foreach (var financial in existing)
+            {
+                try
+                {
+                    if (financial.FinancialStatus == FinancialStatus.pending)
+                    {
+                        foreach (var fpm in financial.FinancialPaymentMethods)
+                            await _financialPaymentMethodRepository.DeleteAsync(fpm.Id);
+
+                        await base.DeleteAsync(financial.Id);
+                    }
+                    else if (financial.FinancialStatus == FinancialStatus.paid)
+                    {
+                        // Parcela paga não pode ser deletada: mantém a coleção de FPMs intacta
+                        // para não deixar o dependente órfão no tracker do EF.
+                        financial.FinancialStatus = FinancialStatus.Canceled;
+                        await base.Alter(financial);
+                    }
+
+                    // O caixa é recalculado DEPOIS de a parcela sair do saldo:
+                    // AjustarCaixaEdicaoVendaAsync relê o que está gravado e descarta as
+                    // canceladas, então chamá-lo antes somaria ao SaldoCalculado justamente
+                    // a parcela que está sendo anulada.
+                    if (financial.BoxId != null)
+                        await _boxService.AjustarCaixaEdicaoVendaAsync((int)financial.BoxId);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+            }
+
+            await GenerateFinancialCentral(payments, idCompany,
+                idServiceOrder: idServiceOrder, idClient: idClient,
+                descricaoOrigem: "Ordem de Serviço");
+        }
+
+        /// <summary>
+        /// Anula os recebíveis de uma ordem de serviço cancelada. Sem isto a OS ficaria
+        /// cancelada mas com parcelas em aberto no financeiro.
+        /// Diferente da reconciliação de edição (que apaga as pendentes porque elas serão
+        /// regeradas), aqui todas as parcelas viram <see cref="FinancialStatus.Canceled"/>:
+        /// a dívida existiu e está sendo anulada, então o registro precisa continuar
+        /// auditável em vez de desaparecer do banco. Parcelas renegociadas ficam intactas —
+        /// elas já foram substituídas por outras sem vínculo com esta OS, e cancelá-las
+        /// quebraria a cadeia registrada em <see cref="FinancialResources"/>.
+        /// Idempotente: parcelas já canceladas são ignoradas.
+        /// </summary>
+        public async Task CancelServiceOrderFinancials(int idServiceOrder)
+        {
+            var existing = await (repository as IFinancialRepository).GetByIdServiceOrderAsync(idServiceOrder);
+
+            foreach (var financial in existing)
+            {
+                if (financial.FinancialStatus == FinancialStatus.Canceled ||
+                    financial.FinancialStatus == FinancialStatus.renegotiated)
+                    continue;
+
+                financial.FinancialStatus = FinancialStatus.Canceled;
+                await base.Alter(financial);
+
+                // Recalculado depois da anulação, pelo mesmo motivo da reconciliação:
+                // o saldo do caixa não pode continuar contando uma parcela já cancelada.
+                if (financial.BoxId != null)
+                    await _boxService.AjustarCaixaEdicaoVendaAsync((int)financial.BoxId);
+            }
+        }
+
+        public async Task<List<Financial>> GetByIdServiceOrderAsync(int id)
+        {
+            return await (repository as IFinancialRepository).GetByIdServiceOrderAsync(id);
+        }
+
         private DateTime GetFirstDueDate()
         {
             return AdjustToBusinessDay(DateTime.Now.AddDays(30));
@@ -489,7 +578,15 @@ namespace Service
         Task CreateRenegotiationAsync(RenegotiationRequestDto request);
         Task<List<Financial>> GetByIdPurchaseAsync(int id);
 
-        Task GenerateFinancialCentral(ICollection<FormPaymentSale> formPaymentSales, int IdSale, int IdCompany,
-            int? IdClient = null, int? BankAccountId = null, decimal? troco = null, string? descricaoOrigem = null);
+        Task GenerateFinancialCentral(ICollection<FormPaymentSale> formPaymentSales, int idCompany,
+            int? idSale = null, int? idServiceOrder = null, int? idClient = null, int? bankAccountId = null,
+            string? descricaoOrigem = null);
+
+        Task ReplaceServiceOrderFinancials(int idServiceOrder, int idCompany, int? idClient,
+            ICollection<FormPaymentSale> payments);
+
+        Task CancelServiceOrderFinancials(int idServiceOrder);
+
+        Task<List<Financial>> GetByIdServiceOrderAsync(int id);
     }
 }

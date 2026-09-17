@@ -706,7 +706,13 @@ namespace Repository
 								.WithMany(c => c.Financials)
 								.HasForeignKey(dc => dc.IdPurchase)
 								.OnDelete(DeleteBehavior.Restrict)
-								.IsRequired(false); 
+								.IsRequired(false);
+			builder.Entity<Financial>()
+								.HasOne(dc => dc.ServiceOrder)
+								.WithMany(o => o.Financials)
+								.HasForeignKey(dc => dc.IdServiceOrder)
+								.OnDelete(DeleteBehavior.Restrict)
+								.IsRequired(false);
 		}
 		private void ConfiguraPlanCompany(ModelBuilder builder)
 		{

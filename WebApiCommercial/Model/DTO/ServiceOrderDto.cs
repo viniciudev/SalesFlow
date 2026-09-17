@@ -27,6 +27,13 @@ namespace Model.DTO
         [Required(ErrorMessage = "Pelo menos um serviço é obrigatório")]
         [MinLength(1, ErrorMessage = "Pelo menos um serviço é obrigatório")]
         public List<ServiceOrderItemRequest> Items { get; set; } = new();
+
+        /// <summary>
+        /// Formas de pagamento da OS. Mesmo contrato usado por <c>SaleDto.FormPaymentSales</c>
+        /// (wire: <c>formPaymentSales</c>). Opcional: uma OS pode ser registrada antes do acerto,
+        /// e nesse caso nenhum lançamento financeiro é gerado.
+        /// </summary>
+        public ICollection<FormPaymentSale> FormPaymentSales { get; set; } = new List<FormPaymentSale>();
     }
 
     public class ServiceOrderUpdateRequest
@@ -36,6 +43,13 @@ namespace Model.DTO
         public string? Notes { get; set; }
         public DateTime? Competence { get; set; }
         public List<ServiceOrderItemRequest> Items { get; set; } = new();
+
+        /// <summary>
+        /// Formas de pagamento da OS. No update a reconciliação é por regeneração: as parcelas
+        /// pendentes são removidas e recriadas a partir desta lista; as já pagas viram
+        /// <see cref="FinancialStatus.Canceled"/> em vez de serem apagadas.
+        /// </summary>
+        public ICollection<FormPaymentSale> FormPaymentSales { get; set; } = new List<FormPaymentSale>();
     }
 
     public class ServiceOrderItemRequest
@@ -108,6 +122,22 @@ namespace Model.DTO
         public Guid CreatedBy { get; set; }
         public List<ServiceOrderItemResponse> Items { get; set; } = new();
         public List<ServiceInvoiceBriefResponse> Invoices { get; set; } = new();
+
+        /// <summary>
+        /// Parcelas financeiras geradas a partir das formas de pagamento. Parcelas canceladas
+        /// não são retornadas. Usado pela tela de edição para remontar o formulário de pagamento.
+        /// </summary>
+        public List<ServiceOrderFinancialResponse> Financials { get; set; } = new();
+    }
+
+    public class ServiceOrderFinancialResponse
+    {
+        public int Id { get; set; }
+        public int PaymentMethodId { get; set; }
+        public string PaymentMethodName { get; set; }
+        public decimal Value { get; set; }
+        public DateTime DueDate { get; set; }
+        public FinancialStatus Status { get; set; }
     }
 
     public class ServiceOrderItemResponse

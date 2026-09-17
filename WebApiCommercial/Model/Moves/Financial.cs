@@ -26,6 +26,9 @@ namespace Model.Moves
 		public ServiceProvided ServiceProvided { get; set; }
 		public int? IdSale { get; set; }
 		public Sale Sale { get; set; }
+		/// <summary>Ordem de serviço que originou este lançamento, quando houver.</summary>
+		public int? IdServiceOrder { get; set; }
+		public ServiceOrder ServiceOrder { get; set; }
 		public int? IdSaleItems { get; set; }
 		public Purchase Purchase { get; set; }
 		public int ?IdPurchase { get; set; }

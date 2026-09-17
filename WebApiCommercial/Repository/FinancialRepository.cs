@@ -337,6 +337,20 @@ namespace Repository
 					.ToListAsync();
 			return data;
 		}
+		/// <summary>
+		/// Parcelas financeiras de uma ordem de serviço, incluindo o método de pagamento
+		/// (necessário para a resposta expor o nome da forma de pagamento).
+		/// </summary>
+		public async Task<List<Financial>> GetByIdServiceOrderAsync(int id)
+		{
+			var data = await _dbContext.Set<Financial>()
+				.Include(x => x.FinancialPaymentMethods)
+					.ThenInclude(fpm => fpm.PaymentMethod)
+				.Where(x => x.IdServiceOrder == id)
+				.AsNoTracking()
+				.ToListAsync();
+			return data;
+		}
 		public async Task<PagedResult<FinancialResponse>> GetPagedByIdClient(Filters filters)
 		{
 
@@ -403,6 +417,7 @@ namespace Repository
 		Task<CommissionInfoResponse> GetByMonthAllCommission(Filters filters);
 		Task<List<Financial>> GetByIdCompany(Filters filters);
 		Task<List<Financial>> GetByIdSaleAsync(int id);
+		Task<List<Financial>> GetByIdServiceOrderAsync(int id);
 		Task<PagedResultWithTotals> GetPaged(Filters filters);
 		Task<PagedResult<FinancialResponse>> GetPagedByIdClient(Filters filters);
 		Task<Financial> GetById(int id);
