@@ -40,7 +40,7 @@ namespace Repository
         {
             var data = await base._dbContext.Set<ServiceProvided>().Where(x =>
                 x.IdCompany == filters.IdCompany &&
-                (string.IsNullOrEmpty(filters.TextOption) || x.Name.Contains(filters.TextOption)))
+                (string.IsNullOrEmpty(filters.TextOption) || x.Name.ToLower().Contains(filters.TextOption.ToLower())))
                 .AsNoTracking().ToListAsync();
             return data;
         }

@@ -163,7 +163,8 @@ namespace Service
                 {
                     OptanteSimplesNacional = ResolverSimplesNacional(config.Emitente?.RegimeTributario),
                     RegimeEspecial = RegimeEspecial.Nenhum
-                }
+                },
+                Email = config?.Emitente?.EmitenteContato.Email
             };
 
             if (!string.IsNullOrWhiteSpace(e.Cnpj)) p.CNPJ = SomenteDigitos(e.Cnpj);

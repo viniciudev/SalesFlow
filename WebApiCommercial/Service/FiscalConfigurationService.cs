@@ -21,7 +21,7 @@ namespace Service
 		}
 
 		// Herdamos Create, Alter, GetAll, GetByIdAsync, DeleteAsync do BaseService/IGenericRepository.
-		// Se quiser lógica adicional (validações) adicione métodos aqui.
+		// Se quiser lï¿½gica adicional (validaï¿½ï¿½es) adicione mï¿½todos aqui.
 		public async Task<FiscalConfiguration> UpdateEntityManually(Model.Registrations.FiscalConfiguration existing, FiscalConfigurationRequest request)
 		{
 			// 1. NumeracaoDocumentos
@@ -55,6 +55,18 @@ namespace Service
 					if (request.NumeracaoDocumentos.Nfce.NumeroInicial > 0)
 						existing.NumeracaoDocumentos.Nfce.NumeroInicial = request.NumeracaoDocumentos.Nfce.NumeroInicial;
 				}
+				// dps
+				if (request.NumeracaoDocumentos.Dps != null)
+				{
+					if (existing.NumeracaoDocumentos.Dps == null)
+						existing.NumeracaoDocumentos.Nfce = new NumeracaoItem();
+
+					if (!string.IsNullOrEmpty(request.NumeracaoDocumentos.Dps.Serie))
+						existing.NumeracaoDocumentos.Dps.Serie = request.NumeracaoDocumentos.Dps.Serie;
+
+					if (request.NumeracaoDocumentos.Dps.NumeroInicial > 0)
+						existing.NumeracaoDocumentos.Dps.NumeroInicial = request.NumeracaoDocumentos.Dps.NumeroInicial;
+				}
 			}
 
 			// 2. CertificadoDigital
@@ -84,7 +96,7 @@ namespace Service
 			}
 
 			// 4. Ambiente
-			// Verifica se o valor foi enviado (assumindo que 0 é um valor padrão não válido)
+			// Verifica se o valor foi enviado (assumindo que 0 ï¿½ um valor padrï¿½o nï¿½o vï¿½lido)
 			// Ajuste conforme seu enum
 			if (request.Ambiente != 0)
 				existing.Ambiente = request.Ambiente;
@@ -95,7 +107,7 @@ namespace Service
 				if (existing.Emitente == null)
 					existing.Emitente = new Emitente();
 
-				// Propriedades básicas do Emitente
+				// Propriedades bï¿½sicas do Emitente
 				if (!string.IsNullOrEmpty(request.Emitente.Cnpj))
 					existing.Emitente.Cnpj = request.Emitente.Cnpj;
 
@@ -110,7 +122,10 @@ namespace Service
 
 				if (!string.IsNullOrEmpty(request.Emitente.Fantasia))
 					existing.Emitente.Fantasia = request.Emitente.Fantasia;
-
+				
+				if (!string.IsNullOrEmpty(request.Emitente.InscricaoMunicipal))
+					existing.Emitente.InscricaoMunicipal = request.Emitente.InscricaoMunicipal;
+				
 				// Logo: remove quando solicitado; grava somente quando um novo arquivo foi enviado
 				if (request.RemoverLogo)
 					existing.Emitente.Logo = null;
@@ -125,6 +140,8 @@ namespace Service
 
 					if (!string.IsNullOrEmpty(request.Emitente.EmitenteContato.Telefone))
 						existing.Emitente.EmitenteContato.Telefone = request.Emitente.EmitenteContato.Telefone;
+					if (!string.IsNullOrEmpty(request.Emitente.EmitenteContato.Email))
+						existing.Emitente.EmitenteContato.Email = request.Emitente.EmitenteContato.Email;
 				}
 
 				// Endereco
@@ -169,7 +186,7 @@ namespace Service
 				}
 			}
 
-			// 6. AutorizacaoASO - Sempre atualiza (é um bool)
+			// 6. AutorizacaoASO - Sempre atualiza (ï¿½ um bool)
 			existing.AutorizacaoASO = request.AutorizacaoASO;
 			return existing;
 		}
@@ -201,6 +218,15 @@ namespace Service
 					{
 						Serie = request.NumeracaoDocumentos.Nfce.Serie ?? string.Empty,
 						NumeroInicial = request.NumeracaoDocumentos.Nfce.NumeroInicial
+					};
+				}
+				// dps
+				if (request.NumeracaoDocumentos.Dps != null)
+				{
+					model.NumeracaoDocumentos.Dps = new NumeracaoItem
+					{
+						Serie = request.NumeracaoDocumentos.Dps.Serie ?? string.Empty,
+						NumeroInicial = request.NumeracaoDocumentos.Dps.NumeroInicial
 					};
 				}
 			}
@@ -238,7 +264,8 @@ namespace Service
 					InscricaoEstadual = request.Emitente.InscricaoEstadual,
 					RazaoSocial = request.Emitente.RazaoSocial,
 					Fantasia = request.Emitente.Fantasia,
-					Logo = request.Emitente.Logo
+					Logo = request.Emitente.Logo,
+					InscricaoMunicipal = request.Emitente.InscricaoMunicipal
 				};
 
 				// Contato
@@ -246,7 +273,8 @@ namespace Service
 				{
 					model.Emitente.EmitenteContato = new Contato
 					{
-						Telefone = request.Emitente.EmitenteContato.Telefone
+						Telefone = request.Emitente.EmitenteContato.Telefone,
+						Email = request.Emitente.EmitenteContato.Email,
 					};
 				}
 

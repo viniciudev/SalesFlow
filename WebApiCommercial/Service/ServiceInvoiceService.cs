@@ -226,7 +226,7 @@ namespace Service
             // sai daqui, e reenviar o mesmo IdDPS com data diferente pode ser recusado
             // como inconsistente caso a primeira tentativa tenha chegado ao SEFIN.
             if (!entity.DhEmissao.HasValue)
-                entity.DhEmissao = DateTime.UtcNow;
+                entity.DhEmissao = DateTime.Now;
 
             var autorizada = false;
 
