@@ -76,6 +76,10 @@ namespace Service
                         ? DFeTipoAmbiente.Producao
                         : DFeTipoAmbiente.Homologacao,
                     DhEmissao = new DateTimeOffset(fatura.DhEmissao ?? DateTime.Now),
+                    // IBSCBS = new RTCInfoIBSCBS
+                    // {
+                    //     
+                    // }
                     VersaoAplicacao = VersaoAplicacao,
                     Serie = serie,
                     NumeroDps = numeroDps,
@@ -147,7 +151,7 @@ namespace Service
 
         /// <summary>1 = CNPJ, 2 = CPF (tipoInscricaoFederal do leiaute).</summary>
         private static int TipoInscricaoFederal(Emitente e)
-            => !string.IsNullOrWhiteSpace(e.Cnpj) ? 1 : 2;
+            => !string.IsNullOrWhiteSpace(e.Cnpj) ? 2 : 1;
 
         private static PrestadorDps MontarPrestador(Emitente e, FiscalConfiguration config)
         {
@@ -516,6 +520,7 @@ namespace Service
                     ValorIRRF = ir > 0 ? ir : null,
                     ValorCSLL = csll > 0 ? csll : null,
                     ValorCP = inss > 0 ? inss : null
+                    
                 };
             }
 
