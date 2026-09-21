@@ -161,29 +161,53 @@ namespace Service
             var certificado = await ResolverCertificadoAsync(config.CertificadoDigital!.Arquivo!);
 
             var open = new OpenNFSeNacional();
-            AplicarConfiguracao(open.Configuracoes, fatura, certificado, config.CertificadoDigital.Senha);
-
+           
+/////////jogar para build
             var evento = new PedidoRegistroEvento
             {
                 Versao = VersaoNFSe.Ve100,
                 Informacoes = new InfPedReg
                 {
-                    TipoAmbiente = DFeTipoAmbiente.Homologacao,
+                    
+                    TipoAmbiente = DFeTipoAmbiente.Producao,
                     DhEvento = DateTime.Now,
-                    ChNFSe = "35230912345678000195560010000000010012345678",
-                    CNPJAutor =  "12345678000195", 
+                    ChNFSe = fatura.ChaveAcesso,
+                    CNPJAutor =SomenteDigitos( config.Emitente.Cnpj) , 
                     Evento = new EventoCancelamento
                     {
                         
                         CodMotivo = MotivoCancelamento.ErroEmissao,
-                        Descricao = "Erro na descrição do serviço."
+                        Descricao = cancelReason
+                        
                     }
                 }
             };
-            var retornoEvento= await open.EnviarEventoAsync(evento);
-           return retornoEvento.Sucesso;
+            try
+            {
+                // evento.Assinar(open.Configuracoes);
+                AplicarConfiguracao(open.Configuracoes, fatura, certificado, config.CertificadoDigital.Senha);
+                var retornoEvento= await open.EnviarEventoAsync(evento);
+                return retornoEvento.Sucesso;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+ 
         }
         
+        public static string? SomenteDigitos(string? texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto))
+                return null;
+
+            var digitos = new string(texto.Where(char.IsDigit).ToArray());
+            if (digitos.Length == 0)
+                return null;
+
+            return digitos;
+        }
         public async Task<byte[]> ObterDanfseAsync(ServiceInvoice fatura, FiscalConfiguration config)
         {
             if (string.IsNullOrWhiteSpace(fatura.ChaveAcesso))
@@ -343,9 +367,9 @@ namespace Service
             // AsnContentException fica de fora de CryptographicException e é justamente o
             // que o .NET lança quando o arquivo não é um PKCS#12 — por isso as duas.
             if (raiz is System.Security.Cryptography.CryptographicException
-                     or System.Formats.Asn1.AsnContentException)
+                or System.Formats.Asn1.AsnContentException)
                 return Truncar("Certificado digital inválido ou senha incorreta. "
-                    + "Confira o arquivo .pfx e a senha na configuração fiscal. Detalhe: " + raiz.Message);
+                               + "Confira o arquivo .pfx e a senha na configuração fiscal. Detalhe: " + raiz.Message);
 
             var prefixo = raiz is HttpRequestException or TaskCanceledException
                 ? "Falha de comunicação com o SEFIN: "

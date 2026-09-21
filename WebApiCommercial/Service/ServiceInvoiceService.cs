@@ -339,13 +339,17 @@ namespace Service
 
             var config = await _invoiceRepo.GetFiscalConfiguration(entity.TenantId);
 
+            var podeTransmitir = _nfseService.TemCertificadoConfigurado(config);
             var resp= await _nfseService.CancelarNfse(entity, config, cancelReason);
-            entity.Status = ServiceInvoiceStatus.Cancelado;
-            entity.CancelReason = cancelReason;
-            entity.CanceledBy = userId;
-            entity.UpdatedAt = DateTime.UtcNow;
+            if (resp!=null && resp==true)
+            {
+                entity.Status = ServiceInvoiceStatus.Cancelado;
+                entity.CancelReason = cancelReason;
+                entity.CanceledBy = userId;
+                entity.UpdatedAt = DateTime.UtcNow;
 
-            await base.Alter(entity);
+                await base.Alter(entity);
+            }
 
             return MapToResponse(entity);
         }
