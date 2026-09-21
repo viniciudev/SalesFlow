@@ -337,6 +337,9 @@ namespace Service
             if (entity.Status == ServiceInvoiceStatus.Cancelado)
                 throw new DomainException("NFSe já está cancelada.");
 
+            var config = await _invoiceRepo.GetFiscalConfiguration(entity.TenantId);
+
+            var resp= await _nfseService.CancelarNfse(entity, config, cancelReason);
             entity.Status = ServiceInvoiceStatus.Cancelado;
             entity.CancelReason = cancelReason;
             entity.CanceledBy = userId;

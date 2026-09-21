@@ -123,7 +123,6 @@ namespace Service
 				if (!string.IsNullOrEmpty(request.Emitente.Fantasia))
 					existing.Emitente.Fantasia = request.Emitente.Fantasia;
 				
-				if (!string.IsNullOrEmpty(request.Emitente.InscricaoMunicipal))
 					existing.Emitente.InscricaoMunicipal = request.Emitente.InscricaoMunicipal;
 				
 				// Logo: remove quando solicitado; grava somente quando um novo arquivo foi enviado

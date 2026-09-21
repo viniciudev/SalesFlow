@@ -65,7 +65,7 @@ namespace Service
             // o SEFIN comporta um único grupo <serv>, então o serviço declarado é o do
             // primeiro item e a discriminação abaixo concatena os demais.
             var primeiro = itens[0];
-
+            var optanteSimples = ResolverSimplesNacional(config.Emitente?.RegimeTributario);
             var dps = new Dps
             {
                 Versao = Versao,
@@ -93,7 +93,7 @@ namespace Service
                     // O grupo IBSCBS (reforma tributária) é minOccurs="0" no
                     // tiposComplexos_v1.01.xsd e o nosso cadastro de serviço não tem os
                     // códigos de classificação que ele exige. Omitir é válido no leiaute.
-                    Valores = MontarValores(itens)
+                    Valores = MontarValores(itens,optanteSimples)
                 }
             };
 
@@ -160,7 +160,7 @@ namespace Service
                 // Sem e-mail no cadastro do emitente (Contato só guarda telefone) — o campo
                 // é opcional no leiaute, então vai vazio em vez de inventado.
                 InscricaoMunicipal = SomenteDigitos(e.InscricaoMunicipal),
-                Nome = e.RazaoSocial ?? e.Fantasia,
+                // Nome = e.RazaoSocial ?? e.Fantasia,
                 Telefone = SomenteDigitos(e.EmitenteContato?.Telefone),
                 // Qualificado: "RegimeTributario" é o NOSSO tipo e o do OpenAC ao mesmo tempo.
                 Regime = new OpenAC.Net.NFSe.Nacional.Common.Model.RegimeTributario
@@ -168,7 +168,9 @@ namespace Service
                     OptanteSimplesNacional = ResolverSimplesNacional(config.Emitente?.RegimeTributario),
                     RegimeEspecial = RegimeEspecial.Nenhum
                 },
-                Email = config?.Emitente?.EmitenteContato.Email
+                Email = config?.Emitente?.EmitenteContato.Email,
+                
+                
             };
 
             if (!string.IsNullOrWhiteSpace(e.Cnpj)) p.CNPJ = SomenteDigitos(e.Cnpj);
@@ -442,7 +444,7 @@ namespace Service
             };
         }
 
-        private static ValoresDps MontarValores(List<ServiceInvoiceItem> itens)
+        private static ValoresDps MontarValores(List<ServiceInvoiceItem> itens, OptanteSimplesNacional optanteSimples)
         {
             // Os totais são RECALCULADOS dos itens aqui, e não lidos de fatura.TotalValue /
             // IssqnValue / itens[i].TotalPrice. Duas razões:
@@ -503,13 +505,15 @@ namespace Service
             var tributos = new TributosNFSe
             {
                 Municipal = municipal,
+                
                 Total = new TotalTributos
                 {
-                    // totTrib é obrigatório e é um xs:choice: exige UM dos quatro filhos.
-                    // indTotTrib = 0 significa "não informar valor estimado" (Decreto
-                    // 8.264/2014) — que é a verdade: não calculamos o total aproximado da
-                    // Lei 12.741/2012. Preferimos declarar zero a inventar um percentual.
-                    IndicadorTotal = 0
+                    ValorTotal = new ValorTotalTributos
+                    {
+                        TotalFederal = 0m,
+                        TotalEstadual = 0m,
+                        TotalMunicipal = 0m
+                    }
                 }
             };
 

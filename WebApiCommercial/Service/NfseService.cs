@@ -15,6 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using OpenAC.Net.NFSe.Nacional.Common.Types;
 
 namespace Service
 {
@@ -55,6 +56,8 @@ namespace Service
 
         /// <summary>DANFSe (PDF) de uma NFS-e já autorizada, obtido pela chave de acesso.</summary>
         Task<byte[]> ObterDanfseAsync(ServiceInvoice fatura, FiscalConfiguration config);
+
+        Task<bool?> CancelarNfse(ServiceInvoice fatura, FiscalConfiguration config, string cancelReason);
     }
 
     public class NfseService : INfseService
@@ -145,7 +148,42 @@ namespace Service
 
             return resultado;
         }
+        public async Task<bool?> CancelarNfse(ServiceInvoice fatura, FiscalConfiguration config, string cancelReason)
+        {
+            if (string.IsNullOrWhiteSpace(fatura.ChaveAcesso))
+                throw new InvalidOperationException(
+                    "NFS-e sem chave de acesso: não há DANFSe a baixar.");
 
+            if (!TemCertificadoConfigurado(config))
+                throw new InvalidOperationException(
+                    "Empresa sem certificado digital configurado: o download do DANFSe exige autenticação.");
+
+            var certificado = await ResolverCertificadoAsync(config.CertificadoDigital!.Arquivo!);
+
+            var open = new OpenNFSeNacional();
+            AplicarConfiguracao(open.Configuracoes, fatura, certificado, config.CertificadoDigital.Senha);
+
+            var evento = new PedidoRegistroEvento
+            {
+                Versao = VersaoNFSe.Ve100,
+                Informacoes = new InfPedReg
+                {
+                    TipoAmbiente = DFeTipoAmbiente.Homologacao,
+                    DhEvento = DateTime.Now,
+                    ChNFSe = "35230912345678000195560010000000010012345678",
+                    CNPJAutor =  "12345678000195", 
+                    Evento = new EventoCancelamento
+                    {
+                        
+                        CodMotivo = MotivoCancelamento.ErroEmissao,
+                        Descricao = "Erro na descrição do serviço."
+                    }
+                }
+            };
+            var retornoEvento= await open.EnviarEventoAsync(evento);
+           return retornoEvento.Sucesso;
+        }
+        
         public async Task<byte[]> ObterDanfseAsync(ServiceInvoice fatura, FiscalConfiguration config)
         {
             if (string.IsNullOrWhiteSpace(fatura.ChaveAcesso))
