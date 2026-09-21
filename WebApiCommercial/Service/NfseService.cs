@@ -113,6 +113,7 @@ namespace Service
                 var certificado = await ResolverCertificadoAsync(config.CertificadoDigital!.Arquivo!);
 
                 var open = new OpenNFSeNacional();
+             
                 AplicarConfiguracao(open.Configuracoes, fatura, certificado, config.CertificadoDigital.Senha);
 
                 var resposta = await open.EnviarAsync(dps);
@@ -165,10 +166,12 @@ namespace Service
 /////////jogar para build
             var evento = new PedidoRegistroEvento
             {
+                
                 Versao = VersaoNFSe.Ve100,
                 Informacoes = new InfPedReg
                 {
                     
+                    Id = "PRE" + fatura.ChaveAcesso + TipoEventoCod.Cancelamento,
                     TipoAmbiente = DFeTipoAmbiente.Producao,
                     DhEvento = DateTime.Now,
                     ChNFSe = fatura.ChaveAcesso,
