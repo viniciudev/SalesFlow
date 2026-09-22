@@ -168,7 +168,9 @@ namespace Service
                     OptanteSimplesNacional = ResolverSimplesNacional(config.Emitente?.RegimeTributario),
                     RegimeEspecial = RegimeEspecial.Nenhum
                 },
-                Email = config?.Emitente?.EmitenteContato.Email,
+                // Opcional no leiaute (minOccurs="0"), mas TSEmail tem minLength=1: string
+                // vazia aqui vira <email></email> e derruba a validação do schema.
+                Email = Opcional(config?.Emitente?.EmitenteContato.Email),
                 
                 
             };
@@ -221,7 +223,7 @@ namespace Service
                 {
                     Logradouro = c.Address,
                     Numero = c.Numero,
-                    Complemento = c.Complemento,
+                    Complemento = Opcional(c.Complemento),
                     Bairro = c.Bairro,
                     Municipio = MontarMunicipioTomador(c)
                 }
@@ -553,6 +555,23 @@ namespace Service
 
             return limpo.Length > 20 ? limpo.Substring(0, 20) : limpo;
         }
+
+        /// <summary>
+        /// Converte string em branco em nulo, para os campos OPCIONAIS do leiaute.
+        ///
+        /// Não é cosmético. Até a 1.4.7 o serializador da OpenAC (por reflexão) omitia
+        /// elemento de string vazia; a partir da 1.5.x ele passou a ser gerado por source
+        /// generator e só omite quando o valor é NULO. Uma string vazia vira
+        /// <c>&lt;xCpl&gt;&lt;/xCpl&gt;</c>, e os tipos opcionais do leiaute têm
+        /// <c>minLength=1</c> (TSComplementoEndereco, TSEmail, ...) — o XSD recusa e a DPS
+        /// inteira é rejeitada na validação de schema. Medido nas duas versões: com "",
+        /// a 1.4.7 omitia e a 1.5.0.3 emite o elemento vazio.
+        ///
+        /// Campo OBRIGATÓRIO não precisa disto: nesses o serializador emite o elemento
+        /// sempre, com <c>?? string.Empty</c>, então nulo e vazio dão no mesmo.
+        /// </summary>
+        private static string? Opcional(string? texto)
+            => string.IsNullOrWhiteSpace(texto) ? null : texto;
 
         /// <summary>
         /// Remove tudo que não é dígito. Os campos do leiaute são numéricos e os nossos

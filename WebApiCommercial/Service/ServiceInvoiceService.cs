@@ -436,8 +436,9 @@ namespace Service
         }
 
         /// <summary>
-        /// DANFSe (PDF) da NFS-e autorizada. Diferente do XML, exige rede: o pacote não
-        /// tem gerador local, o PDF é baixado do ambiente nacional pela chave de acesso.
+        /// DANFSe (PDF) da NFS-e autorizada. Tenta primeiro o download oficial no ADN,
+        /// pela chave de acesso; se o ADN responder 503, o NfseService gera o PDF
+        /// localmente a partir do XML autorizado já persistido na fatura.
         /// </summary>
         public async Task<byte[]> ObterDanfseAsync(int id)
         {
