@@ -107,14 +107,20 @@ namespace Repository
 
         public async Task IncrementInvoiceNumber(int tenantId)
         {
-            var config = await _dbContext.Set<Model.Registrations.FiscalConfiguration>()
-                .FirstOrDefaultAsync(x => x.CompanyId == tenantId);
-
-            if (config != null)
-            {
-                config.LastInvoiceNumber++;
-                await _dbContext.SaveChangesAsync();
-            }
+            // var config = await _dbContext.Set<Model.Registrations.FiscalConfiguration>()
+            //     .AsNoTracking()
+            //     .FirstOrDefaultAsync(x => x.CompanyId == tenantId);
+            //
+            // if (config != null)
+            // {
+            //     config.LastInvoiceNumber++;
+            //     await _dbContext.SaveChangesAsync();
+            // }
+            await _dbContext.Set<Model.Registrations.FiscalConfiguration>()
+                .Where(x => x.CompanyId == tenantId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    c => c.LastInvoiceNumber,
+                    c => c.LastInvoiceNumber + 1));
         }
 
         public async Task<Model.Registrations.FiscalConfiguration> GetFiscalConfiguration(int tenantId)

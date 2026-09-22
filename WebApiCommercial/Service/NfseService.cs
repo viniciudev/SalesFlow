@@ -113,7 +113,7 @@ namespace Service
                 var certificado = await ResolverCertificadoAsync(config.CertificadoDigital!.Arquivo!);
 
                 var open = new OpenNFSeNacional();
-             
+                fatura.TipoAmbiente = config.Ambiente;
                 AplicarConfiguracao(open.Configuracoes, fatura, certificado, config.CertificadoDigital.Senha);
 
                 var resposta = await open.EnviarAsync(dps);
@@ -151,46 +151,74 @@ namespace Service
         }
         public async Task<bool?> CancelarNfse(ServiceInvoice fatura, FiscalConfiguration config, string cancelReason)
         {
+            // As mensagens abaixo sao do dominio do CANCELAMENTO. As identicas em
+            // ObterDanfseAsync falam de download de DANFSe — nao copiar de la.
             if (string.IsNullOrWhiteSpace(fatura.ChaveAcesso))
                 throw new InvalidOperationException(
-                    "NFS-e sem chave de acesso: não há DANFSe a baixar.");
+                    "NFS-e sem chave de acesso: só é possível cancelar uma nota emitida.");
 
             if (!TemCertificadoConfigurado(config))
                 throw new InvalidOperationException(
-                    "Empresa sem certificado digital configurado: o download do DANFSe exige autenticação.");
+                    "Empresa sem certificado digital configurado: o cancelamento é transmitido ao SEFIN e exige autenticação.");
 
             var certificado = await ResolverCertificadoAsync(config.CertificadoDigital!.Arquivo!);
 
             var open = new OpenNFSeNacional();
-           
-/////////jogar para build
+          
+
             var evento = new PedidoRegistroEvento
             {
                 
-                Versao = VersaoNFSe.Ve100,
+                // Mesma versao da DPS. NAO e detalhe: ValidarSchema faz
+                // Configuracao.Arquivos.VersaoSchema = evento.Versao e GetSchema monta
+                // pedRegEvento_v{versao}.xsd — a versao do DOCUMENTO e que escolhe o XSD,
+                // entao o VersaoSchema da config e sobrescrito aqui. O schema 1.00 exige
+                // Id PRE[0-9]{59} (chave + tipoEvento + nPedRegEvento) e o elemento
+                // nPedRegEvento, que este modelo nao emite: o Id daqui tem 56 digitos.
+                Versao = DpsBuilder.Versao,
                 Informacoes = new InfPedReg
                 {
                     
                     Id = "PRE" + fatura.ChaveAcesso + TipoEventoCod.Cancelamento,
-                    TipoAmbiente = DFeTipoAmbiente.Producao,
+                    // Da FATURA, igual ao DpsBuilder e ao cfg.WebServices.Ambiente. Fixo em
+                    // Producao, um cancelamento de homologacao seria POSTado na URL de
+                    // homologacao carregando <tpAmb>1</tpAmb> — ambiente incoerente.
+                    TipoAmbiente = config.Ambiente == AmbienteEnum.Producao
+                        ? DFeTipoAmbiente.Producao
+                        : DFeTipoAmbiente.Homologacao,
                     DhEvento = DateTime.Now,
                     ChNFSe = fatura.ChaveAcesso,
-                    CNPJAutor =SomenteDigitos( config.Emitente.Cnpj) , 
+                    // `Emitente?.` — a config pode existir com certificado e sem emitente.
+                    // SomenteDigitos devolve null com CNPJ vazio, e a lib omite o elemento,
+                    // que e obrigatorio (choice CNPJAutor|CPFAutor) => erro de schema.
+                    CNPJAutor = DpsBuilder.SomenteDigitos(config.Emitente?.Cnpj), 
                     Evento = new EventoCancelamento
                     {
                         
                         CodMotivo = MotivoCancelamento.ErroEmissao,
-                        Descricao = cancelReason
+                        // Descricao NAO se atribui: em 1.01 o xDesc e enumeracao de valor
+                        // unico ("Cancelamento de NFS-e") e a lib ja traz esse default.
+                        // Sobrescrever com a justificativa viola a enumeracao.
+                        // A justificativa vai em xMotivo (TSMotivo, 15 a 255 caracteres).
+                        Motivo = cancelReason
                         
-                    }
+                    },
+                    
                 }
             };
             try
             {
-                // evento.Assinar(open.Configuracoes);
                 AplicarConfiguracao(open.Configuracoes, fatura, certificado, config.CertificadoDigital.Senha);
                 var retornoEvento= await open.EnviarEventoAsync(evento);
-                return retornoEvento.Sucesso;
+
+                // HTTP 2xx NAO basta, mesma razao do EmitirAsync: um 200 cujo corpo nao
+                // desserializou (proxy devolveu HTML) volta com Resultado = null, e o
+                // SEFIN tambem responde 200 com a rejeicao em `erros`. Marcar a fatura
+                // como Cancelada sem conferir isso registraria um cancelamento que nao
+                // existe no SEFIN.
+                return retornoEvento.Sucesso
+                       && retornoEvento.Resultado != null
+                       && retornoEvento.Resultado.Erros.Count == 0;
             }
             catch (Exception e)
             {
@@ -199,18 +227,7 @@ namespace Service
             }
  
         }
-        
-        public static string? SomenteDigitos(string? texto)
-        {
-            if (string.IsNullOrWhiteSpace(texto))
-                return null;
 
-            var digitos = new string(texto.Where(char.IsDigit).ToArray());
-            if (digitos.Length == 0)
-                return null;
-
-            return digitos;
-        }
         public async Task<byte[]> ObterDanfseAsync(ServiceInvoice fatura, FiscalConfiguration config)
         {
             if (string.IsNullOrWhiteSpace(fatura.ChaveAcesso))
@@ -224,9 +241,20 @@ namespace Service
             var certificado = await ResolverCertificadoAsync(config.CertificadoDigital!.Arquivo!);
 
             var open = new OpenNFSeNacional();
+            fatura.TipoAmbiente=config.Ambiente;
             AplicarConfiguracao(open.Configuracoes, fatura, certificado, config.CertificadoDigital.Senha);
 
-            return await open.DownloadDANFSeAsync(fatura.ChaveAcesso);
+            try
+            {
+                var danfe= await open.DownloadDANFSeAsync(fatura.ChaveAcesso);
+                return danfe;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+           
         }
 
         /// <summary>

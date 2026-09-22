@@ -72,7 +72,7 @@ namespace Service
                 Informacoes = new InfDps
                 {
                     Id = MontarIdDps(codMunIBGE, TipoInscricaoFederal(prestador), inscricaoFederal, serie, numeroDps),
-                    TipoAmbiente = fatura.TipoAmbiente == AmbienteEnum.Producao
+                    TipoAmbiente = config.Ambiente == AmbienteEnum.Producao
                         ? DFeTipoAmbiente.Producao
                         : DFeTipoAmbiente.Homologacao,
                     DhEmissao = new DateTimeOffset(fatura.DhEmissao ?? DateTime.Now),

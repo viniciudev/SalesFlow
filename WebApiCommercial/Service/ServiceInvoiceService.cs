@@ -318,7 +318,17 @@ namespace Service
                 order.ConcludedAt = DateTime.UtcNow;
                 order.UpdatedAt = DateTime.UtcNow;
                 order.UpdatedBy = userId;
-                await _orderRepo.UpdateAsync(order.Id, order);
+                try
+                {
+                    // await _orderRepo.UpdateAsync(order.Id, order);
+                    await _orderRepo.SaveChangesAsync(); 
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+               
             }
         }
 
@@ -327,8 +337,11 @@ namespace Service
             if (string.IsNullOrWhiteSpace(cancelReason) || cancelReason.Length < 15)
                 throw new DomainException("Justificativa de cancelamento deve ter no mínimo 15 caracteres.");
 
-            if (cancelReason.Length > 500)
-                throw new DomainException("Justificativa de cancelamento deve ter no máximo 500 caracteres.");
+            // 255 e o teto do SEFIN, nao uma escolha nossa: a justificativa vai em
+            // <xMotivo>, cujo tipo (TSMotivo) tem maxLength 255. Aceitar 500 aqui so
+            // adiava a rejeicao para a validacao de schema, depois de tudo montado.
+            if (cancelReason.Length > 255)
+                throw new DomainException("Justificativa de cancelamento deve ter no máximo 255 caracteres.");
 
             var entity = await _invoiceRepo.GetByIdWithDetails(id);
             if (entity == null)
@@ -338,18 +351,35 @@ namespace Service
                 throw new DomainException("NFSe já está cancelada.");
 
             var config = await _invoiceRepo.GetFiscalConfiguration(entity.TenantId);
+            if (config == null)
+                throw new DomainException("Empresa sem configuração fiscal ativa.");
 
-            var podeTransmitir = _nfseService.TemCertificadoConfigurado(config);
-            var resp= await _nfseService.CancelarNfse(entity, config, cancelReason);
-            if (resp!=null && resp==true)
+            try
             {
-                entity.Status = ServiceInvoiceStatus.Cancelado;
-                entity.CancelReason = cancelReason;
-                entity.CanceledBy = userId;
-                entity.UpdatedAt = DateTime.UtcNow;
+                var resp = await _nfseService.CancelarNfse(entity, config, cancelReason);
 
-                await base.Alter(entity);
+                // CancelarNfse devolve false quando o SEFIN NAO registrou o evento (HTTP de
+                // erro, corpo nao desserializado ou `erros` preenchido). Sem esta guarda o
+                // controller responderia "NFSe cancelada com sucesso" com a fatura ainda
+                // em Emitido — pior do que falhar, porque mente sobre o estado fiscal.
+                if (resp != true)
+                    throw new DomainException(
+                        "O SEFIN não registrou o cancelamento da NFS-e. A nota continua emitida; verifique a conexão e tente novamente.");
             }
+            catch (Exception ex) when (ex is not DomainException)
+            {
+                // Mesma razão do ObterDanfseAsync: o controller só captura DomainException,
+                // então as guardas do CancelarNfse (sem certificado, sem chave de acesso) e
+                // as falhas de rede virariam 500 sem mensagem nenhuma na tela.
+                throw new DomainException("Não foi possível cancelar a NFS-e: " + ex.Message);
+            }
+
+            entity.Status = ServiceInvoiceStatus.Cancelado;
+            entity.CancelReason = cancelReason;
+            entity.CanceledBy = userId;
+            entity.UpdatedAt = DateTime.UtcNow;
+
+            await base.Alter(entity);
 
             return MapToResponse(entity);
         }
