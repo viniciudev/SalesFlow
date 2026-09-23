@@ -336,7 +336,7 @@ namespace Repository
                 // Document = "" e, sem ele, o segundo registro simplificado
                 // seria rejeitado pelo índice.
                 client.HasIndex(c => new { c.IdCompany, c.Document })
-                    .IsUnique()
+                    .IsUnique(false)
                     .HasFilter("\"Document\" <> ''")
                     .HasDatabaseName("IX_tb_client_IdCompany_Document");
             });
