@@ -50,13 +50,6 @@ namespace Repository.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_tb_client_IdCompany_Document",
-                table: "tb_client",
-                columns: new[] { "IdCompany", "Document" },
-                unique: true,
-                filter: "\"Document\" <> ''");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_tb_driver_license_IdClient",
                 table: "tb_driver_license",
                 column: "IdClient",
