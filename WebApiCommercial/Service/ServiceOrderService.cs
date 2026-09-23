@@ -17,16 +17,19 @@ namespace Service
         private readonly IServiceOrderRepository _orderRepo;
         private readonly IServiceInvoiceRepository _invoiceRepo;
         private readonly IFinancialService _financialService;
+        private readonly IServiceInvoiceService _serviceInvoiceService;
 
         public ServiceOrderService(
             IGenericRepository<ServiceOrder> repository,
             IServiceOrderRepository orderRepo,
             IServiceInvoiceRepository invoiceRepo,
-            IFinancialService financialService) : base(repository)
+            IFinancialService financialService,
+            IServiceInvoiceService serviceInvoiceService) : base(repository)
         {
             _orderRepo = orderRepo;
             _invoiceRepo = invoiceRepo;
             _financialService = financialService;
+            _serviceInvoiceService = serviceInvoiceService;
         }
 
         public async Task<PagedResult<ServiceOrderResponse>> GetAllPaged(Filters filter)
@@ -155,6 +158,11 @@ namespace Service
 
                     await base.Alter(entity);
 
+                    // Depois do Alter, e não antes: a OS já está com os itens finais
+                    // (atualizados, adicionados e removidos) e é esse estado que a nota
+                    // precisa espelhar.
+                    await SyncPendingInvoicesAsync(entity);
+
                     await _financialService.ReplaceServiceOrderFinancials(id, entity.TenantId, entity.ClientId,
                         request.FormPaymentSales);
 
@@ -169,6 +177,67 @@ namespace Service
                     transaction.Rollback();
                     throw;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Espelha nas NFS-e ainda pendentes desta OS os valores que acabaram de mudar na
+        /// OS. Sem isso a nota — que é o documento que de fato vai ao SEFIN — continuaria
+        /// com quantidade/valor/alíquota antigos e a emissão sairia errada.
+        ///
+        /// Três escolhas deliberadas:
+        /// 1. Só as notas <see cref="ServiceInvoiceStatus.Pendente"/> são tocadas: nota
+        ///    emitida é documento fiscal, e o próprio <c>ServiceInvoiceService.UpdateAsync</c>
+        ///    recusa a edição ("Apenas NFSe pendente pode ser editada").
+        /// 2. A seleção de serviços de cada nota é preservada. Uma OS pode ter várias notas
+        ///    com conjuntos DISJUNTOS de serviços (a criação impede repetir um serviço já
+        ///    faturado), então mandar a lista inteira da OS para cada nota duplicaria o
+        ///    faturamento. Só os itens que a nota já fatura são atualizados.
+        /// 3. Competência, ambiente e município continuam sendo os da NOTA: são dados
+        ///    fiscais próprios do documento, editados na própria nota, e não derivados
+        ///    da OS.
+        /// </summary>
+        private async Task SyncPendingInvoicesAsync(ServiceOrder order)
+        {
+            var invoices = await _invoiceRepo.GetInvoicesByOrderId(order.Id);
+            if (invoices.Count == 0)
+                return;
+
+            foreach (var invoice in invoices.Where(x => x.Status == ServiceInvoiceStatus.Pendente))
+            {
+                var items = order.ServiceOrderItems
+                    .Where(orderItem => invoice.ServiceInvoiceItems
+                        .Any(invoiceItem => invoiceItem.ServiceProvidedId == orderItem.ServiceProvidedId))
+                    .Select(orderItem => new ServiceInvoiceItemRequest
+                    {
+                        ServiceProvidedId = orderItem.ServiceProvidedId,
+                        Quantity = orderItem.Quantity,
+                        UnitPrice = orderItem.UnitPrice,
+                        Discount = orderItem.Discount,
+                        Description = orderItem.Description,
+                        IssqnRate = orderItem.IssqnRate,
+                        IssqnRetido = orderItem.IssqnRetido,
+                        PisRate = orderItem.PisRate,
+                        CofinsRate = orderItem.CofinsRate,
+                        IrRate = orderItem.IrRate,
+                        CsllRate = orderItem.CsllRate,
+                        InssRate = orderItem.InssRate
+                    })
+                    .ToList();
+
+                // Nenhum serviço da nota sobreviveu à edição da OS. Zerar a nota aqui a
+                // deixaria inemissível por um efeito colateral de editar a OS; é melhor
+                // deixá-la como está e o usuário decidir o que fazer com ela na tela da NFSe.
+                if (items.Count == 0)
+                    continue;
+
+                await _serviceInvoiceService.UpdateAsync(invoice.Id, new ServiceInvoiceUpdateRequest
+                {
+                    DataCompetencia = invoice.DataCompetencia,
+                    TipoAmbiente = invoice.TipoAmbiente,
+                    CodMunIBGE = invoice.CodMunIBGE,
+                    Items = items
+                });
             }
         }
 

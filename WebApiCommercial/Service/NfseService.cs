@@ -267,40 +267,40 @@ namespace Service
             var open = new OpenNFSeNacional();
             fatura.TipoAmbiente=config.Ambiente;
             AplicarConfiguracao(open.Configuracoes, fatura, certificado, config.CertificadoDigital.Senha);
-
+            return await GerarDanfseFallbackAsync(fatura, config);
             // Passe 1 — ADN. O download é GET {base}/danfse/{chave} contra o
             // adn.nfse.gov.br (ver NacionalWebservice.DownloadDANFSeAsync).
             // 503 NÃO é retentado aqui de propósito: ele cai no fallback local, que é
             // determinístico e não depende do ADN voltar.
-            for (var tentativa = 0; ; tentativa++)
-            {
-                try
-                {
-                    return await open.DownloadDANFSeAsync(fatura.ChaveAcesso);
-                }
-                catch (HttpRequestException ex) when (
-                    TentativaRecuperavel(ex.StatusCode)
-                    && ex.StatusCode != HttpStatusCode.ServiceUnavailable
-                    && tentativa < EsperasDanfse.Length)
-                {
-                    await Task.Delay(EsperasDanfse[tentativa]);
-                }
-                catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.ServiceUnavailable)
-                {
-                    _logger.LogWarning(
-                        ex,
-                        "ADN respondeu 503 no DANFSe da NFS-e {ChaveAcesso} (ambiente {Ambiente}). "
-                        + "Gerando o PDF localmente a partir do XML autorizado.",
-                        fatura.ChaveAcesso, config.Ambiente);
-
-                    // O corpo do 503 não chega até aqui: EnsureSuccessStatusCode descarta
-                    // o conteúdo ao lançar. Sem ele não dá para saber se o 503 é do próprio
-                    // ADN ou de um gateway/WAF na frente dele — por isso a sonda.
-                    await RegistrarDiagnosticoAdnAsync(open, fatura, certificado, config.CertificadoDigital.Senha);
-
-                    return await GerarDanfseFallbackAsync(fatura, config);
-                }
-            }
+            // for (var tentativa = 0; ; tentativa++)
+            // {
+            //     try
+            //     {
+            //         return await open.DownloadDANFSeAsync(fatura.ChaveAcesso);
+            //     }
+            //     catch (HttpRequestException ex) when (
+            //         TentativaRecuperavel(ex.StatusCode)
+            //         && ex.StatusCode != HttpStatusCode.ServiceUnavailable
+            //         && tentativa < EsperasDanfse.Length)
+            //     {
+            //         await Task.Delay(EsperasDanfse[tentativa]);
+            //     }
+            //     catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.ServiceUnavailable)
+            //     {
+            //         _logger.LogWarning(
+            //             ex,
+            //             "ADN respondeu 503 no DANFSe da NFS-e {ChaveAcesso} (ambiente {Ambiente}). "
+            //             + "Gerando o PDF localmente a partir do XML autorizado.",
+            //             fatura.ChaveAcesso, config.Ambiente);
+            //
+            //         // O corpo do 503 não chega até aqui: EnsureSuccessStatusCode descarta
+            //         // o conteúdo ao lançar. Sem ele não dá para saber se o 503 é do próprio
+            //         // ADN ou de um gateway/WAF na frente dele — por isso a sonda.
+            //         await RegistrarDiagnosticoAdnAsync(open, fatura, certificado, config.CertificadoDigital.Senha);
+            //
+            //         return await GerarDanfseFallbackAsync(fatura, config);
+            //     }
+            // }
         }
 
         /// <summary>
