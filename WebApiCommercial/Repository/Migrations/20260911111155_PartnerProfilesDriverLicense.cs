@@ -62,10 +62,7 @@ namespace Repository.Migrations
             migrationBuilder.DropTable(
                 name: "tb_driver_license");
 
-            migrationBuilder.DropIndex(
-                name: "IX_tb_client_IdCompany_Document",
-                table: "tb_client");
-
+          
             migrationBuilder.DropColumn(
                 name: "Profiles",
                 table: "tb_client");
