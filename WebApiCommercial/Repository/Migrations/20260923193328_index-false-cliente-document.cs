@@ -10,23 +10,24 @@ namespace Repository.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_tb_client_IdCompany_Document",
-                table: "tb_client");
+            migrationBuilder.Sql(@"
+        DROP INDEX IF EXISTS ""IX_tb_client_IdCompany_Document"";
+    ");
 
             migrationBuilder.CreateIndex(
                 name: "IX_tb_client_IdCompany_Document",
                 table: "tb_client",
                 columns: new[] { "IdCompany", "Document" },
                 filter: "\"Document\" <> ''");
+        
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_tb_client_IdCompany_Document",
-                table: "tb_client");
+            migrationBuilder.Sql(@"
+        DROP INDEX IF EXISTS ""IX_tb_client_IdCompany_Document"";
+    ");
 
             migrationBuilder.CreateIndex(
                 name: "IX_tb_client_IdCompany_Document",
