@@ -468,6 +468,31 @@ namespace Model
                     Name = "Deletar nota de serviço",
                     Category = "Nota de serviço"
                 },
+                // Veículos (MDF-e)
+                new Permission {
+                    Id = (int)PermissionEnum.CADASTRO_VEICULO_VIEW,
+                    Code = PermissionEnum.CADASTRO_VEICULO_VIEW,
+                    Name = "Visualizar Veículos",
+                    Category = "Cadastros"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.CADASTRO_VEICULO_CREATE,
+                    Code = PermissionEnum.CADASTRO_VEICULO_CREATE,
+                    Name = "Criar Veículo",
+                    Category = "Cadastros"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.CADASTRO_VEICULO_EDIT,
+                    Code = PermissionEnum.CADASTRO_VEICULO_EDIT,
+                    Name = "Editar Veículo",
+                    Category = "Cadastros"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.CADASTRO_VEICULO_DELETE,
+                    Code = PermissionEnum.CADASTRO_VEICULO_DELETE,
+                    Name = "Desativar Veículo",
+                    Category = "Cadastros"
+                },
             };
         }
     }

@@ -113,6 +113,27 @@ namespace Model
         [StringLength(20)]
         public string InscricaoMunicipal { get; set; }
 
+        /// <summary>
+        /// RNTRC — Registro Nacional de Transportador de Cargas (ANTT).
+        ///
+        /// Só faz sentido para o parceiro com perfil Transportadora (ou o
+        /// proprietário terceiro de um veículo), por isso é nulo para a maioria
+        /// dos registros. Passou a existir para atender à RV10 do cadastro de
+        /// veículos: o MDF-e exige o RNTRC do proprietário quando o veículo não
+        /// é próprio (<c>veicReboque/RNTRC</c> no XSD
+        /// <c>mdfeModalRodoviario_v3.00.xsd</c>).
+        ///
+        /// São SEMPRE 8 dígitos — não há dígito verificador nem variação de
+        /// formato. É o tipo <c>TRNTRC</c> dos XSDs do MDF-e, cujo
+        /// <c>&lt;xs:pattern value="[0-9]{8}"/&gt;</c> é idêntico nas versões
+        /// 1.00 e 3.00. O limite aqui tem de acompanhar a coluna
+        /// (<c>varchar(8)</c>, ver <c>ContextBase.ConfiguraClient</c>): com um
+        /// limite maior o valor passaria pelo <c>ModelState</c> e só estouraria
+        /// no Postgres (22001), virando erro 500 em vez de mensagem de validação.
+        /// </summary>
+        [StringLength(8)]
+        public string? Rntrc { get; set; }
+
         [StringLength(60)]
    
         public string? Email { get; set; }

@@ -94,6 +94,15 @@
         SERVICO_NFSE_CREATE = 122,
         SERVICO_NFSE_EDIT = 123,
         SERVICO_NFSE_DELETE = 124,
-        
+
+        // VEÍCULOS (MDF-e)
+        // Os quatro existem porque o ConventionPermissionMiddleware deriva o
+        // código do verbo HTTP (GET/POST/PUT/DELETE) — um verbo sem código
+        // correspondente fica sem permissão mapeada e é bloqueado.
+        CADASTRO_VEICULO_VIEW = 125,
+        CADASTRO_VEICULO_CREATE = 126,
+        CADASTRO_VEICULO_EDIT = 127,
+        CADASTRO_VEICULO_DELETE = 128,
+
     }
 }

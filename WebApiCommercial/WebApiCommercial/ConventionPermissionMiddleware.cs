@@ -54,7 +54,13 @@ public class ConventionPermissionMiddleware
         {  "SituacaoTributaria", "SITUACAO_TRIBUTARIA"   },
 		
         {"ServiceOrders", "SERVICO_ORDEM"},
-        {"ServiceInvoices","SERVICO_NFSE"}
+        {"ServiceInvoices","SERVICO_NFSE"},
+
+        // === MDF-e ===
+        // Sem esta linha o default-deny bloqueia TODA rota do controller com
+        // 403 — e o 403 é indistinguível de uma negação legítima, então o
+        // sintoma parece permissão faltando no usuário, não mapa faltando aqui.
+        { "Vehicle", "CADASTRO_VEICULO" }
     };
 
     // 🔥 Controllers que NÃO exigem permissão (públicos)
@@ -326,6 +332,10 @@ public class ConventionPermissionMiddleware
             PermissionEnum.SERVICO_NFSE_EDIT => "Editar service",
             PermissionEnum.SERVICO_NFSE_VIEW => "Visualizar service",
             PermissionEnum.SERVICO_NFSE_DELETE  => "Deletar service",
+            PermissionEnum.CADASTRO_VEICULO_VIEW => "Visualizar veículos",
+            PermissionEnum.CADASTRO_VEICULO_CREATE => "Criar veículo",
+            PermissionEnum.CADASTRO_VEICULO_EDIT => "Editar veículo",
+            PermissionEnum.CADASTRO_VEICULO_DELETE => "Desativar veículo",
             _ => permission.ToString().Replace("_", " ")
         };
     }

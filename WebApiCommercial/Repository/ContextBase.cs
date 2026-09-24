@@ -27,6 +27,8 @@ namespace Repository
         public virtual DbSet<SituacaoTributaria> SituacaoTributaria { get; set; }
         public virtual DbSet<RegraFiscal> RegraFiscal { get; set; }
         public virtual DbSet<PurchaseItem> PurchaseItem { get; set; }
+        public virtual DbSet<Vehicle> Vehicle { get; set; }
+        public virtual DbSet<VehicleUsageHistory> VehicleUsageHistory { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -119,6 +121,8 @@ namespace Repository
             ConfiguraServiceOrderItem(modelBuilder);
             ConfiguraServiceInvoice(modelBuilder);
             ConfiguraServiceInvoiceItem(modelBuilder);
+            ConfiguraVehicle(modelBuilder);
+            ConfiguraVehicleUsageHistory(modelBuilder);
             var cascadeFKs = modelBuilder.Model.GetEntityTypes()
                 .SelectMany(t => t.GetForeignKeys())
                 .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
@@ -317,6 +321,14 @@ namespace Repository
                 client.Property(c => c.Email).HasMaxLength(100);
                 client.Property(c => c.Bairro).HasMaxLength(100);
 
+                // RNTRC (ANTT) — usado pela RV10 do cadastro de veículos.
+                //
+                // 8 é o tamanho do CONTRATO, não uma escolha: o tipo TRNTRC dos
+                // XSDs do MDF-e (mdfeModalRodoviario_v3.00.xsd) é
+                // `<xs:pattern value="[0-9]{8}"/>`. Um valor maior que isso
+                // passaria pelo banco e só seria recusado pela SEFAZ na emissão.
+                client.Property(c => c.Rntrc).HasMaxLength(8);
+
                 // Enum [Flags] persistido como integer (bitmask).
                 client.Property(c => c.Profiles).HasConversion<int>();
 
@@ -371,6 +383,103 @@ namespace Repository
                     .OnDelete(DeleteBehavior.Restrict);
             });
         }
+
+        /// <summary>
+        /// Cadastro de veículos (MDF-e). Segue a mesma estrutura de
+        /// <see cref="ConfiguraClient"/>.
+        /// </summary>
+        private void ConfiguraVehicle(ModelBuilder builder)
+        {
+            builder.Entity<Vehicle>(vehicle =>
+            {
+                vehicle.ToTable("tb_vehicle");
+                vehicle.HasKey(v => v.Id);
+                vehicle.Property(v => v.Id).ValueGeneratedOnAdd();
+
+                vehicle.Property(v => v.InternalCode).HasMaxLength(30);
+                vehicle.Property(v => v.LicensePlate).HasMaxLength(8).IsRequired();
+                vehicle.Property(v => v.Renavam).HasMaxLength(11);
+                vehicle.Property(v => v.LicensingState).HasMaxLength(2).IsRequired();
+
+                // Capacidade em M³ com precisão explícita: sem ela o Postgres
+                // usa numeric sem escala fixa e o valor pode voltar com mais
+                // casas decimais do que o MOC aceita (999.99).
+                vehicle.Property(v => v.CapacityM3).HasPrecision(15, 2);
+
+                // Datas SEM HasColumnType explícito, de propósito.
+                //
+                // O modelo de design time mapeia DateTime para "timestamp with
+                // time zone", que é o tipo de 44 das 47 colunas de data do banco
+                // — declarar aqui não mudaria o SQL gerado, só criaria a falsa
+                // impressão de que é preciso. (As 3 exceções são as datas de CNH
+                // em tb_driver_license, de outro módulo; ver
+                // ConfiguraDriverLicense.)
+                //
+                // Cuidado ao investigar os AlterColumn de data que o scaffold
+                // emite para OUTRAS tabelas: a causa é o snapshot
+                // (ContextBaseModelSnapshot) ter ficado para trás, gravando
+                // "timestamp without time zone" em colunas que no banco são
+                // timestamptz. NÃO é o switch EnableLegacyTimestampBehavior do
+                // Startup: o design time usa DesignTimeContextFactory
+                // (IDesignTimeDbContextFactory) e nunca executa o Startup —
+                // verificado por medição. Ver a migration AddVehicleMdfe.
+
+                // Índice da FK declarado explicitamente para que o EF não o
+                // remova ao detectar o índice composto abaixo (mesma razão do
+                // ConfiguraClient).
+                vehicle.HasIndex(v => v.IdCompany);
+                vehicle.HasIndex(v => v.ClientId);
+
+                // RV02 — placa única entre veículos ATIVOS da mesma empresa.
+                //
+                // O filtro é o que faz a exclusão lógica (RV11) liberar a placa:
+                // sem ele, um veículo desativado continuaria bloqueando o
+                // recadastro da mesma placa. Mesma técnica já usada em
+                // tb_client, com a sintaxe de filtro do POSTGRES (aspas duplas
+                // escapadas) — não a de SQL Server.
+                vehicle.HasIndex(v => new { v.IdCompany, v.LicensePlate })
+                    .IsUnique()
+                    .HasFilter("\"IsActive\"")
+                    .HasDatabaseName("IX_tb_vehicle_IdCompany_LicensePlate");
+
+                // WithMany() sem parâmetro: Company não tem coleção de veículos,
+                // e criá-la mexeria em um cadastro fora do escopo desta OS.
+                vehicle.HasOne(v => v.Company)
+                    .WithMany()
+                    .HasForeignKey(v => v.IdCompany)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // RV09/RV10 — proprietário terceiro (parceiro/transportador).
+                vehicle.HasOne(v => v.Client)
+                    .WithMany()
+                    .HasForeignKey(v => v.ClientId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        /// <summary>
+        /// RV14 — histórico de associação do veículo a MDF-e/OS. Tabela criada
+        /// agora, populada quando a emissão existir.
+        /// </summary>
+        private void ConfiguraVehicleUsageHistory(ModelBuilder builder)
+        {
+            builder.Entity<VehicleUsageHistory>(history =>
+            {
+                history.ToTable("tb_vehicleUsageHistory");
+                history.HasKey(h => h.Id);
+                history.Property(h => h.Id).ValueGeneratedOnAdd();
+                history.Property(h => h.Reference).HasMaxLength(200);
+
+                history.HasIndex(h => h.IdVehicle);
+                history.HasIndex(h => new { h.IdCompany, h.Source });
+
+                history.HasOne(h => h.Vehicle)
+                    .WithMany(v => v.UsageHistory)
+                    .HasForeignKey(h => h.IdVehicle)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
         private void ConfiguraCompany(ModelBuilder builder)
         {
             builder.Entity<Company>(user =>

@@ -43,6 +43,23 @@ namespace Model
 		public bool? SalesOrder { get; set; }
 		public SaleStatus? SaleStatus { get; set; }
 		public string? Search { get; set; }
+
+		// ===== Cadastro de veículos (MDF-e) =====
+		// A placa NÃO tem campo próprio de propósito: ela é buscada por
+		// TextOption, como o nome do produto/cliente — o repositório procura em
+		// placa E código interno com um único parâmetro.
+		//
+		// Tipo anulável de propósito: null = "todos". Um valor não anulável
+		// tornaria impossível distinguir "não filtrar" de "filtrar por Traction".
+		public string? LicensingState { get; set; }
+		public VehicleType? VehicleType { get; set; }
+
+		/// <summary>
+		/// null = todos (ativos e inativos). true = só ativos, false = só
+		/// inativos. Note que a listagem do cadastro mostra os dois, então o
+		/// padrão do repositório é não filtrar por aqui.
+		/// </summary>
+		public bool? VehicleIsActive { get; set; }
 	}
 
 	public enum FilterType

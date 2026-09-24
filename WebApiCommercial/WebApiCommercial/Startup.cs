@@ -230,6 +230,11 @@ namespace WebAppCommercial
             services.AddTransient<IGenericRepository<ClosuresDetail>, ClosuresDetailRepository>();
             services.AddTransient<IClosuresDetailRepository, ClosuresDetailRepository>();
             services.AddTransient<IBaseService<ClosuresDetail>, ClosuresDetailService>();
+            //Vehicle (MDF-e)
+            services.AddTransient<IVehicleService, VehicleService>();
+            services.AddTransient<IGenericRepository<Vehicle>, VehicleRepository>();
+            services.AddTransient<IVehicleRepository, VehicleRepository>();
+            services.AddTransient<IBaseService<Vehicle>, VehicleService>();
             #endregion
             services.AddHttpContextAccessor();
             services.AddScoped<IEmailService, EmailService>();
@@ -488,6 +493,10 @@ namespace WebAppCommercial
             ConventionPermissionMiddleware.RegisterControllerPermission("Company", "CADASTRO_EMPRESA");
             ConventionPermissionMiddleware.RegisterControllerPermission("PaymentMethod", "FORMA_PAGAMENTO");
             ConventionPermissionMiddleware.RegisterControllerPermission("ServiceProvided", "CADASTRO_SERVICO");
+            // MDF-e — precisa estar TAMBÉM aqui: este método sobrescreve o mapa
+            // estático do middleware no start da aplicação, então registrar só
+            // lá não sobrevive ao boot.
+            ConventionPermissionMiddleware.RegisterControllerPermission("Vehicle", "CADASTRO_VEICULO");
 
             // === CONTROLLERS DE USU�RIOS ===
             ConventionPermissionMiddleware.RegisterControllerPermission("User", "USUARIO");

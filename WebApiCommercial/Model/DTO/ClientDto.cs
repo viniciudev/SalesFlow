@@ -26,6 +26,19 @@ public class ClientDto
 	public string Complemento { get; set; } = string.Empty;
 	public string Ie { get; set; } = string.Empty;
 	public string InscricaoMunicipal { get; set; } = string.Empty;
+
+	/// <summary>
+	/// RNTRC do transportador (ANTT). Exigido pela RV10 do cadastro de veículos
+	/// quando o parceiro é proprietário de um veículo que não é próprio.
+	///
+	/// 8 dígitos, como o tipo <c>TRNTRC</c> dos XSDs do MDF-e
+	/// (<c>&lt;xs:pattern value="[0-9]{8}"/&gt;</c>) e a coluna
+	/// <c>tb_client.Rntrc</c>. Mesmo limite da entidade
+	/// <c>Client.Rntrc</c> — se divergirem, o POST e o PUT passam a aceitar
+	/// coisas diferentes.
+	/// </summary>
+	[StringLength(8)]
+	public string? Rntrc { get; set; }
 	public string? Email { get; set; }
 	public string CellPhone { get; set; } = string.Empty;
 	public string Pais { get; set; } = "Brasil";
