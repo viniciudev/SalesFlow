@@ -118,7 +118,7 @@ namespace Repository
         {
             List<Client> data = await _dbContext.Set<Client>()
               .Where(x =>( x.IdCompany == filter.IdCompany)
-              && (string.IsNullOrEmpty(filter.TextOption) || x.Name.Contains(filter.TextOption)))
+              && (string.IsNullOrEmpty(filter.TextOption) || x.Name.Contains(filter.TextOption)) && x.Status == Client.statusType.Ativo)
               .AsNoTracking().WithCaseInsensitive()
               .ToListAsync();
             return data;

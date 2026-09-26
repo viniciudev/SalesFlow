@@ -154,8 +154,7 @@ namespace Repository.Migrations
                     { 20, "Usuários", 71, null, "Gerenciar Usuários" },
                     { 21, "Usuários", 72, "Pode atribuir permissões a outros usuários", "Gerenciar Permissões" },
                     { 22, "Cadastros", 80, null, "Visualizar Formas de Pagamento" },
-                    { 23, "Cadastros", 81, null, "Gerenciar Formas de Pagamento" },
-                    { 24, "Cadastros", 81, null, "Gerenciar Formas de Pagamento" }
+                    { 23, "Cadastros", 81, null, "Gerenciar Formas de Pagamento" }
                 });
         }
 
