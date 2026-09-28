@@ -41,6 +41,14 @@ namespace Model.Registrations
         /// município emissor, a inscrição federal e o número.
         /// </summary>
         public NumeracaoItem Dps { get; set; } = new();
+
+        /// <summary>
+        /// Série e número inicial do MDF-e (modelo 58). RM09 lê daqui na emissão
+        /// do manifesto — não existe contador próprio na tabela do MDF-e, pelo
+        /// mesmo motivo que NF-e e NFC-e também não têm: a numeração fiscal é
+        /// configuração da empresa, não estado do documento.
+        /// </summary>
+        public NumeracaoItem Mdfe { get; set; } = new();
     }
 
     public class NumeracaoItem
@@ -74,6 +82,19 @@ namespace Model.Registrations
         public string? InscricaoMunicipal { get; set; }
 
         public string? InscricaoEstadual { get; set; }
+
+        /// <summary>
+        /// RNTRC do emitente (ANTT), obrigatório no MDF-e quando o tipo de
+        /// emitente é PST (RM08) — vai em <c>emit.RNTRC</c>.
+        ///
+        /// É o RNTRC da PRÓPRIA empresa, e não confundir com
+        /// <c>Client.Rntrc</c>: aquele é o do parceiro proprietário do veículo,
+        /// que aparece em <c>veicTracao.prop.RNTRC</c>. São dois campos porque
+        /// são dois sujeitos diferentes — a empresa que emite o manifesto e o
+        /// dono do caminhão.
+        /// </summary>
+        public string? Rntrc { get; set; }
+
         public string? RazaoSocial { get; set; }
         public string? Fantasia { get; set; }
         public Contato EmitenteContato { get; set; } = new();

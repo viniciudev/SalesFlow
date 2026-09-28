@@ -104,5 +104,19 @@
         CADASTRO_VEICULO_EDIT = 127,
         CADASTRO_VEICULO_DELETE = 128,
 
+        // MDF-E
+        // Os quatro pelo mesmo motivo do bloco acima: o middleware deriva o
+        // código do verbo HTTP.
+        //
+        // O prefixo FISCAL_MDFE é o que ConventionPermissionMiddleware usa para
+        // montar o nome (FISCAL_MDFE + _VIEW/_CREATE/_EDIT/_DELETE); se o
+        // prefixo mudar, mudar também em _controllerPermissionMap e em
+        // Startup.ConfigurePermissionMappings, senão o controller cai no
+        // default-deny e passa a devolver 403.
+        FISCAL_MDFE_VIEW = 129,
+        FISCAL_MDFE_CREATE = 130,
+        FISCAL_MDFE_EDIT = 131,
+        FISCAL_MDFE_DELETE = 132,
+
     }
 }

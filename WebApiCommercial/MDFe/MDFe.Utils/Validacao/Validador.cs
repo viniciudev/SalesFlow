@@ -1,0 +1,66 @@
+﻿using MDFe.Utils.Configuracoes;
+using System;
+using System.IO;
+using System.Xml;
+using System.Xml.Schema;
+
+namespace MDFe.Utils.Validacao
+{
+    public class Validador
+    {
+        public static void Valida(string xml, string schema, MDFeConfiguracao cfgMdfe = null)
+        {
+            var config = cfgMdfe ?? MDFeConfiguracao.Instancia;
+            var pathSchema = config.CaminhoSchemas;
+
+            if (!Directory.Exists(pathSchema))
+                throw new Exception("Diretório de Schemas não encontrado: \n" + pathSchema);
+
+            var arquivoSchema = Path.Combine(pathSchema, schema);
+
+            // Define o tipo de validação
+            var cfg = new XmlReaderSettings { ValidationType = ValidationType.Schema };
+
+            // Previne ataques XXE: nao permite resolver recursos externos
+            cfg.DtdProcessing = DtdProcessing.Prohibit;
+            cfg.XmlResolver = null;
+
+            // Carrega o arquivo de esquema
+            var schemas = new XmlSchemaSet();
+            schemas.XmlResolver = new XmlUrlResolver();
+            cfg.Schemas = schemas;
+
+            // Quando carregar o eschema, especificar o namespace que ele valida
+            // e a localização do arquivo 
+            schemas.Add(null, arquivoSchema);
+
+            // Especifica o tratamento de evento para os erros de validacao
+            cfg.ValidationEventHandler += ValidationEventHandler;
+
+            // Cria um leitor para validação
+            var validator = XmlReader.Create(new StringReader(xml), cfg);
+            try
+            {
+                // Faz a leitura de todos os dados XML
+                while (validator.Read())
+                {
+                }
+            }
+            catch (XmlException err)
+            {
+                // Um erro ocorre se o documento XML inclui caracteres ilegais
+                // ou tags que não estão aninhadas corretamente
+                throw new Exception("Ocorreu o seguinte erro durante a validação XML:" + "\n" + err.Message);
+            }
+            finally
+            {
+                validator.Close();
+            }
+        }
+
+        private static void ValidationEventHandler(object sender, ValidationEventArgs e)
+        {
+            throw new Exception("Erros da validação : " + e.Message);
+        }
+    }
+}
