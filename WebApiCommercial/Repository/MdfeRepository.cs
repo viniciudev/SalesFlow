@@ -441,7 +441,6 @@ namespace Repository
                 .Include(n => n.Sale).ThenInclude(s => s.SaleItems).ThenInclude(i => i.Product)
                 .Where(n => n.CompanyId == idCompany
                     && n.TipoDocumento == Model.Enums.TipoDocumentoEnum.NFE
-                    && n.Sent
                     && n.StatusNfe == StatusNfe.emitida
                     && n.ChaveAcesso != null
                     && n.ChaveAcesso.Length == 44)
