@@ -35,7 +35,10 @@
          Zeus.Net.MDFe: aquele pacote empacota DFe.Classes/DFe.Utils proprios, que
          colidiriam com os daqui. Ver o plano para o detalhe. -->
     <ProjectReference Include="..\MDFe\MDFe.Classes\MDFe.Classes.csproj" />
+    <ProjectReference Include="..\MDFe\MDFe.Damdfe.QuestPdf\MDFe.Damdfe.QuestPdf.csproj" />
     <ProjectReference Include="..\MDFe\MDFe.Utils\MDFe.Utils.csproj" />
+    <ProjectReference Include="..\MDFe\MDFe.Servicos\MDFe.Servicos.csproj" />
+    <ProjectReference Include="..\MDFe\MDFe.Wsdl\MDFe.Wsdl.csproj" />
     <ProjectReference Include="..\NFe\DFe.Classes\DFe.Classes.csproj" />
     <ProjectReference Include="..\NFe\NFe.AppTeste.NetCore\NFe.AppTeste.NetCore.csproj" />
     <ProjectReference Include="..\NFe\NFe.Danfe.OpenFast\NFe.Danfe.OpenFast.csproj" />

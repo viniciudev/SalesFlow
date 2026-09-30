@@ -362,8 +362,15 @@ namespace Repository
         /// manifesto deixa de ser rascunho — carregar e regravar a árvore toda
         /// para atualizar um texto reescreveria as coleções à toa, e é justamente
         /// o que não se quer num documento já assinado.
+        ///
+        /// O município de carregamento entra aqui porque é recalculado a partir da
+        /// configuração fiscal imediatamente antes da assinatura
+        /// (<c>MdfeService.GerarXmlAsync</c>), e o XML gravado tem de refletir o
+        /// mesmo valor que vai para a linha. Depender do <c>SaveChanges</c> do
+        /// histórico de veículos seria frágil: ele sai cedo quando não há veículo
+        /// nenhum.
         /// </summary>
-        public async Task<int> SalvarXmlAsync(int id, int idCompany, string chaveAcesso, string xml, decimal valorTotal, decimal pesoBruto, int quantidadeNFe)
+        public async Task<int> SalvarXmlAsync(int id, int idCompany, string chaveAcesso, string xml, decimal valorTotal, decimal pesoBruto, int quantidadeNFe, string codMunCarregamento, string munCarregamento)
         {
             return await _dbContext.Set<MdfeEmissao>()
                 .Where(m => m.Id == id && m.IdCompany == idCompany)
@@ -373,6 +380,8 @@ namespace Repository
                     .SetProperty(m => m.ValorTotal, valorTotal)
                     .SetProperty(m => m.PesoBruto, pesoBruto)
                     .SetProperty(m => m.QuantidadeNFe, quantidadeNFe)
+                    .SetProperty(m => m.CodMunCarregamento, codMunCarregamento)
+                    .SetProperty(m => m.MunCarregamento, munCarregamento)
                     .SetProperty(m => m.StatusMdfe, Model.Enums.MdfeStatus.Validado)
                     .SetProperty(m => m.ErrorMessage, (string)null)
                     .SetProperty(m => m.UpdatedAt, DateTime.UtcNow));
@@ -390,6 +399,134 @@ namespace Repository
                 .ExecuteUpdateAsync(setters => setters
                     .SetProperty(m => m.StatusMdfe, Model.Enums.MdfeStatus.Erro)
                     .SetProperty(m => m.ErrorMessage, mensagem)
+                    .SetProperty(m => m.UpdatedAt, DateTime.UtcNow));
+        }
+
+        // =====================================================================
+        // Transmissão e eventos
+        //
+        // Todos usam ExecuteUpdate pelo mesmo motivo de SalvarXmlAsync: daqui em
+        // diante o manifesto é documento assinado, e regravar a árvore inteira
+        // para mudar um campo reescreveria coleções que não mudaram. Todos
+        // filtram por Id E IdCompany, e todos devolvem a contagem de linhas para
+        // o serviço distinguir "não existe / é de outra empresa" de "ok".
+        // =====================================================================
+
+        /// <summary>
+        /// Autorização da SEFAZ: grava o protocolo e o <c>procMDFe</c>, e passa o
+        /// manifesto para <see cref="Model.Enums.MdfeStatus.Autorizado"/>.
+        ///
+        /// O <paramref name="xmlProc"/> substitui o XML assinado em
+        /// <c>XmlCompleto</c>. O <c>MDFe</c> continua dentro dele, então nada se
+        /// perde, e é o único jeito de a DAMDFe e os eventos (que precisam do
+        /// protocolo) lerem de um lugar só.
+        /// </summary>
+        public async Task<int> RegistrarAutorizacaoAsync(int id, int idCompany, int cStat, string? xMotivo, string? protocolo, string? recibo, DateTime? dataAutorizacao, string? xmlProc, string? responseJson)
+        {
+            return await _dbContext.Set<MdfeEmissao>()
+                .Where(m => m.Id == id && m.IdCompany == idCompany)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(m => m.CStat, cStat)
+                    .SetProperty(m => m.XMotivo, xMotivo)
+                    .SetProperty(m => m.Protocolo, protocolo)
+                    .SetProperty(m => m.Recibo, recibo)
+                    .SetProperty(m => m.DataAutorizacao, dataAutorizacao)
+                    .SetProperty(m => m.XmlCompleto, m => xmlProc ?? m.XmlCompleto)
+                    .SetProperty(m => m.ResponseJson, responseJson)
+                    .SetProperty(m => m.StatusMdfe, Model.Enums.MdfeStatus.Autorizado)
+                    .SetProperty(m => m.Sent, true)
+                    .SetProperty(m => m.TryCount, m => m.TryCount + 1)
+                    .SetProperty(m => m.ErrorMessage, (string)null)
+                    .SetProperty(m => m.UpdatedAt, DateTime.UtcNow));
+        }
+
+        /// <summary>
+        /// Recusa da SEFAZ: o manifesto FOI transmitido e voltou com um
+        /// <c>cStat</c> diferente de 100. Grava o motivo e marca
+        /// <see cref="Model.Enums.MdfeStatus.Erro"/>.
+        ///
+        /// Não volta para rascunho de propósito: o XML já está assinado e o
+        /// número já foi consumido, então "corrigir e reemitir" não é uma opção
+        /// aqui — o caminho é ler o motivo e decidir.
+        /// </summary>
+        public async Task<int> RegistrarRejeicaoAsync(int id, int idCompany, int? cStat, string? xMotivo, string? responseJson)
+        {
+            return await _dbContext.Set<MdfeEmissao>()
+                .Where(m => m.Id == id && m.IdCompany == idCompany)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(m => m.CStat, cStat)
+                    .SetProperty(m => m.XMotivo, xMotivo)
+                    .SetProperty(m => m.ResponseJson, responseJson)
+                    .SetProperty(m => m.StatusMdfe, Model.Enums.MdfeStatus.Erro)
+                    .SetProperty(m => m.TryCount, m => m.TryCount + 1)
+                    .SetProperty(m => m.UpdatedAt, DateTime.UtcNow));
+        }
+
+        /// <summary>
+        /// A transmissão nem chegou a ser respondida — certificado recusado, rede
+        /// fora, SEFAZ fora do ar. Conta a tentativa e guarda o motivo, mas
+        /// MANTÉM o estado em <see cref="Model.Enums.MdfeStatus.Validado"/>: o
+        /// manifesto continua pronto para uma nova tentativa, e rebaixá-lo para
+        /// erro obrigaria a gerar o XML de novo sem necessidade.
+        /// </summary>
+        public async Task<int> RegistrarFalhaDeTransmissaoAsync(int id, int idCompany, string mensagem)
+        {
+            return await _dbContext.Set<MdfeEmissao>()
+                .Where(m => m.Id == id && m.IdCompany == idCompany)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(m => m.ErrorMessage, mensagem)
+                    .SetProperty(m => m.TryCount, m => m.TryCount + 1)
+                    .SetProperty(m => m.UpdatedAt, DateTime.UtcNow));
+        }
+
+        /// <summary>
+        /// Retorno de uma consulta de situação que não autorizou nada (ainda em
+        /// processamento, ou rejeitado). Atualiza só o que a SEFAZ informou —
+        /// <c>cStat</c>, motivo e a resposta crua — sem mexer no estado local,
+        /// porque quem manda no estado é a autorização, não a consulta.
+        /// </summary>
+        public async Task<int> RegistrarConsultaAsync(int id, int idCompany, int? cStat, string? xMotivo, string? responseJson)
+        {
+            return await _dbContext.Set<MdfeEmissao>()
+                .Where(m => m.Id == id && m.IdCompany == idCompany)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(m => m.CStat, cStat)
+                    .SetProperty(m => m.XMotivo, xMotivo)
+                    .SetProperty(m => m.ResponseJson, responseJson)
+                    .SetProperty(m => m.UpdatedAt, DateTime.UtcNow));
+        }
+
+        /// <summary>
+        /// Encerramento aceito (<c>evEncMDFe</c>). O protocolo é do EVENTO, e não
+        /// o da autorização — por isso coluna própria.
+        /// </summary>
+        public async Task<int> RegistrarEncerramentoAsync(int id, int idCompany, string? protocolo, DateTime dataEncerramento, int sequenciaEvento, string? responseJson)
+        {
+            return await _dbContext.Set<MdfeEmissao>()
+                .Where(m => m.Id == id && m.IdCompany == idCompany)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(m => m.ProtocoloEncerramento, protocolo)
+                    .SetProperty(m => m.DataEncerramento, dataEncerramento)
+                    .SetProperty(m => m.SequenciaEvento, sequenciaEvento)
+                    .SetProperty(m => m.ResponseJson, responseJson)
+                    .SetProperty(m => m.StatusMdfe, Model.Enums.MdfeStatus.Encerrado)
+                    .SetProperty(m => m.UpdatedAt, DateTime.UtcNow));
+        }
+
+        /// <summary>
+        /// Cancelamento aceito (<c>evCancMDFe</c>). Grava a justificativa
+        /// enviada: é o que permite responder depois o que foi alegado à SEFAZ.
+        /// </summary>
+        public async Task<int> RegistrarCancelamentoAsync(int id, int idCompany, DateTime dataCancelamento, string justificativa, int sequenciaEvento, string? responseJson)
+        {
+            return await _dbContext.Set<MdfeEmissao>()
+                .Where(m => m.Id == id && m.IdCompany == idCompany)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(m => m.DataCancelamento, dataCancelamento)
+                    .SetProperty(m => m.JustificativaCancelamento, justificativa)
+                    .SetProperty(m => m.SequenciaEvento, sequenciaEvento)
+                    .SetProperty(m => m.ResponseJson, responseJson)
+                    .SetProperty(m => m.StatusMdfe, Model.Enums.MdfeStatus.Cancelado)
                     .SetProperty(m => m.UpdatedAt, DateTime.UtcNow));
         }
 
@@ -651,9 +788,17 @@ namespace Repository
 
         Task<MdfeEmissao> AddAsync(MdfeEmissao mdfe, long numeroInicialBase);
         Task<MdfeEmissao> UpdateAsync(MdfeEmissao mdfe);
-        Task<int> SalvarXmlAsync(int id, int idCompany, string chaveAcesso, string xml, decimal valorTotal, decimal pesoBruto, int quantidadeNFe);
+        Task<int> SalvarXmlAsync(int id, int idCompany, string chaveAcesso, string xml, decimal valorTotal, decimal pesoBruto, int quantidadeNFe, string codMunCarregamento, string munCarregamento);
         Task<int> MarcarErroAsync(int id, int idCompany, string mensagem);
         Task<int> DeleteAsync(int id, int idCompany);
+
+        // Transmissão e eventos — ver os comentários na implementação.
+        Task<int> RegistrarAutorizacaoAsync(int id, int idCompany, int cStat, string? xMotivo, string? protocolo, string? recibo, DateTime? dataAutorizacao, string? xmlProc, string? responseJson);
+        Task<int> RegistrarRejeicaoAsync(int id, int idCompany, int? cStat, string? xMotivo, string? responseJson);
+        Task<int> RegistrarFalhaDeTransmissaoAsync(int id, int idCompany, string mensagem);
+        Task<int> RegistrarConsultaAsync(int id, int idCompany, int? cStat, string? xMotivo, string? responseJson);
+        Task<int> RegistrarEncerramentoAsync(int id, int idCompany, string? protocolo, DateTime dataEncerramento, int sequenciaEvento, string? responseJson);
+        Task<int> RegistrarCancelamentoAsync(int id, int idCompany, DateTime dataCancelamento, string justificativa, int sequenciaEvento, string? responseJson);
 
         Task<List<NFeEmission>> PesquisarNFeSaidaAsync(Filters filter, int idCompany);
         Task<List<Purchase>> PesquisarNFeEntradaAsync(Filters filter, int idCompany);

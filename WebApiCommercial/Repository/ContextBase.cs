@@ -539,6 +539,15 @@ namespace Repository
                 mdfe.Property(m => m.ResponseJson).HasColumnType("text");
                 mdfe.Property(m => m.ErrorMessage).HasColumnType("text");
 
+                // Retorno da transmissão e eventos. Os limites de xMotivo e da
+                // justificativa são os do leiaute (255); Recibo e
+                // ProtocoloEncerramento acompanham o Protocolo (20), que já
+                // existia.
+                mdfe.Property(m => m.XMotivo).HasMaxLength(255);
+                mdfe.Property(m => m.Recibo).HasMaxLength(20);
+                mdfe.Property(m => m.ProtocoloEncerramento).HasMaxLength(20);
+                mdfe.Property(m => m.JustificativaCancelamento).HasMaxLength(255);
+
                 // Datas SEM HasColumnType explícito, como em ConfiguraVehicle —
                 // o modelo de design time já mapeia para timestamptz, que é o
                 // tipo predominante no banco.

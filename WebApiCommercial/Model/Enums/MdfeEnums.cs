@@ -83,17 +83,18 @@ namespace Model.Enums
 
         /// <summary>
         /// XML montado, ASSINADO e aprovado na validação contra os XSDs locais.
-        /// É o estado final da fase 1 — não significa autorizado pela SEFAZ.
+        /// Não significa autorizado pela SEFAZ — é o estado de onde a transmissão
+        /// parte.
         /// </summary>
         Validado = 2,
 
-        /// <summary>Reservado à fase 2: autorizado pela SEFAZ (tem protocolo).</summary>
+        /// <summary>Autorizado pela SEFAZ: tem protocolo e <c>DataAutorizacao</c>.</summary>
         Autorizado = 3,
 
-        /// <summary>Reservado à fase 2: cancelado por evento <c>evCancMDFe</c>.</summary>
+        /// <summary>Cancelado por evento <c>evCancMDFe</c>.</summary>
         Cancelado = 4,
 
-        /// <summary>Reservado à fase 2: encerrado por evento <c>evEncMDFe</c>.</summary>
+        /// <summary>Encerrado por evento <c>evEncMDFe</c>.</summary>
         Encerrado = 5,
 
         /// <summary>Falha na montagem, assinatura ou validação — ver <c>ErrorMessage</c>.</summary>

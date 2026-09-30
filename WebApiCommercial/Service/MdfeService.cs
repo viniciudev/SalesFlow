@@ -22,16 +22,28 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
+// Mesmo apelido que a biblioteca vendorizada usa (ExtMDFe.cs): o nome do tipo é
+// MDFe.Classes.Informacoes.MDFe, e escrever isso inteiro em cada chamada de
+// FuncoesXml.XmlStringParaClasse<> não ajuda a ler.
+using MDFEletronico = MDFe.Classes.Informacoes.MDFe;
+
 namespace Service
 {
     /// <summary>
-    /// Emissão de MDF-e (modelo 58) — FASE 1: montar, assinar e validar o XML
-    /// contra os XSDs da SEFAZ, e persistir o resultado.
+    /// Emissão de MDF-e (modelo 58) — monta e assina o XML, valida contra os XSDs
+    /// da SEFAZ, transmite (<c>MDFeRecepcaoSinc</c>) e opera o ciclo de vida do
+    /// documento: consulta de situação, encerramento, cancelamento e a DAMDFe.
     ///
-    /// <b>Não transmite.</b> Não há chamada de serviço da SEFAZ aqui, e
-    /// <see cref="MdfeStatus.Validado"/> (o estado final desta fase) não é
-    /// autorização — é "o XML está bem formado, assinado e passa no schema".
-    /// Transmissão, encerramento e cancelamento são fase 2.
+    /// <b>O MDF-e é síncrono.</b> Não há lote, recibo nem polling como na NF-e: o
+    /// envio já devolve protocolo ou rejeição, e por isso não existe aqui o par
+    /// "transmitir / consultar recibo" que o <c>NFeService</c> tem. A consulta de
+    /// situação existe para o outro caso — saber o que a SEFAZ pensa de um
+    /// manifesto cuja resposta se perdeu no caminho.
+    ///
+    /// <see cref="MdfeStatus.Validado"/> não é autorização: é "o XML está bem
+    /// formado, assinado e passa no schema". Só depois da transmissão o manifesto
+    /// vira <see cref="MdfeStatus.Autorizado"/>, e é quando ganha protocolo e
+    /// <c>DataAutorizacao</c> — a base da janela de 24h do cancelamento.
     ///
     /// Deliberadamente NÃO repete os três vícios do <c>NFeService</c>:
     /// <list type="number">
@@ -46,6 +58,13 @@ namespace Service
     ///   mensagem no retorno, com o manifesto marcado como
     ///   <see cref="MdfeStatus.Erro"/>.</item>
     /// </list>
+    ///
+    /// Uma diferença de desenho em relação à emissão: falha de <b>rede</b> na
+    /// transmissão não rebaixa o manifesto. Ela vira <see cref="DomainException"/>
+    /// com o motivo e o manifesto continua <see cref="MdfeStatus.Validado"/> —
+    /// rebaixá-lo faria a tela dizer que o documento está ruim quando o que está
+    /// fora é a SEFAZ, e obrigaria a gerar XML de novo (consumindo número) para
+    /// tentar de novo.
     /// </summary>
     public class MdfeService : BaseService<MdfeEmissao>, IMdfeService
     {
@@ -145,8 +164,8 @@ namespace Service
                 Modal = dto.Modal!.Value,
                 TipoOperacao = dto.TipoOperacao!.Value,
                 StatusMdfe = MdfeStatus.Rascunho,
-                CodMunCarregamento = dto.CodMunCarregamento,
-                MunCarregamento = dto.MunCarregamento.Trim(),
+                // CodMunCarregamento/MunCarregamento não vêm do dto: são fixados
+                // pelo consolidador, a partir da configuração fiscal.
                 TipoCarga = dto.TipoCarga!.Value,
                 ProdutoPredominante = dto.ProdutoPredominante.Trim(),
                 InfoAdFisco = string.IsNullOrWhiteSpace(dto.InfoAdFisco) ? null : dto.InfoAdFisco.Trim(),
@@ -163,7 +182,9 @@ namespace Service
 
             AplicarFilhos(mdfe, dto);
 
-            await ConsolidarTotaisAsync(mdfe, dto, idCompany);
+            // O município de carregamento do payload é descartado aqui: o valor
+            // vem da configuração fiscal, dentro do consolidador.
+            ConsolidarTotais(mdfe, config);
 
             var criado = await _mdfeRepository.AddAsync(mdfe, config.NumeracaoDocumentos?.Mdfe?.NumeroInicial ?? 1);
 
@@ -192,8 +213,7 @@ namespace Service
             mdfe.TipoEmitente = dto.TipoEmitente!.Value;
             mdfe.Modal = dto.Modal!.Value;
             mdfe.TipoOperacao = dto.TipoOperacao!.Value;
-            mdfe.CodMunCarregamento = dto.CodMunCarregamento;
-            mdfe.MunCarregamento = dto.MunCarregamento.Trim();
+            // CodMunCarregamento/MunCarregamento: fixados pelo consolidador.
             mdfe.TipoCarga = dto.TipoCarga!.Value;
             mdfe.ProdutoPredominante = dto.ProdutoPredominante.Trim();
             mdfe.InfoAdFisco = string.IsNullOrWhiteSpace(dto.InfoAdFisco) ? null : dto.InfoAdFisco.Trim();
@@ -209,7 +229,12 @@ namespace Service
 
             AplicarFilhos(mdfe, dto);
 
-            await ConsolidarTotaisAsync(mdfe, dto, idCompany);
+            // A configuração é buscada aqui só pelo município de carregamento — os
+            // campos de município que vieram no DTO são descartados dentro do
+            // consolidador.
+            var config = await ObterConfiguracaoFiscalAsync(idCompany);
+
+            ConsolidarTotais(mdfe, config);
 
             var atualizado = await _mdfeRepository.UpdateAsync(mdfe);
 
@@ -300,6 +325,14 @@ namespace Service
 
             var config = await ObterConfiguracaoFiscalAsync(idCompany);
 
+            // De novo aqui, e não só na criação/edição: o município de carregamento
+            // é lido da configuração fiscal, e um manifesto gravado antes desta
+            // regra (ou com a configuração corrigida depois) ainda tem o valor
+            // antigo na linha. Este é o último ponto antes da assinatura, então é
+            // onde a garantia de que o XML sai com o código certo vale de fato.
+            // A persistência vai junto do XML, em SalvarXmlAsync.
+            AplicarMunicipioDeCarregamento(mdfe, config);
+
             // ---- Regras de negócio (lançam) ----
             var validacao = await ValidarAsync(id, idCompany);
             if (!validacao.IsReady)
@@ -348,7 +381,8 @@ namespace Service
 
             await _mdfeRepository.SalvarXmlAsync(
                 id, idCompany, chave, xml,
-                mdfe.ValorTotal, mdfe.PesoBruto, mdfe.QuantidadeNFe);
+                mdfe.ValorTotal, mdfe.PesoBruto, mdfe.QuantidadeNFe,
+                mdfe.CodMunCarregamento, mdfe.MunCarregamento);
 
             // VehicleUsageHistory: o consumidor que a migration de veículo deixou
             // pendente ("SourceId nulo para MDF-e até que a tabela de manifesto
@@ -374,6 +408,548 @@ namespace Service
 
             var nome = $"{mdfe.Serie}-{mdfe.Numero}-mdfe.xml";
             return (Encoding.UTF8.GetBytes(mdfe.XmlCompleto), nome);
+        }
+
+        // =====================================================================
+        // Transmissão e eventos
+        //
+        // O MDF-e é SÍNCRONO: não há lote, recibo nem polling como na NF-e. O
+        // envio já devolve o protocolo (ou a rejeição), então "transmitir" e
+        // "consultar o recibo" são a mesma chamada — o que a consulta de situação
+        // resolve aqui é outro caso: saber o que a SEFAZ pensa de um manifesto
+        // cuja resposta se perdeu no caminho.
+        // =====================================================================
+
+        /// <summary>
+        /// Transmite o manifesto à SEFAZ (<c>MDFeRecepcaoSinc</c>) e grava o
+        /// resultado.
+        ///
+        /// Parte do XML <b>já assinado e validado</b> que está em
+        /// <see cref="MdfeEmissao.XmlCompleto"/>, e não de uma remontagem: o que
+        /// sobe é o documento que passou no validador local. Não há risco de
+        /// divergência por causa disso — a biblioteca re-assina dentro do
+        /// <c>MDFeRecepcaoSinc</c>, mas o <c>Assina()</c> dela <b>atribui</b> a
+        /// assinatura em vez de acumular, e reescreve os mesmos valores que o
+        /// <c>MdfeBuilder</c> já tinha gravado (<c>versaoModal</c>, QR Code, Id,
+        /// cDV). Como o RSA PKCS#1 v1.5 é determinístico, o documento que sobe é
+        /// equivalente ao que foi validado — e a própria biblioteca valida de novo
+        /// contra os XSDs antes de enviar.
+        ///
+        /// <b>Nenhuma exceção de rede escapa como exceção crua:</b> falha de
+        /// comunicação vira <see cref="DomainException"/> com o motivo e o
+        /// manifesto continua <see cref="MdfeStatus.Validado"/>, pronto para uma
+        /// nova tentativa. Só a resposta da SEFAZ muda o estado.
+        /// </summary>
+        public async Task<MdfeResponseDto> TransmitirAsync(int id, int idCompany)
+        {
+            var mdfe = await _mdfeRepository.GetTrackedAsync(id, idCompany);
+            if (mdfe == null)
+                throw new DomainException("Manifesto não encontrado.");
+
+            if (string.IsNullOrEmpty(mdfe.XmlCompleto))
+                throw new DomainException("Este manifesto ainda não teve o XML gerado. Gere e valide o XML antes de transmitir.");
+
+            if (mdfe.StatusMdfe == MdfeStatus.Autorizado)
+                throw new DomainException($"Este manifesto já está autorizado (protocolo {mdfe.Protocolo}). Não há o que transmitir.");
+
+            if (mdfe.StatusMdfe == MdfeStatus.Cancelado || mdfe.StatusMdfe == MdfeStatus.Encerrado)
+                throw new DomainException($"Este manifesto está '{mdfe.StatusMdfe}' e não pode mais ser transmitido.");
+
+            // Rejeição anterior: o XML foi assinado e o número consumido, então a
+            // única saída útil é tentar de novo depois de entender o motivo —
+            // e é exatamente o que reenviar faz. Gerar o XML de novo é que não
+            // faz sentido (o número já foi usado).
+            if (mdfe.StatusMdfe != MdfeStatus.Validado && mdfe.StatusMdfe != MdfeStatus.Erro)
+                throw new DomainException($"O manifesto está com situação '{mdfe.StatusMdfe}' e não pode ser transmitido. Gere o XML primeiro.");
+
+            var config = await ObterConfiguracaoFiscalAsync(idCompany);
+            var configuracaoMdfe = MontarConfiguracaoMdfe(config);
+
+            // O servidor web não sai gravando XML em disco: a biblioteca chama
+            // SalvarXmlEmDisco no meio do caminho, e é este flag que a faz parar.
+            configuracaoMdfe.IsSalvarXml = false;
+
+            MDFe.Classes.Retorno.MDFeRetRecepcao.Sincrono.MDFeRetMDFe retorno;
+
+            try
+            {
+                var documento = FuncoesXml.XmlStringParaClasse<MDFEletronico>(mdfe.XmlCompleto);
+                retorno = new MDFe.Servicos.RecepcaoMDFe.ServicoMDFeRecepcao()
+                    .MDFeRecepcaoSinc(documento, configuracaoMdfe);
+            }
+            catch (DomainException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Falha local ou de comunicação: o manifesto NÃO muda de estado.
+                // Rebaixá-lo para Erro aqui faria a tela dizer que o manifesto
+                // está ruim quando o que está fora é a rede ou a SEFAZ.
+                var mensagem = MensagemDeValidacao(ex);
+                await _mdfeRepository.RegistrarFalhaDeTransmissaoAsync(id, idCompany, mensagem);
+
+                throw new DomainException($"Não foi possível transmitir o manifesto: {mensagem}");
+            }
+
+            var resposta = SerializarResposta(retorno);
+
+            if (retorno.CStat == 100)
+            {
+                var protocolo = retorno.ProtMdFe?.InfProt;
+
+                // procMDFe = MDFe + protMDFe. É o documento que a SEFAZ devolve
+                // autorizado, e o que a DAMDFe e os eventos precisam ler (os dois
+                // exigem o protocolo). O MDFe continua dentro, então substituir o
+                // XmlCompleto não perde o manifesto assinado.
+                var proc = new MDFe.Classes.Retorno.MDFeProcMDFe
+                {
+                    // Do builder, e não o padrão do construtor, que é Versao100:
+                    // o procMDFe de um manifesto v3.00 declarado como 1.00 é
+                    // simplesmente o leiaute errado.
+                    Versao = MdfeBuilder.VersaoLayout,
+                    MDFe = FuncoesXml.XmlStringParaClasse<MDFEletronico>(mdfe.XmlCompleto),
+                    ProtMDFe = retorno.ProtMdFe
+                };
+
+                await _mdfeRepository.RegistrarAutorizacaoAsync(
+                    id, idCompany,
+                    retorno.CStat,
+                    retorno.XMotivo,
+                    protocolo?.NProt,
+                    retorno.NRec,
+                    DataDoProtocolo(protocolo?.DhRecbto),
+                    FuncoesXml.ClasseParaXmlString(proc),
+                    resposta);
+            }
+            else
+            {
+                await _mdfeRepository.RegistrarRejeicaoAsync(
+                    id, idCompany, retorno.CStat, retorno.XMotivo, resposta);
+            }
+
+            var atualizado = await _mdfeRepository.GetByIdAsync(id, idCompany);
+            return await MapearDetalheAsync(atualizado!, idCompany);
+        }
+
+        /// <summary>
+        /// Consulta a situação do manifesto na SEFAZ pela chave
+        /// (<c>MDFeConsultaProtocolo</c>).
+        ///
+        /// Serve para o caso em que a resposta da transmissão se perdeu: o
+        /// manifesto pode ter sido autorizado lá e continuar "Validado" aqui. Se a
+        /// consulta revelar autorização, o estado local é sincronizado — e é por
+        /// isso que não basta gravar o <c>cStat</c> e seguir.
+        /// </summary>
+        public async Task<MdfeResponseDto> ConsultarSituacaoAsync(int id, int idCompany)
+        {
+            var mdfe = await _mdfeRepository.GetByIdAsync(id, idCompany);
+            if (mdfe == null)
+                throw new DomainException("Manifesto não encontrado.");
+
+            if (string.IsNullOrWhiteSpace(mdfe.ChaveAcesso))
+                throw new DomainException("Este manifesto ainda não teve o XML gerado — não há chave para consultar.");
+
+            var config = await ObterConfiguracaoFiscalAsync(idCompany);
+            var configuracaoMdfe = MontarConfiguracaoMdfe(config);
+            configuracaoMdfe.IsSalvarXml = false;
+
+            MDFe.Classes.Retorno.MDFeConsultaProtocolo.MDFeRetConsSitMDFe retorno;
+
+            try
+            {
+                retorno = new MDFe.Servicos.ConsultaProtocoloMDFe.ServicoMDFeConsultaProtocolo()
+                    .MDFeConsultaProtocolo(mdfe.ChaveAcesso!, configuracaoMdfe);
+            }
+            catch (DomainException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                var mensagem = MensagemDeValidacao(ex);
+                throw new DomainException($"Não foi possível consultar a situação do manifesto: {mensagem}");
+            }
+
+            var resposta = SerializarResposta(retorno);
+            var protocolo = retorno.ProtMDFe?.InfProt;
+
+            // Só sincroniza o que ainda não estava autorizado aqui. Numa consulta
+            // de rotina a um manifesto já autorizado, `RegistrarAutorizacaoAsync`
+            // reescreveria o protocolo e somaria em `TryCount` — e o contador é de
+            // TENTATIVAS DE TRANSMISSÃO; vê-lo subir a cada consulta faria a tela
+            // mentir sobre o histórico do documento.
+            var jaAutorizado = mdfe.StatusMdfe == MdfeStatus.Autorizado
+                || mdfe.StatusMdfe == MdfeStatus.Encerrado
+                || mdfe.StatusMdfe == MdfeStatus.Cancelado;
+
+            if ((retorno.CStat == 100 || protocolo?.CStat == 100) && !jaAutorizado)
+            {
+                var proc = new MDFe.Classes.Retorno.MDFeProcMDFe
+                {
+                    Versao = MdfeBuilder.VersaoLayout,
+                    MDFe = FuncoesXml.XmlStringParaClasse<MDFEletronico>(mdfe.XmlCompleto!),
+                    ProtMDFe = retorno.ProtMDFe
+                };
+
+                await _mdfeRepository.RegistrarAutorizacaoAsync(
+                    id, idCompany,
+                    100,
+                    retorno.XMotivo ?? protocolo?.XMotivo,
+                    protocolo?.NProt,
+                    null,
+                    DataDoProtocolo(protocolo?.DhRecbto),
+                    FuncoesXml.ClasseParaXmlString(proc),
+                    resposta);
+            }
+            else
+            {
+                await _mdfeRepository.RegistrarConsultaAsync(id, idCompany, retorno.CStat, retorno.XMotivo, resposta);
+            }
+
+            var atualizado = await _mdfeRepository.GetByIdAsync(id, idCompany);
+            return await MapearDetalheAsync(atualizado!, idCompany);
+        }
+
+        /// <summary>
+        /// Situação do serviço do MDF-e na SEFAZ (<c>consStatServMDFe</c>).
+        ///
+        /// Não toca em manifesto nenhum — é a checagem que se faz antes de
+        /// transmitir. Com o serviço parado (ou em manutenção), a transmissão falha
+        /// de um jeito que parece erro do manifesto; esta rota existe para separar
+        /// as duas coisas.
+        /// </summary>
+        public async Task<MdfeStatusServicoDto> ConsultarStatusServicoAsync(int idCompany)
+        {
+            var config = await ObterConfiguracaoFiscalAsync(idCompany);
+            var configuracaoMdfe = MontarConfiguracaoMdfe(config);
+            configuracaoMdfe.IsSalvarXml = false;
+
+            MDFe.Classes.Retorno.MDFeStatusServico.MDFeRetConsStatServ retorno;
+
+            try
+            {
+                retorno = new MDFe.Servicos.StatusServicoMDFe.ServicoMDFeStatusServico()
+                    .MDFeStatusServico(configuracaoMdfe);
+            }
+            catch (DomainException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                var mensagem = MensagemDeValidacao(ex);
+                throw new DomainException($"Não foi possível consultar a situação do serviço do MDF-e: {mensagem}");
+            }
+
+            return new MdfeStatusServicoDto
+            {
+                CStat = retorno.CStat,
+                XMotivo = retorno.XMotivo,
+                DhRecbto = retorno.DhRecbto,
+                TMed = retorno.TMed,
+                XObs = retorno.XObs,
+                VersaoAplicativo = retorno.VerAplic,
+                Ambiente = retorno.TpAmb.ToString()
+            };
+        }
+
+        /// <summary>
+        /// Encerra o manifesto (<c>evEncMDFe</c>). É obrigatório ao fim da viagem:
+        /// manifesto não encerrado sujeita o transportador a multa.
+        ///
+        /// UF e município do encerramento vêm no DTO; quando não vêm, o serviço usa
+        /// o município de DESCARGA do manifesto — que é o palpite certo na maioria
+        /// dos casos, e está explícito aqui em vez de escondido.
+        /// </summary>
+        public async Task<MdfeResponseDto> EncerrarAsync(int id, int idCompany, MdfeEncerrarDto dto)
+        {
+            var mdfe = await _mdfeRepository.GetTrackedAsync(id, idCompany);
+            if (mdfe == null)
+                throw new DomainException("Manifesto não encontrado.");
+
+            if (mdfe.StatusMdfe != MdfeStatus.Autorizado)
+                throw new DomainException($"Só manifesto autorizado pode ser encerrado — este está '{mdfe.StatusMdfe}'.");
+
+            if (string.IsNullOrWhiteSpace(mdfe.Protocolo))
+                throw new DomainException("O manifesto está autorizado mas sem protocolo gravado — encerrar sem ele seria recusado pela SEFAZ. Consulte a situação do manifesto.");
+
+            var documento = CarregarDocumentoAutorizado(mdfe);
+
+            var uf = string.IsNullOrWhiteSpace(dto?.UfEncerramento)
+                ? mdfe.UfDescarregamento
+                : NormalizarUf(dto!.UfEncerramento!);
+
+            // A UF é resolvida aqui, e não dentro do try lá embaixo: uma sigla
+            // inválida tem que virar "informe uma UF válida", e não a mensagem de
+            // ArgumentException do Enum.Parse. O enum de UF é fechado (as 27), e
+            // `UfDescarregamento` já está normalizado pelo serviço na criação.
+            if (!Enum.TryParse<Estado>(uf, out var ufEncerramento))
+                throw new DomainException($"'{uf}' não é uma UF válida para o encerramento.");
+
+            var codigoMunicipio = ResolverMunicipioDeEncerramento(mdfe, dto);
+
+            var config = await ObterConfiguracaoFiscalAsync(idCompany);
+            var configuracaoMdfe = MontarConfiguracaoMdfe(config);
+            configuracaoMdfe.IsSalvarXml = false;
+
+            MDFe.Classes.Retorno.MDFeEvento.MDFeRetEventoMDFe retorno;
+
+            try
+            {
+                retorno = new MDFe.Servicos.EventosMDFe.ServicoMDFeEvento()
+                    .MDFeEventoEncerramentoMDFeEventoEncerramento(
+                        documento,
+                        ufEncerramento,
+                        codigoMunicipio,
+                        (byte)(mdfe.SequenciaEvento + 1),
+                        mdfe.Protocolo!,
+                        configuracaoMdfe);
+            }
+            catch (DomainException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                var mensagem = MensagemDeValidacao(ex);
+                throw new DomainException($"Não foi possível encerrar o manifesto: {mensagem}");
+            }
+
+            var resposta = SerializarResposta(retorno);
+            var infEvento = retorno.InfEvento;
+
+            if (infEvento == null || infEvento.CStat != 135)
+                throw new DomainException(
+                    $"A SEFAZ recusou o encerramento ({infEvento?.CStat}): {infEvento?.XMotivo ?? retorno.RetornoXmlString}");
+
+            await _mdfeRepository.RegistrarEncerramentoAsync(
+                id, idCompany,
+                infEvento.NProt,
+                infEvento.DhRegEvento ?? DateTime.UtcNow,
+                infEvento.NSeqEvento,
+                resposta);
+
+            var atualizado = await _mdfeRepository.GetByIdAsync(id, idCompany);
+            return await MapearDetalheAsync(atualizado!, idCompany);
+        }
+
+        /// <summary>
+        /// Cancela o manifesto (<c>evCancMDFe</c>).
+        ///
+        /// A janela de 24 horas é conferida AQUI, contra
+        /// <see cref="MdfeEmissao.DataAutorizacao"/>, e não deixada para a SEFAZ:
+        /// descobrir que o prazo passou só depois de montar e assinar o evento dá
+        /// ao usuário um erro que ele não pode resolver. A justificativa também é
+        /// validada aqui (15 a 255), pelo mesmo motivo.
+        /// </summary>
+        public async Task<MdfeResponseDto> CancelarAsync(int id, int idCompany, MdfeCancelarDto dto)
+        {
+            var mdfe = await _mdfeRepository.GetTrackedAsync(id, idCompany);
+            if (mdfe == null)
+                throw new DomainException("Manifesto não encontrado.");
+
+            if (dto == null)
+                throw new DomainException("Dados do cancelamento não informados.");
+
+            if (mdfe.StatusMdfe != MdfeStatus.Autorizado)
+                throw new DomainException($"Só manifesto autorizado pode ser cancelado — este está '{mdfe.StatusMdfe}'.");
+
+            if (string.IsNullOrWhiteSpace(mdfe.Protocolo))
+                throw new DomainException("O manifesto está autorizado mas sem protocolo gravado — cancelar sem ele seria recusado pela SEFAZ. Consulte a situação do manifesto.");
+
+            var justificativa = (dto.Justificativa ?? string.Empty).Trim();
+            if (justificativa.Length < 15 || justificativa.Length > 255)
+                throw new DomainException("A justificativa do cancelamento deve ter de 15 a 255 caracteres.");
+
+            if (mdfe.DataAutorizacao.HasValue)
+            {
+                var prazo = mdfe.DataAutorizacao.Value.AddHours(24);
+                if (DateTime.UtcNow > prazo)
+                    throw new DomainException(
+                        $"O prazo de cancelamento venceu em {prazo:dd/MM/yyyy HH:mm} (24 horas após a autorização). " +
+                        "Passado o prazo, o manifesto segue válido e o caminho é o encerramento.");
+            }
+
+            var documento = CarregarDocumentoAutorizado(mdfe);
+
+            var config = await ObterConfiguracaoFiscalAsync(idCompany);
+            var configuracaoMdfe = MontarConfiguracaoMdfe(config);
+            configuracaoMdfe.IsSalvarXml = false;
+
+            MDFe.Classes.Retorno.MDFeEvento.MDFeRetEventoMDFe retorno;
+
+            try
+            {
+                retorno = new MDFe.Servicos.EventosMDFe.ServicoMDFeEvento()
+                    .MDFeEventoCancelar(
+                        documento,
+                        (byte)(mdfe.SequenciaEvento + 1),
+                        mdfe.Protocolo!,
+                        justificativa,
+                        configuracaoMdfe);
+            }
+            catch (DomainException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                var mensagem = MensagemDeValidacao(ex);
+                throw new DomainException($"Não foi possível cancelar o manifesto: {mensagem}");
+            }
+
+            var resposta = SerializarResposta(retorno);
+            var infEvento = retorno.InfEvento;
+
+            // 135 = evento registrado e vinculado ao documento; 136 = registrado,
+            // mas não vinculado (o cancelamento fora do prazo cai aqui). Os dois
+            // são "aceito" — tratar só o 135 como sucesso faria um cancelamento
+            // legítimo parecer falha.
+            if (infEvento == null || (infEvento.CStat != 135 && infEvento.CStat != 136))
+                throw new DomainException(
+                    $"A SEFAZ recusou o cancelamento ({infEvento?.CStat}): {infEvento?.XMotivo ?? retorno.RetornoXmlString}");
+
+            await _mdfeRepository.RegistrarCancelamentoAsync(
+                id, idCompany,
+                infEvento.DhRegEvento ?? DateTime.UtcNow,
+                justificativa,
+                infEvento.NSeqEvento,
+                resposta);
+
+            var atualizado = await _mdfeRepository.GetByIdAsync(id, idCompany);
+            return await MapearDetalheAsync(atualizado!, idCompany);
+        }
+
+        /// <summary>
+        /// DAMDFe em PDF. Só de manifesto AUTORIZADO: a DAMDFe é o documento
+        /// auxiliar do manifesto protocolado, e imprimir de um rascunho daria ao
+        /// motorista uma folha que não corresponde a nada na SEFAZ.
+        /// </summary>
+        public async Task<(byte[] Bytes, string NomeArquivo)> ObterDamdfeAsync(int id, int idCompany)
+        {
+            var mdfe = await _mdfeRepository.GetByIdAsync(id, idCompany);
+            if (mdfe == null)
+                throw new DomainException("Manifesto não encontrado.");
+
+            if (mdfe.StatusMdfe != MdfeStatus.Autorizado && mdfe.StatusMdfe != MdfeStatus.Encerrado && mdfe.StatusMdfe != MdfeStatus.Cancelado)
+                throw new DomainException("A DAMDFe só pode ser impressa depois da autorização do manifesto.");
+
+            if (string.IsNullOrWhiteSpace(mdfe.XmlCompleto) || string.IsNullOrWhiteSpace(mdfe.ChaveAcesso))
+                throw new DomainException("Este manifesto não tem o XML autorizado gravado. Consulte a situação do manifesto.");
+
+            var config = await ObterConfiguracaoFiscalAsync(idCompany);
+
+            // A tarja não sai do XML: o documento continua sendo um manifesto
+            // autorizado depois de cancelado ou encerrado, e um DAMDFe sem tarja
+            // circulando na estrada é exatamente o que o cancelamento existe para
+            // evitar. Quem sabe o estado é o banco, então é daqui que ela vem.
+            var tarja = mdfe.StatusMdfe switch
+            {
+                MdfeStatus.Cancelado => "CANCELADO",
+                MdfeStatus.Encerrado => "ENCERRADO",
+                _ => null
+            };
+
+            var danfe = new MDFe.Damdfe.QuestPdf.ImpressaoMdfe.DamdfeMdfeDocument(
+                mdfe.XmlCompleto!,
+                config.Emitente?.Logo,
+                tarja);
+
+            var nome = $"{mdfe.Serie}-{mdfe.Numero}-damdfe.pdf";
+            return (danfe.GerarPdfBytes(), nome);
+        }
+
+        /// <summary>
+        /// Carrega o <c>MDFe</c> de dentro do que está gravado em
+        /// <c>XmlCompleto</c>.
+        ///
+        /// Depois da autorização o que está lá é o <c>procMDFe</c> (manifesto +
+        /// protocolo), não o <c>MDFe</c> solto — e os eventos precisam do
+        /// <c>MDFe</c>. Ler direto como <c>MDFEletronico</c> falharia com um
+        /// documento autorizado, que é justamente o único caso em que se encerra ou
+        /// cancela. Por isso a raiz é conferida antes.
+        /// </summary>
+        private static MDFEletronico CarregarDocumentoAutorizado(MdfeEmissao mdfe)
+        {
+            if (string.IsNullOrWhiteSpace(mdfe.XmlCompleto))
+                throw new DomainException("Este manifesto não tem o XML gravado.");
+
+            if (mdfe.XmlCompleto!.Contains("<mdfeProc"))
+            {
+                var proc = FuncoesXml.XmlStringParaClasse<MDFe.Classes.Retorno.MDFeProcMDFe>(mdfe.XmlCompleto);
+                if (proc?.MDFe == null)
+                    throw new DomainException("O XML autorizado do manifesto está sem o nó MDFe.");
+
+                return proc.MDFe;
+            }
+
+            return FuncoesXml.XmlStringParaClasse<MDFEletronico>(mdfe.XmlCompleto);
+        }
+
+        /// <summary>
+        /// Município de encerramento: o do DTO quando informado, senão o primeiro
+        /// município de DESCARGA do manifesto (é onde a carga foi entregue, e
+        /// portanto onde a viagem terminou na maioria dos casos).
+        /// </summary>
+        private static long ResolverMunicipioDeEncerramento(MdfeEmissao mdfe, MdfeEncerrarDto? dto)
+        {
+            if (!string.IsNullOrWhiteSpace(dto?.CodigoMunicipioEncerramento))
+            {
+                var digitos = SomenteDigitos(dto!.CodigoMunicipioEncerramento);
+
+                if (digitos?.Length != 7)
+                    throw new DomainException("O código IBGE do município de encerramento precisa ter 7 dígitos.");
+
+                return long.Parse(digitos);
+            }
+
+            var municipioDescarga = mdfe.Documentos?
+                .Select(d => SomenteDigitos(d.CodMunDescarga))
+                .FirstOrDefault(c => c?.Length == 7);
+
+            if (municipioDescarga == null)
+                throw new DomainException(
+                    "Não há município de descarga no manifesto para usar como município de encerramento. " +
+                    "Informe o município de encerramento.");
+
+            return long.Parse(municipioDescarga);
+        }
+
+        /// <summary>
+        /// O retorno cru da SEFAZ, para diagnóstico. <c>RetornoXmlString</c> é o que
+        /// interessa quando a rejeição não vem acompanhada de motivo legível — sem
+        /// ele, sobra só o <c>cStat</c>.
+        /// </summary>
+        private static string SerializarResposta(object? retorno)
+        {
+            if (retorno == null)
+                return string.Empty;
+
+            try
+            {
+                return FuncoesXml.ClasseParaXmlString(retorno);
+            }
+            catch (Exception)
+            {
+                // A resposta crua é diagnóstico, não parte do fluxo: se ela não
+                // serializar, o manifesto não pode deixar de ser gravado por isso.
+                return retorno.ToString() ?? string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Data de autorização a partir do <c>dhRecbto</c> do protocolo.
+        ///
+        /// O <c>DateTime</c> do retorno não é anulável, então "sem data" chega
+        /// como <see cref="DateTime.MinValue"/> — e gravar isso deixaria a janela
+        /// de 24h do cancelamento vencida desde sempre, recusando todo
+        /// cancelamento. O <c>UtcNow</c> é o palpite certo para um documento que a
+        /// SEFAZ acabou de protocolar.
+        /// </summary>
+        private static DateTime DataDoProtocolo(DateTime? data)
+        {
+            return data.GetValueOrDefault() == default ? DateTime.UtcNow : data!.Value;
         }
 
         // =====================================================================
@@ -643,8 +1219,11 @@ namespace Service
         /// Os totais são calculados dos DOCUMENTOS, e não do que o cliente mandou
         /// no cabeçalho: assim o total do XML é sempre a soma do que está na lista,
         /// e a tela não consegue mostrar um total que o XML não confirma.
+        ///
+        /// Também é aqui que o município de carregamento é fixado, a partir da
+        /// configuração fiscal — ver <see cref="AplicarMunicipioDeCarregamento"/>.
         /// </summary>
-        private async Task ConsolidarTotaisAsync(MdfeEmissao mdfe, MdfeCreateDto dto, int idCompany)
+        private static void ConsolidarTotais(MdfeEmissao mdfe, FiscalConfiguration config)
         {
             var documentos = mdfe.Documentos?.ToList() ?? new List<MdfeDocumento>();
 
@@ -652,22 +1231,51 @@ namespace Service
             mdfe.ValorTotal = documentos.Sum(d => d.ValorTotal);
             mdfe.PesoBruto = documentos.Sum(d => d.PesoBruto);
 
-            // Sugestão de município de carregamento quando a tela não mandou um:
-            // na saída própria é o endereço da empresa; na entrada de terceiros é o
-            // do fornecedor — que é justamente o caso em que derivar da UF erraria.
-            if (string.IsNullOrWhiteSpace(mdfe.CodMunCarregamento) && documentos.Count > 0)
-            {
-                var config = await ObterConfiguracaoFiscalAsync(idCompany);
-                var endereco = config.Emitente?.EmitenteEndereco;
+            AplicarMunicipioDeCarregamento(mdfe, config);
+        }
 
-                if (!string.IsNullOrWhiteSpace(endereco?.CodigoCidade))
-                {
-                    mdfe.CodMunCarregamento = endereco.CodigoCidade!;
-                    mdfe.MunCarregamento = endereco.Cidade ?? string.Empty;
-                }
-            }
+        /// <summary>
+        /// Fixa <c>infMunCarrega</c> a partir do endereço do EMITENTE, ignorando o
+        /// que a tela mandou.
+        ///
+        /// O campo nasceu editável e o payload é aceito, mas o valor é descartado:
+        /// não existe tabela de municípios do IBGE neste sistema, então enquanto o
+        /// código vinha da tela nada no caminho até a SEFAZ conferia o valor
+        /// contra a tabela real. O XSD exige apenas <c>[0-9]{7}</c>, o DTO exige
+        /// apenas 7 caracteres e <c>MdfeBuilder.ExigirCodigoIbge</c> confere apenas
+        /// o comprimento — um código inexistente (o <c>1234567</c> que apareceu num
+        /// manifesto de teste) atravessava a pilha inteira e só seria recusado pela
+        /// SEFAZ, depois de assinado. A configuração fiscal é o único lugar do
+        /// sistema onde o código é informado por quem sabe qual é.
+        ///
+        /// <b>Chamado também de <see cref="GerarXmlAsync"/></b>, e não só daqui: um
+        /// manifesto já gravado com um código ruim continuaria gerando XML errado
+        /// até alguém editá-lo e salvar de novo, e <c>GerarXmlAsync</c> é o último
+        /// ponto antes da assinatura — o único lugar onde a garantia vale de fato.
+        ///
+        /// <b>Consequência aceita:</b> na entrada de terceiros, em que a carga é
+        /// carregada no pátio do fornecedor, o município declarado passa a ser o da
+        /// empresa. Trocar isso por uma heurística (derivar da UF, ou do parceiro)
+        /// reintroduziria a classe de erro que esta mudança fecha.
+        /// </summary>
+        private static void AplicarMunicipioDeCarregamento(MdfeEmissao mdfe, FiscalConfiguration config)
+        {
+            var endereco = config.Emitente?.EmitenteEndereco;
 
-            await Task.CompletedTask;
+            var codigo = SomenteDigitos(endereco?.CodigoCidade);
+
+            if (codigo?.Length != 7)
+                throw new DomainException(
+                    "O código IBGE do município da empresa não está preenchido com 7 dígitos na configuração fiscal. " +
+                    "O município de carregamento do manifesto é lido de lá.");
+
+            if (string.IsNullOrWhiteSpace(endereco?.Cidade))
+                throw new DomainException(
+                    "O município da empresa não está preenchido na configuração fiscal. " +
+                    "Ele é o município de carregamento declarado no manifesto.");
+
+            mdfe.CodMunCarregamento = codigo;
+            mdfe.MunCarregamento = endereco!.Cidade!.Trim();
         }
 
         // =====================================================================
@@ -784,6 +1392,15 @@ namespace Service
                 Sent = m.Sent,
                 TryCount = m.TryCount,
                 ErrorMessage = m.ErrorMessage,
+                CStat = m.CStat,
+                XMotivo = m.XMotivo,
+                Recibo = m.Recibo,
+                DataAutorizacao = m.DataAutorizacao,
+                DataEncerramento = m.DataEncerramento,
+                ProtocoloEncerramento = m.ProtocoloEncerramento,
+                DataCancelamento = m.DataCancelamento,
+                JustificativaCancelamento = m.JustificativaCancelamento,
+                SequenciaEvento = m.SequenciaEvento,
                 XmlCompleto = m.XmlCompleto,
                 ValorTotal = m.ValorTotal,
                 PesoBruto = m.PesoBruto,
@@ -848,8 +1465,28 @@ namespace Service
                 }).ToList()
             };
 
+            dto.PodeCancelar = PodeCancelar(m);
+            dto.PodeEncerrar = m.StatusMdfe == MdfeStatus.Autorizado;
             dto.Validacao = await CalcularValidacaoAsync(m, idCompany);
             return dto;
+        }
+
+        /// <summary>
+        /// Manifesto autorizado, com protocolo, dentro das 24 horas de
+        /// <see cref="MdfeEmissao.DataAutorizacao"/>. É o mesmo teste que
+        /// <see cref="CancelarAsync"/> faz antes de enviar o evento — aqui só para
+        /// a tela poder desabilitar o botão em vez de mostrar o erro depois.
+        ///
+        /// Sem <c>DataAutorizacao</c> o manifesto é tratado como cancelável: o que
+        /// a tela não pode é impedir um cancelamento legítimo por falta de um dado
+        /// que já deveria estar gravado.
+        /// </summary>
+        private static bool PodeCancelar(MdfeEmissao m)
+        {
+            if (m.StatusMdfe != MdfeStatus.Autorizado || string.IsNullOrWhiteSpace(m.Protocolo))
+                return false;
+
+            return !m.DataAutorizacao.HasValue || DateTime.UtcNow <= m.DataAutorizacao.Value.AddHours(24);
         }
 
         private static DocumentoElegivelDto MapearSaida(NFeEmission nota, HashSet<string> chavesVinculadas)
@@ -1100,5 +1737,23 @@ namespace Service
         Task<MdfeValidacaoResult> ValidarAsync(int id, int idCompany);
         Task<MdfeResponseDto> GerarXmlAsync(int id, int idCompany);
         Task<(byte[] Bytes, string NomeArquivo)> ObterXmlAsync(int id, int idCompany);
+
+        /// <summary>Transmite o XML assinado à SEFAZ e grava o protocolo ou a rejeição.</summary>
+        Task<MdfeResponseDto> TransmitirAsync(int id, int idCompany);
+
+        /// <summary>Situação do manifesto na SEFAZ pela chave — sincroniza o estado local.</summary>
+        Task<MdfeResponseDto> ConsultarSituacaoAsync(int id, int idCompany);
+
+        /// <summary>Situação do serviço do MDF-e na SEFAZ (<c>consStatServMDFe</c>).</summary>
+        Task<MdfeStatusServicoDto> ConsultarStatusServicoAsync(int idCompany);
+
+        /// <summary>Encerra o manifesto autorizado (<c>evEncMDFe</c>).</summary>
+        Task<MdfeResponseDto> EncerrarAsync(int id, int idCompany, MdfeEncerrarDto dto);
+
+        /// <summary>Cancela o manifesto autorizado, dentro de 24h (<c>evCancMDFe</c>).</summary>
+        Task<MdfeResponseDto> CancelarAsync(int id, int idCompany, MdfeCancelarDto dto);
+
+        /// <summary>DAMDFe em PDF do manifesto autorizado.</summary>
+        Task<(byte[] Bytes, string NomeArquivo)> ObterDamdfeAsync(int id, int idCompany);
     }
 }

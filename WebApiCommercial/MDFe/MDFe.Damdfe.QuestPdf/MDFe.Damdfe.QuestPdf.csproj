@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net8.0 junto de net9.0 para espelhar o NFe.Danfe.QuestPdf; o Service é net9.0
+         e resolve o que precisa. Não há motivo para este projeto existir em net462. -->
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>MDFe.Damdfe.QuestPdf</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Fontes\Arial.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Arial embutida e registrada em FontManager (DamdfeMdfeDocument): o DANFE
+         de NF-e usa "Times New Roman" por nome e depende da fonte existir no
+         sistema; em container Linux isso não está garantido. Aqui a fonte viaja
+         com o assembly. -->
+    <EmbeddedResource Include="Fontes\Arial.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BarcodeLib" Version="3.1.4" />
+    <PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="7.3.0.2" />
+    <PackageReference Include="QuestPDF" Version="2024.7.3" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- MDFe.Utils já traz DFe.Classes, DFe.Utils e NFe.Utils; MDFe.Classes traz o
+         leiaute. Os dois aqui são o suficiente. -->
+    <ProjectReference Include="..\MDFe.Classes\MDFe.Classes.csproj" />
+    <ProjectReference Include="..\MDFe.Utils\MDFe.Utils.csproj" />
+  </ItemGroup>
+
+</Project>

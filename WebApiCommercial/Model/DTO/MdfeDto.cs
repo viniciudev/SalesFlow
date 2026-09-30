@@ -278,6 +278,35 @@ namespace Model.DTO
         public int TryCount { get; set; }
         public string? ErrorMessage { get; set; }
 
+        // ------------------------------------------------------------------
+        // Transmissão e eventos. Ver os campos correspondentes em MdfeEmissao
+        // para o significado de cada um.
+        // ------------------------------------------------------------------
+
+        /// <summary>Código de situação da SEFAZ (100 = autorizado).</summary>
+        public int? CStat { get; set; }
+
+        /// <summary>Motivo literal da SEFAZ.</summary>
+        public string? XMotivo { get; set; }
+
+        public string? Recibo { get; set; }
+        public DateTime? DataAutorizacao { get; set; }
+        public DateTime? DataEncerramento { get; set; }
+        public string? ProtocoloEncerramento { get; set; }
+        public DateTime? DataCancelamento { get; set; }
+        public string? JustificativaCancelamento { get; set; }
+        public int SequenciaEvento { get; set; }
+
+        /// <summary>
+        /// Calculado, e não uma coluna: a janela de cancelamento do MDF-e é de 24
+        /// horas contadas da autorização, e a tela precisa saber disso para
+        /// desabilitar o botão antes de o usuário tentar e ser recusado.
+        /// </summary>
+        public bool PodeCancelar { get; set; }
+
+        /// <summary>Idem, para o encerramento — que só cabe em manifesto autorizado e ainda não encerrado.</summary>
+        public bool PodeEncerrar { get; set; }
+
         /// <summary>
         /// O XML assinado. Devolvido no detalhe para a tela poder exibir na aba
         /// Resumo; o download é <c>GET /api/Mdfe/{id}/xml</c>, que evita carregar
@@ -348,6 +377,14 @@ namespace Model.DTO
         public string? VeiculoTracaoPlaca { get; set; }
         public string? MunCarregamento { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// Motivo da SEFAZ, para a listagem mostrar o porquê da recusa em vez de
+        /// só o badge vermelho — sem ele o usuário teria de abrir cada manifesto
+        /// rejeitado para descobrir o que houve.
+        /// </summary>
+        public int? CStat { get; set; }
+        public string? XMotivo { get; set; }
     }
 
     /// <summary>
@@ -438,5 +475,56 @@ namespace Model.DTO
         /// legítima.
         /// </summary>
         public List<string> Warnings { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Dados do encerramento do manifesto (<c>evEncMDFe</c>).
+    ///
+    /// A UF e o município são os do ENCERRAMENTO — onde a viagem terminou —, que
+    /// não são necessariamente os da descarga declarada. Por isso são parâmetros,
+    /// e não algo derivado em silêncio: quando não vêm, o serviço usa o município
+    /// de descarga do manifesto, que é o palpite certo na maioria dos casos, mas
+    /// quem sabe a resposta é quem está encerrando.
+    /// </summary>
+    public class MdfeEncerrarDto
+    {
+        /// <summary>UF do encerramento. Vazio = usar a UF de descarregamento do manifesto.</summary>
+        [StringLength(2)]
+        public string? UfEncerramento { get; set; }
+
+        /// <summary>Código IBGE do município de encerramento. Nulo = usar o município de descarga do manifesto.</summary>
+        [StringLength(7)]
+        public string? CodigoMunicipioEncerramento { get; set; }
+    }
+
+    /// <summary>
+    /// Dados do cancelamento do manifesto (<c>evCancMDFe</c>).
+    ///
+    /// A justificativa é validada aqui — 15 a 255 caracteres, como a SEFAZ exige —
+    /// em vez de deixar a SEFAZ recusar: o usuário recebe "a justificativa precisa
+    /// de pelo menos 15 caracteres" em vez de um <c>cStat</c> de rejeição que não
+    /// diz o que fazer.
+    /// </summary>
+    public class MdfeCancelarDto
+    {
+        [Required(ErrorMessage = "A justificativa do cancelamento é obrigatória.")]
+        [StringLength(255, MinimumLength = 15, ErrorMessage = "A justificativa do cancelamento deve ter de 15 a 255 caracteres.")]
+        public string Justificativa { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Situação do serviço do MDF-e na SEFAZ (<c>consStatServMDFe</c>). É o que se
+    /// consulta ANTES de transmitir: com o serviço parado, a transmissão falha de
+    /// um jeito que parece erro do manifesto.
+    /// </summary>
+    public class MdfeStatusServicoDto
+    {
+        public int CStat { get; set; }
+        public string? XMotivo { get; set; }
+        public DateTime DhRecbto { get; set; }
+        public int? TMed { get; set; }
+        public string? XObs { get; set; }
+        public string? VersaoAplicativo { get; set; }
+        public string? Ambiente { get; set; }
     }
 }
