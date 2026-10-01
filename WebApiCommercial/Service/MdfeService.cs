@@ -195,62 +195,53 @@ namespace Service
         {
             if (dto == null) throw new DomainException("Dados do manifesto não informados.");
 
-            var mdfe = await _mdfeRepository.GetTrackedAsync(id, idCompany);
-            if (mdfe == null)
+            // NÃO rastrear — só leitura para validação
+            var existente = await _mdfeRepository.GetByIdAsync(id, idCompany);
+            if (existente == null)
                 throw new DomainException("Manifesto não encontrado.");
 
-            // Rascunho e Erro são os dois estados em que o manifesto ainda não
-            // declara nada à fiscalização. Um Erro por rejeição da SEFAZ ainda
-            // carrega o XML assinado, e editá-lo é justamente o que descarta esse
-            // XML — então a permissão não sai do status, e sim de PodeEditar, que
-            // só a concede quando há certeza de que a SEFAZ recusou.
-            if (!PodeEditar(mdfe))
-                throw new DomainException(MotivoNaoPodeEditar(mdfe));
+            if (!PodeEditar(existente))
+                throw new DomainException(MotivoNaoPodeEditar(existente));
 
             await ValidarTipoOperacaoAsync(dto, idCompany, id);
 
-            mdfe.DataEmissao = dto.DataEmissao;
-            mdfe.UfCarregamento = NormalizarUf(dto.UfCarregamento);
-            mdfe.UfDescarregamento = NormalizarUf(dto.UfDescarregamento);
-            mdfe.TipoEmitente = dto.TipoEmitente!.Value;
-            mdfe.Modal = dto.Modal!.Value;
-            mdfe.TipoOperacao = dto.TipoOperacao!.Value;
-            // CodMunCarregamento/MunCarregamento: fixados pelo consolidador.
-            mdfe.TipoCarga = dto.TipoCarga!.Value;
-            mdfe.ProdutoPredominante = dto.ProdutoPredominante.Trim();
-            mdfe.InfoAdFisco = string.IsNullOrWhiteSpace(dto.InfoAdFisco) ? null : dto.InfoAdFisco.Trim();
-            mdfe.InfoComplementar = string.IsNullOrWhiteSpace(dto.InfoComplementar) ? null : dto.InfoComplementar.Trim();
-            mdfe.IndicadorPagamento = dto.IndicadorPagamento ?? MdfeIndicadorPagamento.AVista;
-            mdfe.PagamentoBanco = Limpar(dto.PagamentoBanco);
-            mdfe.PagamentoAgencia = Limpar(dto.PagamentoAgencia);
-            mdfe.PagamentoCnpjIpef = Limpar(dto.PagamentoCnpjIpef);
-            mdfe.PagamentoChavePix = Limpar(dto.PagamentoChavePix);
-            mdfe.CodigoCIOT = Limpar(dto.CodigoCIOT);
-            mdfe.ContratanteId = dto.ContratanteId;
-            mdfe.IdVeiculoTracao = dto.IdVeiculoTracao;
+            // Entidade NOVA, desconectada, que vai substituir a antiga.
+            var mdfe = new MdfeEmissao
+            {
+                Id = id,
+                IdCompany = idCompany,
+                DataEmissao = dto.DataEmissao,
+                UfCarregamento = NormalizarUf(dto.UfCarregamento),
+                UfDescarregamento = NormalizarUf(dto.UfDescarregamento),
+                TipoEmitente = dto.TipoEmitente!.Value,
+                Modal = dto.Modal!.Value,
+                TipoOperacao = dto.TipoOperacao!.Value,
+                TipoCarga = dto.TipoCarga!.Value,
+                ProdutoPredominante = dto.ProdutoPredominante.Trim(),
+                InfoAdFisco = string.IsNullOrWhiteSpace(dto.InfoAdFisco) ? null : dto.InfoAdFisco.Trim(),
+                InfoComplementar = string.IsNullOrWhiteSpace(dto.InfoComplementar) ? null : dto.InfoComplementar.Trim(),
+                IndicadorPagamento = dto.IndicadorPagamento ?? MdfeIndicadorPagamento.AVista,
+                PagamentoBanco = Limpar(dto.PagamentoBanco),
+                PagamentoAgencia = Limpar(dto.PagamentoAgencia),
+                PagamentoCnpjIpef = Limpar(dto.PagamentoCnpjIpef),
+                PagamentoChavePix = Limpar(dto.PagamentoChavePix),
+                CodigoCIOT = Limpar(dto.CodigoCIOT),
+                ContratanteId = dto.ContratanteId,
+                IdVeiculoTracao = dto.IdVeiculoTracao,
+                // preservados pelo repositório a partir do registro atual:
+                // Serie, Numero, CreatedAt, ChaveAcesso, XmlCompleto
+            };
 
             AplicarFilhos(mdfe, dto);
 
-            // A configuração é buscada aqui só pelo município de carregamento — os
-            // campos de município que vieram no DTO são descartados dentro do
-            // consolidador.
             var config = await ObterConfiguracaoFiscalAsync(idCompany);
-
             ConsolidarTotais(mdfe, config);
 
             var atualizado = await _mdfeRepository.UpdateAsync(mdfe);
 
-            // Um manifesto que não era rascunho ainda carrega o XML assinado e a
-            // chave — o Update acima os preserva de propósito. Mas a edição foi
-            // aceita, e a partir daqui o documento assinado não corresponde mais
-            // aos dados da linha: ele é descartado para que o XML seja gerado de
-            // novo a partir do que está gravado agora.
-            if (mdfe.StatusMdfe != MdfeStatus.Rascunho)
+            if (existente.StatusMdfe != MdfeStatus.Rascunho)
             {
                 await _mdfeRepository.ReabrirParaEdicaoAsync(id, idCompany);
-
-                // Reler: ExecuteUpdate não passa pelo change tracker, então o
-                // objeto em memória ainda tem o XML que acabou de ser descartado.
                 atualizado = await _mdfeRepository.GetByIdAsync(id, idCompany) ?? atualizado;
             }
 
@@ -596,8 +587,8 @@ namespace Service
             // TENTATIVAS DE TRANSMISSÃO; vê-lo subir a cada consulta faria a tela
             // mentir sobre o histórico do documento.
             var jaAutorizado = mdfe.StatusMdfe == MdfeStatus.Autorizado
-                || mdfe.StatusMdfe == MdfeStatus.Encerrado
-                || mdfe.StatusMdfe == MdfeStatus.Cancelado;
+                               || mdfe.StatusMdfe == MdfeStatus.Encerrado
+                               || mdfe.StatusMdfe == MdfeStatus.Cancelado;
 
             if ((retorno.CStat == 100 || protocolo?.CStat == 100) && !jaAutorizado)
             {
@@ -1679,7 +1670,7 @@ namespace Service
         private MDFeConfiguracao MontarConfiguracaoMdfe(FiscalConfiguration config)
         {
             var certificado = config.CertificadoDigital
-                ?? throw new DomainException("A empresa não tem certificado digital configurado — sem ele o manifesto não pode ser assinado.");
+                              ?? throw new DomainException("A empresa não tem certificado digital configurado — sem ele o manifesto não pode ser assinado.");
 
             if (string.IsNullOrWhiteSpace(certificado.Arquivo))
                 throw new DomainException("O certificado digital da empresa está sem arquivo informado.");

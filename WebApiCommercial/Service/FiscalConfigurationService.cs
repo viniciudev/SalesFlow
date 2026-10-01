@@ -120,6 +120,9 @@ namespace Service
 					existing.Emitente = new Emitente();
 
 				// Propriedades b�sicas do Emitente
+				if (!string.IsNullOrEmpty(request.Emitente.Rntrc))
+					existing.Emitente.Rntrc = request.Emitente.Rntrc;
+				
 				if (!string.IsNullOrEmpty(request.Emitente.Cnpj))
 					existing.Emitente.Cnpj = request.Emitente.Cnpj;
 
@@ -280,6 +283,7 @@ namespace Service
 			{
 				model.Emitente = new Emitente
 				{
+					Rntrc = request.Emitente.Rntrc,
 					Cnpj = request.Emitente.Cnpj,
 					Cpf = request.Emitente.Cpf,
 					InscricaoEstadual = request.Emitente.InscricaoEstadual,

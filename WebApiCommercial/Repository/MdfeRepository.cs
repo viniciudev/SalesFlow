@@ -306,53 +306,108 @@ namespace Repository
         /// </summary>
         public async Task<MdfeEmissao> UpdateAsync(MdfeEmissao mdfe)
         {
-            var atual = await GetTrackedAsync(mdfe.Id, mdfe.IdCompany)
-                ?? throw new InvalidOperationException($"Manifesto {mdfe.Id} não encontrado para a empresa {mdfe.IdCompany}.");
+            // 1) Lê o pai SEM rastrear — só para pegar os campos que não vêm do payload.
+            var atual = await _dbContext.Set<MdfeEmissao>()
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(x => x.Id == mdfe.Id && x.IdCompany == mdfe.IdCompany)
+                        ?? throw new InvalidOperationException($"Manifesto {mdfe.Id} não encontrado para a empresa {mdfe.IdCompany}.");
 
-            _dbContext.Set<MdfeDocumento>().RemoveRange(atual.Documentos);
-            _dbContext.Set<MdfeVeiculo>().RemoveRange(atual.Veiculos);
-            _dbContext.Set<MdfeCondutor>().RemoveRange(atual.Condutores);
-            _dbContext.Set<MdfePercurso>().RemoveRange(atual.Percurso);
+            // 2) Se o mdfe já estiver sendo rastreado (é o caso quando o Service usa
+            //    GetTrackedAsync), desanexa o grafo inteiro para não brigar com o EF.
+            DetachGraph(mdfe);
 
-            // Série, número e criação são do registro, não do payload: aceitar os
-            // que vieram no objeto deixaria a tela reescrever a identidade fiscal
-            // do manifesto (ou zerar a auditoria) mandando o campo em branco.
-            mdfe.Serie = atual.Serie;
-            mdfe.Numero = atual.Numero;
-            mdfe.CreatedAt = atual.CreatedAt;
-            mdfe.UpdatedAt = DateTime.UtcNow;
-            mdfe.ChaveAcesso = atual.ChaveAcesso;
-            mdfe.XmlCompleto = atual.XmlCompleto;
+            // 3) Apaga os filhos atuais direto no banco (sem materializar).
+            await _dbContext.Set<MdfeDocumento>().Where(x => x.IdMdfe == mdfe.Id).ExecuteDeleteAsync();
+            await _dbContext.Set<MdfeVeiculo>()  .Where(x => x.IdMdfe == mdfe.Id).ExecuteDeleteAsync();
+            await _dbContext.Set<MdfeCondutor>() .Where(x => x.IdMdfe == mdfe.Id).ExecuteDeleteAsync();
+            await _dbContext.Set<MdfePercurso>() .Where(x => x.IdMdfe == mdfe.Id).ExecuteDeleteAsync();
 
-            foreach (var doc in mdfe.Documentos)
-            {
-                doc.Id = 0;
-                doc.IdMdfe = mdfe.Id;
-            }
+            // 4) Preserva identidade fiscal / auditoria.
+            mdfe.Serie        = atual.Serie;
+            mdfe.Numero       = atual.Numero;
+            mdfe.CreatedAt    = atual.CreatedAt;
+            mdfe.UpdatedAt    = DateTime.UtcNow;
+            mdfe.ChaveAcesso  = atual.ChaveAcesso;
+            mdfe.XmlCompleto  = atual.XmlCompleto;
 
-            foreach (var veiculo in mdfe.Veiculos)
-            {
-                veiculo.Id = 0;
-                veiculo.IdMdfe = mdfe.Id;
-            }
+            // 5) Zera Ids e religa os filhos ao pai.
+            foreach (var d in mdfe.Documentos) { d.Id = 0; d.IdMdfe = mdfe.Id; }
+            foreach (var v in mdfe.Veiculos)   { v.Id = 0; v.IdMdfe = mdfe.Id; }
+            foreach (var c in mdfe.Condutores) { c.Id = 0; c.IdMdfe = mdfe.Id; }
+            foreach (var p in mdfe.Percurso)   { p.Id = 0; p.IdMdfe = mdfe.Id; }
 
-            foreach (var condutor in mdfe.Condutores)
-            {
-                condutor.Id = 0;
-                condutor.IdMdfe = mdfe.Id;
-            }
+            // 6) Anexa o pai como Modified e os filhos como Added — grafo desconectado.
+            _dbContext.Attach(mdfe);
+            _dbContext.Entry(mdfe).State = EntityState.Modified;
 
-            foreach (var percurso in mdfe.Percurso)
-            {
-                percurso.Id = 0;
-                percurso.IdMdfe = mdfe.Id;
-            }
+            foreach (var d in mdfe.Documentos) _dbContext.Entry(d).State = EntityState.Added;
+            foreach (var v in mdfe.Veiculos)   _dbContext.Entry(v).State = EntityState.Added;
+            foreach (var c in mdfe.Condutores) _dbContext.Entry(c).State = EntityState.Added;
+            foreach (var p in mdfe.Percurso)   _dbContext.Entry(p).State = EntityState.Added;
 
-            _dbContext.Set<MdfeEmissao>().Update(mdfe);
             await _dbContext.SaveChangesAsync();
-
             return mdfe;
         }
+
+        private void DetachGraph(MdfeEmissao mdfe)
+        {
+            // Desanexa filhos e o pai do change tracker, se estiverem rastreados.
+            foreach (var d in mdfe.Documentos) _dbContext.Entry(d).State = EntityState.Detached;
+            foreach (var v in mdfe.Veiculos)   _dbContext.Entry(v).State = EntityState.Detached;
+            foreach (var c in mdfe.Condutores) _dbContext.Entry(c).State = EntityState.Detached;
+            foreach (var p in mdfe.Percurso)   _dbContext.Entry(p).State = EntityState.Detached;
+
+            _dbContext.Entry(mdfe).State = EntityState.Detached;
+        }
+        // public async Task<MdfeEmissao> UpdateAsync(MdfeEmissao mdfe)
+        // {
+        //     var atual = await GetTrackedAsync(mdfe.Id, mdfe.IdCompany)
+        //         ?? throw new InvalidOperationException($"Manifesto {mdfe.Id} não encontrado para a empresa {mdfe.IdCompany}.");
+        //
+        //     _dbContext.Set<MdfeDocumento>().RemoveRange(atual.Documentos);
+        //     _dbContext.Set<MdfeVeiculo>().RemoveRange(atual.Veiculos);
+        //     _dbContext.Set<MdfeCondutor>().RemoveRange(atual.Condutores);
+        //     _dbContext.Set<MdfePercurso>().RemoveRange(atual.Percurso);
+        //
+        //     // Série, número e criação são do registro, não do payload: aceitar os
+        //     // que vieram no objeto deixaria a tela reescrever a identidade fiscal
+        //     // do manifesto (ou zerar a auditoria) mandando o campo em branco.
+        //     mdfe.Serie = atual.Serie;
+        //     mdfe.Numero = atual.Numero;
+        //     mdfe.CreatedAt = atual.CreatedAt;
+        //     mdfe.UpdatedAt = DateTime.UtcNow;
+        //     mdfe.ChaveAcesso = atual.ChaveAcesso;
+        //     mdfe.XmlCompleto = atual.XmlCompleto;
+        //
+        //     foreach (var doc in mdfe.Documentos)
+        //     {
+        //         doc.Id = 0;
+        //         doc.IdMdfe = mdfe.Id;
+        //     }
+        //
+        //     foreach (var veiculo in mdfe.Veiculos)
+        //     {
+        //         veiculo.Id = 0;
+        //         veiculo.IdMdfe = mdfe.Id;
+        //     }
+        //
+        //     foreach (var condutor in mdfe.Condutores)
+        //     {
+        //         condutor.Id = 0;
+        //         condutor.IdMdfe = mdfe.Id;
+        //     }
+        //
+        //     foreach (var percurso in mdfe.Percurso)
+        //     {
+        //         percurso.Id = 0;
+        //         percurso.IdMdfe = mdfe.Id;
+        //     }
+        //
+        //     _dbContext.Set<MdfeEmissao>().Update(mdfe);
+        //     await _dbContext.SaveChangesAsync();
+        //
+        //     return mdfe;
+        // }
 
         /// <summary>
         /// Grava o XML assinado e o resultado da validação, sem passar pelo
@@ -611,10 +666,10 @@ namespace Repository
                 .Include(n => n.Sale).ThenInclude(s => s.Client)
                 .Include(n => n.Sale).ThenInclude(s => s.SaleItems).ThenInclude(i => i.Product)
                 .Where(n => n.CompanyId == idCompany
-                    && n.TipoDocumento == Model.Enums.TipoDocumentoEnum.NFE
-                    && n.StatusNfe == StatusNfe.emitida
-                    && n.ChaveAcesso != null
-                    && n.ChaveAcesso.Length == 44)
+                            && n.TipoDocumento == Model.Enums.TipoDocumentoEnum.NFE
+                            && n.StatusNfe == StatusNfe.emitida
+                            && n.ChaveAcesso != null
+                            && n.ChaveAcesso.Length == 44)
                 .AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(filter.DocumentoChave))
@@ -666,8 +721,8 @@ namespace Repository
                 .Include(p => p.Fornecedor)
                 .Include(p => p.PurchaseItems).ThenInclude(i => i.Produto)
                 .Where(p => p.IdCompany == idCompany
-                    && p.ChaveNfe != null
-                    && p.ChaveNfe.Length == 44)
+                            && p.ChaveNfe != null
+                            && p.ChaveNfe.Length == 44)
                 .AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(filter.DocumentoChave))
@@ -718,9 +773,9 @@ namespace Repository
             var chaves = await _dbContext.Set<MdfeDocumento>()
                 .AsNoTracking()
                 .Where(d => d.Mdfe.IdCompany == idCompany
-                    && d.Mdfe.StatusMdfe != Model.Enums.MdfeStatus.Cancelado
-                    && d.Mdfe.StatusMdfe != Model.Enums.MdfeStatus.Erro
-                    && (ignorarMdfeId == null || d.IdMdfe != ignorarMdfeId.Value))
+                            && d.Mdfe.StatusMdfe != Model.Enums.MdfeStatus.Cancelado
+                            && d.Mdfe.StatusMdfe != Model.Enums.MdfeStatus.Erro
+                            && (ignorarMdfeId == null || d.IdMdfe != ignorarMdfeId.Value))
                 .Select(d => d.ChaveNFe)
                 .Distinct()
                 .ToListAsync();
@@ -767,8 +822,8 @@ namespace Repository
             var jaRegistrados = await _dbContext.Set<VehicleUsageHistory>()
                 .AsNoTracking()
                 .Where(h => h.Source == Model.Enums.VehicleUsageSource.Mdfe
-                    && h.SourceId == mdfe.Id
-                    && idsVeiculo.Contains(h.IdVehicle))
+                            && h.SourceId == mdfe.Id
+                            && idsVeiculo.Contains(h.IdVehicle))
                 .Select(h => h.IdVehicle)
                 .ToListAsync();
 
