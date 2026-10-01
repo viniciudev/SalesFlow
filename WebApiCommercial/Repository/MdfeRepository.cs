@@ -384,6 +384,40 @@ namespace Repository
                     .SetProperty(m => m.MunCarregamento, munCarregamento)
                     .SetProperty(m => m.StatusMdfe, Model.Enums.MdfeStatus.Validado)
                     .SetProperty(m => m.ErrorMessage, (string)null)
+                    // A recusa anterior deixa de valer: o manifesto que acabou de
+                    // ser assinado não tem cStat nenhum. Sem limpar, um manifesto
+                    // regerado depois de uma rejeição voltaria a `Validado`
+                    // carregando a tarja "Recusado pela SEFAZ" da tentativa que já
+                    // não existe — a tela decide isso por `CStat != null`.
+                    .SetProperty(m => m.CStat, (int?)null)
+                    .SetProperty(m => m.XMotivo, (string)null)
+                    .SetProperty(m => m.UpdatedAt, DateTime.UtcNow));
+        }
+
+        /// <summary>
+        /// Devolve um manifesto já transmitido ao estado de rascunho, descartando o
+        /// XML assinado, a chave e a recusa da SEFAZ — é o que permite corrigir os
+        /// dados e emitir de novo.
+        ///
+        /// Quem decide se isso é seguro é o serviço, não este método: descartar a
+        /// chave de um documento que a SEFAZ possa ter AUTORIZADO (resposta
+        /// perdida) apagaria a única referência dele. Ver
+        /// <c>MdfeService.PodeEditar</c>.
+        ///
+        /// O que NÃO é limpo, de propósito: <c>ResponseJson</c>, que é o registro do
+        /// que a SEFAZ respondeu (histórico, não estado), e <c>TryCount</c>, porque
+        /// as tentativas aconteceram de fato.
+        /// </summary>
+        public async Task<int> ReabrirParaEdicaoAsync(int id, int idCompany)
+        {
+            return await _dbContext.Set<MdfeEmissao>()
+                .Where(m => m.Id == id && m.IdCompany == idCompany)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(m => m.XmlCompleto, (string)null)
+                    .SetProperty(m => m.ChaveAcesso, (string)null)
+                    .SetProperty(m => m.CStat, (int?)null)
+                    .SetProperty(m => m.XMotivo, (string)null)
+                    .SetProperty(m => m.StatusMdfe, Model.Enums.MdfeStatus.Rascunho)
                     .SetProperty(m => m.UpdatedAt, DateTime.UtcNow));
         }
 
@@ -790,6 +824,7 @@ namespace Repository
         Task<MdfeEmissao> UpdateAsync(MdfeEmissao mdfe);
         Task<int> SalvarXmlAsync(int id, int idCompany, string chaveAcesso, string xml, decimal valorTotal, decimal pesoBruto, int quantidadeNFe, string codMunCarregamento, string munCarregamento);
         Task<int> MarcarErroAsync(int id, int idCompany, string mensagem);
+        Task<int> ReabrirParaEdicaoAsync(int id, int idCompany);
         Task<int> DeleteAsync(int id, int idCompany);
 
         // Transmissão e eventos — ver os comentários na implementação.

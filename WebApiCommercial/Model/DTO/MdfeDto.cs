@@ -308,6 +308,15 @@ namespace Model.DTO
         public bool PodeEncerrar { get; set; }
 
         /// <summary>
+        /// Calculado, e não uma coluna. Um manifesto rejeitado pela SEFAZ pode ser
+        /// corrigido e reemitido, mas reabrir apaga o XML assinado e a chave de
+        /// acesso — então a regra é mais estreita que o status, e mora no serviço
+        /// (<c>PodeEditar</c>), junto da guarda que a aplica. Ver lá por que um
+        /// <see cref="MdfeStatus.Erro"/> sem <c>CStat</c> é recusado.
+        /// </summary>
+        public bool PodeEditar { get; set; }
+
+        /// <summary>
         /// O XML assinado. Devolvido no detalhe para a tela poder exibir na aba
         /// Resumo; o download é <c>GET /api/Mdfe/{id}/xml</c>, que evita carregar
         /// o XML inteiro em toda listagem.
@@ -385,6 +394,15 @@ namespace Model.DTO
         /// </summary>
         public int? CStat { get; set; }
         public string? XMotivo { get; set; }
+
+        /// <summary>
+        /// Calculado, e não uma coluna: o que impede a exclusão é o XML assinado
+        /// existir, e não o status — um manifesto em <see cref="MdfeStatus.Erro"/>
+        /// por rejeição da SEFAZ já foi transmitido e tem XML. A listagem usa este
+        /// campo em vez de adivinhar pelo status, que era o que fazia o botão
+        /// "Excluir" aparecer e ser recusado no clique.
+        /// </summary>
+        public bool PodeExcluir { get; set; }
     }
 
     /// <summary>

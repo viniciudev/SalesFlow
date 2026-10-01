@@ -199,11 +199,13 @@ namespace Service
             if (mdfe == null)
                 throw new DomainException("Manifesto não encontrado.");
 
-            // Depois de assinado o XML é imutável: mudar a origem invalidaria a
-            // assinatura, e o manifesto já declarado à fiscalização não é mais um
-            // rascunho. Editar aqui exigiria cancelar e emitir outro — que é fase 2.
-            if (!string.IsNullOrEmpty(mdfe.XmlCompleto) || mdfe.StatusMdfe != MdfeStatus.Rascunho)
-                throw new DomainException("Este manifesto já teve o XML gerado e não pode mais ser editado. Para alterá-lo, exclua este rascunho e emita outro.");
+            // Rascunho e Erro são os dois estados em que o manifesto ainda não
+            // declara nada à fiscalização. Um Erro por rejeição da SEFAZ ainda
+            // carrega o XML assinado, e editá-lo é justamente o que descarta esse
+            // XML — então a permissão não sai do status, e sim de PodeEditar, que
+            // só a concede quando há certeza de que a SEFAZ recusou.
+            if (!PodeEditar(mdfe))
+                throw new DomainException(MotivoNaoPodeEditar(mdfe));
 
             await ValidarTipoOperacaoAsync(dto, idCompany, id);
 
@@ -238,6 +240,20 @@ namespace Service
 
             var atualizado = await _mdfeRepository.UpdateAsync(mdfe);
 
+            // Um manifesto que não era rascunho ainda carrega o XML assinado e a
+            // chave — o Update acima os preserva de propósito. Mas a edição foi
+            // aceita, e a partir daqui o documento assinado não corresponde mais
+            // aos dados da linha: ele é descartado para que o XML seja gerado de
+            // novo a partir do que está gravado agora.
+            if (mdfe.StatusMdfe != MdfeStatus.Rascunho)
+            {
+                await _mdfeRepository.ReabrirParaEdicaoAsync(id, idCompany);
+
+                // Reler: ExecuteUpdate não passa pelo change tracker, então o
+                // objeto em memória ainda tem o XML que acabou de ser descartado.
+                atualizado = await _mdfeRepository.GetByIdAsync(id, idCompany) ?? atualizado;
+            }
+
             return await MapearDetalheAsync(atualizado, idCompany);
         }
 
@@ -248,7 +264,7 @@ namespace Service
                 throw new DomainException("Manifesto não encontrado.");
 
             if (!string.IsNullOrEmpty(mdfe.XmlCompleto))
-                throw new DomainException("Manifesto com XML gerado não pode ser excluído — ele já foi declarado. Use o cancelamento (fase 2).");
+                throw new DomainException("Este manifesto já foi transmitido e não pode ser excluído. Para corrigir os dados, edite o manifesto e gere o XML novamente; se ele já estiver autorizado, o caminho é o cancelamento.");
 
             await _mdfeRepository.DeleteAsync(id, idCompany);
         }
@@ -473,7 +489,7 @@ namespace Service
 
             try
             {
-                var documento = FuncoesXml.XmlStringParaClasse<MDFEletronico>(mdfe.XmlCompleto);
+                var documento = ComVersaoDoDocumento(FuncoesXml.XmlStringParaClasse<MDFEletronico>(mdfe.XmlCompleto));
                 retorno = new MDFe.Servicos.RecepcaoMDFe.ServicoMDFeRecepcao()
                     .MDFeRecepcaoSinc(documento, configuracaoMdfe);
             }
@@ -508,7 +524,7 @@ namespace Service
                     // o procMDFe de um manifesto v3.00 declarado como 1.00 é
                     // simplesmente o leiaute errado.
                     Versao = MdfeBuilder.VersaoLayout,
-                    MDFe = FuncoesXml.XmlStringParaClasse<MDFEletronico>(mdfe.XmlCompleto),
+                    MDFe = ComVersaoDoDocumento(FuncoesXml.XmlStringParaClasse<MDFEletronico>(mdfe.XmlCompleto)),
                     ProtMDFe = retorno.ProtMdFe
                 };
 
@@ -588,7 +604,7 @@ namespace Service
                 var proc = new MDFe.Classes.Retorno.MDFeProcMDFe
                 {
                     Versao = MdfeBuilder.VersaoLayout,
-                    MDFe = FuncoesXml.XmlStringParaClasse<MDFEletronico>(mdfe.XmlCompleto!),
+                    MDFe = ComVersaoDoDocumento(FuncoesXml.XmlStringParaClasse<MDFEletronico>(mdfe.XmlCompleto!)),
                     ProtMDFe = retorno.ProtMDFe
                 };
 
@@ -861,6 +877,30 @@ namespace Service
         }
 
         /// <summary>
+        /// Devolve o manifesto desserializado com a versão do leiaute do PRÓPRIO
+        /// documento propagada para o <c>ide</c>.
+        ///
+        /// <b>Sem isto a transmissão não funciona.</b> O <c>XmlSerializer</c> cria o
+        /// <c>MDFeIde</c> pelo construtor privado de serialização, que não recebe a
+        /// versão; os proxies <c>dhEmi</c>/<c>dhIniViagem</c> caem então no fallback
+        /// para o singleton <c>MDFeConfiguracao.Instancia</c>, que neste serviço nunca
+        /// é configurado (é global e compartilhado entre empresas). O valor fica
+        /// <c>0</c> e a serialização lança "Versão Inválida para MDF-e" — dentro de
+        /// <c>MDFeRecepcaoSinc</c>, ao montar o envelope SOAP, longe daqui.
+        ///
+        /// A versão vem de <c>infMDFe/@versao</c>, que é o que o documento declara
+        /// sobre si mesmo: é ela que diz em que formato as datas foram escritas e,
+        /// portanto, em que formato devem ser reescritas. Não é constante
+        /// (<see cref="MdfeBuilder.VersaoLayout"/>) de propósito — um manifesto
+        /// antigo em v1.00 continuaria sendo reescrito no formato errado.
+        /// </summary>
+        private static MDFEletronico ComVersaoDoDocumento(MDFEletronico documento)
+        {
+            documento.InfMDFe.Ide.VersaoLayout = documento.InfMDFe.Versao;
+            return documento;
+        }
+
+        /// <summary>
         /// Carrega o <c>MDFe</c> de dentro do que está gravado em
         /// <c>XmlCompleto</c>.
         ///
@@ -881,10 +921,10 @@ namespace Service
                 if (proc?.MDFe == null)
                     throw new DomainException("O XML autorizado do manifesto está sem o nó MDFe.");
 
-                return proc.MDFe;
+                return ComVersaoDoDocumento(proc.MDFe);
             }
 
-            return FuncoesXml.XmlStringParaClasse<MDFEletronico>(mdfe.XmlCompleto);
+            return ComVersaoDoDocumento(FuncoesXml.XmlStringParaClasse<MDFEletronico>(mdfe.XmlCompleto));
         }
 
         /// <summary>
@@ -1368,7 +1408,11 @@ namespace Service
                 QuantidadeNFe = m.QuantidadeNFe,
                 VeiculoTracaoPlaca = m.VeiculoTracao?.LicensePlate,
                 MunCarregamento = m.MunCarregamento,
-                CreatedAt = m.CreatedAt
+                CreatedAt = m.CreatedAt,
+                // A listagem decide a exclusão por aqui, e não pelo status: o que
+                // barra o Delete é o XML assinado existir, não o estado — um Erro
+                // por rejeição da SEFAZ também já foi transmitido.
+                PodeExcluir = string.IsNullOrEmpty(m.XmlCompleto)
             };
         }
 
@@ -1467,6 +1511,7 @@ namespace Service
 
             dto.PodeCancelar = PodeCancelar(m);
             dto.PodeEncerrar = m.StatusMdfe == MdfeStatus.Autorizado;
+            dto.PodeEditar = PodeEditar(m);
             dto.Validacao = await CalcularValidacaoAsync(m, idCompany);
             return dto;
         }
@@ -1487,6 +1532,46 @@ namespace Service
                 return false;
 
             return !m.DataAutorizacao.HasValue || DateTime.UtcNow <= m.DataAutorizacao.Value.AddHours(24);
+        }
+
+        /// <summary>
+        /// Manifesto que pode voltar a rascunho para ser corrigido — a mesma regra
+        /// que <see cref="AtualizarAsync"/> aplica antes de aceitar a edição, exposta
+        /// no detalhe para a tela desabilitar o botão em vez de mostrar o erro
+        /// depois. Espelha <see cref="PodeCancelar"/> nesse arranjo.
+        ///
+        /// <see cref="MdfeStatus.Rascunho"/>: nunca teve XML.
+        /// <see cref="MdfeStatus.Erro"/> sem XML: falha de montagem ou assinatura —
+        /// <c>MarcarErroAsync</c> roda antes de <c>SalvarXmlAsync</c>, então nada foi
+        /// transmitido.
+        /// <see cref="MdfeStatus.Erro"/> com XML e <c>CStat</c>: a SEFAZ respondeu e
+        /// recusou; o XML assinado não vale nada e pode ser descartado.
+        /// <see cref="MdfeStatus.Erro"/> com XML e <b>sem</b> <c>CStat</c>: não dá
+        /// para afirmar que houve recusa. A resposta pode ter se perdido com o
+        /// documento já autorizado, e reabrir apagaria <c>ChaveAcesso</c> — o único
+        /// registro dele. A tela manda consultar a situação antes.
+        /// </summary>
+        private static bool PodeEditar(MdfeEmissao m)
+        {
+            if (m.StatusMdfe == MdfeStatus.Rascunho)
+                return true;
+
+            if (m.StatusMdfe != MdfeStatus.Erro)
+                return false;
+
+            return string.IsNullOrEmpty(m.XmlCompleto) || m.CStat.HasValue;
+        }
+
+        /// <summary>Por que <see cref="PodeEditar"/> disse não — a mensagem que a tela mostra.</summary>
+        private static string MotivoNaoPodeEditar(MdfeEmissao m)
+        {
+            if (m.StatusMdfe == MdfeStatus.Erro)
+                return "Este manifesto foi transmitido e a resposta da SEFAZ não chegou. Consulte a situação antes de editá-lo: se ele tiver sido autorizado, corrigir os dados apagaria o registro de um documento válido.";
+
+            if (m.StatusMdfe == MdfeStatus.Validado)
+                return "Este manifesto tem XML assinado, aguardando transmissão. Transmita-o antes de alterar os dados.";
+
+            return $"O manifesto está com situação '{m.StatusMdfe}' e não pode mais ser editado.";
         }
 
         private static DocumentoElegivelDto MapearSaida(NFeEmission nota, HashSet<string> chavesVinculadas)

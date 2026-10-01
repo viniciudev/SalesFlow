@@ -26,7 +26,31 @@ namespace MDFe.Classes.Informacoes
         }
 
         [XmlIgnore]
-        private readonly VersaoServico? _versaoServico;
+        private VersaoServico? _versaoServico;
+
+        /// <summary>
+        /// Versão do leiaute usada para escrever <c>dhEmi</c> e <c>dhIniViagem</c>.
+        ///
+        /// <b>Patch local sobre a biblioteca do DFe.NET.</b> O <c>XmlSerializer</c>
+        /// cria este objeto pelo construtor privado, que não tem como receber a
+        /// versão — então todo <see cref="MDFeIde"/> que veio de
+        /// <c>XmlStringParaClasse</c> fica com <c>_versaoServico == null</c> e cai no
+        /// fallback para <c>MDFeConfiguracao.Instancia</c>. Num serviço web
+        /// multi-empresa esse singleton nunca é configurado (é compartilhado entre
+        /// requisições), o valor fica <c>default(VersaoServico) == 0</c>, e os proxies
+        /// abaixo lançam "Versão Inválida para MDF-e" no meio da serialização — que é
+        /// onde a transmissão monta o envelope SOAP.
+        ///
+        /// Quem desserializa informa aqui a versão do próprio documento
+        /// (<c>infMDFe/@versao</c>), que é a fonte da verdade: é ela que diz como os
+        /// campos de data foram escritos e, portanto, como devem ser reescritos.
+        /// </summary>
+        [XmlIgnore]
+        public VersaoServico VersaoLayout
+        {
+            get { return _versaoServico ?? MDFeConfiguracao.Instancia.VersaoWebService.VersaoLayout; }
+            set { _versaoServico = value; }
+        }
 
         /// <summary>
         /// 2 - Código da UF do emitente do MDF-e. 
@@ -116,8 +140,7 @@ namespace MDFe.Classes.Informacoes
         {
             get
             {
-                var versaoLayout = _versaoServico ?? MDFeConfiguracao.Instancia.VersaoWebService.VersaoLayout;
-                switch (versaoLayout)
+                switch (VersaoLayout)
                 {
                     case VersaoServico.Versao100:
                         return DhEmi.ParaDataHoraStringSemUtc();
@@ -207,9 +230,7 @@ namespace MDFe.Classes.Informacoes
         {
             get
             {
-                var versaoLayout = _versaoServico ?? MDFeConfiguracao.Instancia.VersaoWebService.VersaoLayout;
-
-                switch (versaoLayout)
+                switch (VersaoLayout)
                 {
                     case VersaoServico.Versao100:
                         return DhIniViagem.ParaDataHoraStringSemUtc();

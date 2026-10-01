@@ -107,7 +107,7 @@ public class DamdfeMdfeDocument : IDocument
             var proc = FuncoesXml.XmlStringParaClasse<MDFeProcMDFe>(xml);
             if (proc?.MDFe != null)
             {
-                _mdfe = proc.MDFe;
+                _mdfe = ComVersaoDoDocumento(proc.MDFe);
                 _protocolo = proc.ProtMDFe?.InfProt;
                 return;
             }
@@ -119,13 +119,30 @@ public class DamdfeMdfeDocument : IDocument
 
         try
         {
-            _mdfe = FuncoesXml.XmlStringParaClasse<MDFe.Classes.Informacoes.MDFe>(xml);
+            _mdfe = ComVersaoDoDocumento(
+                FuncoesXml.XmlStringParaClasse<MDFe.Classes.Informacoes.MDFe>(xml));
             _protocolo = null;
         }
         catch (Exception)
         {
             throw new ArgumentException("Verifique se o XML do manifesto está correto.");
         }
+    }
+
+    /// <summary>
+    /// Propaga a versão do leiaute declarada pelo documento para o <c>ide</c>
+    /// (<c>infMDFe/@versao</c> → <c>ide/@versao</c>).
+    ///
+    /// Sem isto a impressão quebra: o <c>XmlSerializer</c> cria o <c>MDFeIde</c>
+    /// pelo construtor privado de serialização, que não recebe a versão, e os
+    /// proxies de data caem no singleton <c>MDFeConfiguracao.Instancia</c> — que
+    /// numa aplicação web nunca é configurado. O <c>ProxyDhEmi</c> lido no
+    /// cabeçalho lançaria "Versão Inválida para MDF-e" ao montar o PDF.
+    /// </summary>
+    private static MDFe.Classes.Informacoes.MDFe ComVersaoDoDocumento(MDFe.Classes.Informacoes.MDFe documento)
+    {
+        documento.InfMDFe.Ide.VersaoLayout = documento.InfMDFe.Versao;
+        return documento;
     }
 
     public DocumentMetadata GetMetadata() => DocumentMetadata.Default;

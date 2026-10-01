@@ -72,9 +72,9 @@ namespace Model.Enums
     /// Situação da emissão no ServiceBOX. Não existe no leiaute — o que a SEFAZ
     /// devolve é o <c>cStat</c> do protocolo, tratado à parte.
     ///
-    /// Os valores 3 a 5 estão reservados para a fase 2 (transmissão, eventos de
-    /// encerramento e cancelamento). Já ficam declarados com o número definitivo
-    /// para que a fase 2 não precise de migration só para remapear status.
+    /// Os valores 3 a 5 foram declarados com o número definitivo desde a criação
+    /// da tabela, para que a transmissão e os eventos (encerramento e
+    /// cancelamento) não precisassem de migration só para remapear status.
     /// </summary>
     public enum MdfeStatus
     {
