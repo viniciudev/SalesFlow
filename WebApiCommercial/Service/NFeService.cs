@@ -182,7 +182,7 @@ namespace Service
 			int numeroNfe = Convert.ToInt32(nFeEmission.Numero);
 			var respEmissao = await TransmitirNfe(numeroNfe, fiscalConfig, sale, naturezaOperacao);
 
-			UpdateNFeEmission(nFeEmission, respEmissao, fiscalConfig);
+			UpdateNFeEmission(nFeEmission, respEmissao, fiscalConfig,naturezaOperacao);
 
 			await repository.UpdateAsync(nFeEmission.Id, nFeEmission);
 			return new ResponseGeneric { Success = true, Data = nFeEmission };
@@ -234,10 +234,13 @@ namespace Service
 		}
 
 		// M�todo privado para atualizar entidade existente
-		private void UpdateNFeEmission(NFeEmission nFeEmission, object respEmissao, FiscalConfiguration fiscalConfig)
+		private void UpdateNFeEmission(NFeEmission nFeEmission, object respEmissao,
+			FiscalConfiguration fiscalConfig,NaturezaOperacao naturezaOperacao)
 		{
 			nFeEmission.Sent = true;
-			nFeEmission.Serie = fiscalConfig.NumeracaoDocumentos.Nfce.Serie;
+			nFeEmission.Serie = naturezaOperacao.TipoDocumento == TipoDocumentoEnum.NFCE
+				? fiscalConfig.NumeracaoDocumentos.Nfce.Serie
+				: fiscalConfig.NumeracaoDocumentos.Nfe.Serie;
 			nFeEmission.TryCount += 1;
 			nFeEmission.UpdatedAt = DateTime.Now;
 
@@ -262,14 +265,17 @@ namespace Service
 		}
 
 		// M�todo privado para criar nova entidade
-		private NFeEmission CreateNFeEmission(NFeEmissionDto attempt, object respEmissao, FiscalConfiguration fiscalConfig, int numero, NaturezaOperacao naturezaOperacao)
+		private NFeEmission CreateNFeEmission(NFeEmissionDto attempt, object respEmissao,
+			FiscalConfiguration fiscalConfig, int numero, NaturezaOperacao naturezaOperacao)
 		{
 			var entity = new NFeEmission
 			{
 				NaturezaOperacaoId = attempt.NaturezaOperacaoId,
 				SaleId = attempt.SaleId,
 				TipoDocumento = naturezaOperacao.TipoDocumento == TipoDocumentoEnum.NFE ? TipoDocumentoEnum.NFE : TipoDocumentoEnum.NFCE,
-				Serie = fiscalConfig.NumeracaoDocumentos.Nfce.Serie,
+				Serie =naturezaOperacao.TipoDocumento==TipoDocumentoEnum.NFCE?
+					fiscalConfig.NumeracaoDocumentos.Nfce.Serie
+				:fiscalConfig.NumeracaoDocumentos.Nfe.Serie,
 				Numero = numero,
 				CreatedAt = DateTime.Now,
 				TryCount = attempt.TryCount <= 0 ? 1 : attempt.TryCount,

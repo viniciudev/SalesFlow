@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net462;netstandard2.0;net8.0;net9.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\NFe\DFe.Classes\DFe.Classes.csproj" />
+    <ProjectReference Include="..\..\NFe\DFe.Utils\DFe.Utils.csproj" />
+    <ProjectReference Include="..\..\NFe\NFe.Utils\NFe.Utils.csproj" />
+  </ItemGroup>
+
+</Project>

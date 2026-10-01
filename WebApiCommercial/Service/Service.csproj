@@ -23,7 +23,26 @@
          Depende de OpenAC.Net.NFSe.Nacional >= 1.5.0.3 — por isso o pin acima. -->
     <PackageReference Include="OpenAC.Net.NFSe.Nacional.DANFSe.PDFSharp" Version="1.5.0.3" />
     <PackageReference Include="SendGrid" Version="9.29.3" />
-    <PackageReference Include="SkiaSharp" Version="3.119.2" />
+    <!-- O SkiaSharp entra aqui SO pelo BarcodeLib (codigo de barras Code128 da DAMDFe e
+         das DANFE), que e o unico consumidor dele na solucao — nenhum codigo nosso chama
+         a API direto. O BarcodeLib 3.1.4 declara SkiaSharp >= 2.88.8 E tambem
+         SkiaSharp.NativeAssets.Linux.NoDependencies >= 2.88.8, e e essa combinacao que
+         ele foi compilado para usar.
+
+         A versao TEM de andar junto com o nativo. O SkiaSharp gerenciado valida no
+         type initializer de SKObject que o libSkiaSharp.so carregado esta na mesma faixa
+         (2.88.8 aceita [2.88, 2.89); a 3.119.2 exige [119.0, 120.0)). Como o nativo Linux
+         so vem do pacote NativeAssets.Linux.NoDependencies, subir este pin sem subir
+         aquele junto faz o .so 2.88.8 ser carregado por um gerenciado 3.x e a DAMDFe
+         morre com TypeInitializationException em BarcodeStandard.Barcode..ctor().
+
+         Manter em 2.88.8 tambem evita forcar o BarcodeLib (compilado contra a API da
+         2.88) a rodar sobre a 3.x, que removeu membros que ele usa.
+
+         O QuestPDF NAO depende disso: desde a 2023.x ele embarca o proprio Skia
+         (runtimes/linux-x64/native/libQuestPdfSkia.so), sem pacote SkiaSharp nenhum —
+         por isso atualizar o QuestPDF nao tem efeito sobre este erro. -->
+    <PackageReference Include="SkiaSharp" Version="2.88.8" />
     <!-- 10.0.11 e o minimo que o OpenAC.Net.DFe.Core 1.7.0.3 (trazido pela 1.5.0.3) exige.
          Com 10.0.3 o restore falha com NU1605 (downgrade). -->
     <PackageReference Include="System.Drawing.Common" Version="10.0.11" />
@@ -31,6 +50,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- MDF-e vendorizado do DFe.NET (tag 2026.9.24.1416). Sao projetos, nao o pacote
+         Zeus.Net.MDFe: aquele pacote empacota DFe.Classes/DFe.Utils proprios, que
+         colidiriam com os daqui. Ver o plano para o detalhe. -->
+    <ProjectReference Include="..\MDFe\MDFe.Classes\MDFe.Classes.csproj" />
+    <ProjectReference Include="..\MDFe\MDFe.Damdfe.QuestPdf\MDFe.Damdfe.QuestPdf.csproj" />
+    <ProjectReference Include="..\MDFe\MDFe.Utils\MDFe.Utils.csproj" />
+    <ProjectReference Include="..\MDFe\MDFe.Servicos\MDFe.Servicos.csproj" />
+    <ProjectReference Include="..\MDFe\MDFe.Wsdl\MDFe.Wsdl.csproj" />
     <ProjectReference Include="..\NFe\DFe.Classes\DFe.Classes.csproj" />
     <ProjectReference Include="..\NFe\NFe.AppTeste.NetCore\NFe.AppTeste.NetCore.csproj" />
     <ProjectReference Include="..\NFe\NFe.Danfe.OpenFast\NFe.Danfe.OpenFast.csproj" />

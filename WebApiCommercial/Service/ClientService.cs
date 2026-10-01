@@ -71,6 +71,11 @@ namespace Service
 				Complemento = string.IsNullOrEmpty(model.Complemento) ? string.Empty : model.Complemento,
 				Ie = string.IsNullOrEmpty(model.Ie) ? string.Empty : model.Ie,
 				InscricaoMunicipal = string.IsNullOrEmpty(model.InscricaoMunicipal) ? string.Empty : model.InscricaoMunicipal,
+
+				// RNTRC (usado pelo cadastro de veículos na RV10). Nulo quando não
+				// informado — o parceiro comum não é transportador.
+				Rntrc = string.IsNullOrWhiteSpace(model.Rntrc) ? null : model.Rntrc.Trim(),
+
 				Email = string.IsNullOrEmpty(model.Email) ? string.Empty : model.Email,
 				CellPhone = string.IsNullOrEmpty(model.CellPhone) ? string.Empty : model.CellPhone,
 				Pais = string.IsNullOrEmpty(model.Pais) ? "Brasil" : model.Pais,

@@ -67,6 +67,18 @@ namespace Service
 					if (request.NumeracaoDocumentos.Dps.NumeroInicial > 0)
 						existing.NumeracaoDocumentos.Dps.NumeroInicial = request.NumeracaoDocumentos.Dps.NumeroInicial;
 				}
+				// dps
+				if (request.NumeracaoDocumentos.Mdfe != null)
+				{
+					if (existing.NumeracaoDocumentos.Mdfe == null)
+						existing.NumeracaoDocumentos.Nfce = new NumeracaoItem();
+
+					if (!string.IsNullOrEmpty(request.NumeracaoDocumentos.Mdfe.Serie))
+						existing.NumeracaoDocumentos.Mdfe.Serie = request.NumeracaoDocumentos.Mdfe.Serie;
+
+					if (request.NumeracaoDocumentos.Mdfe.NumeroInicial > 0)
+						existing.NumeracaoDocumentos.Mdfe.NumeroInicial = request.NumeracaoDocumentos.Mdfe.NumeroInicial;
+				}
 			}
 
 			// 2. CertificadoDigital
@@ -108,6 +120,9 @@ namespace Service
 					existing.Emitente = new Emitente();
 
 				// Propriedades b�sicas do Emitente
+				if (!string.IsNullOrEmpty(request.Emitente.Rntrc))
+					existing.Emitente.Rntrc = request.Emitente.Rntrc;
+				
 				if (!string.IsNullOrEmpty(request.Emitente.Cnpj))
 					existing.Emitente.Cnpj = request.Emitente.Cnpj;
 
@@ -228,6 +243,16 @@ namespace Service
 						NumeroInicial = request.NumeracaoDocumentos.Dps.NumeroInicial
 					};
 				}
+				// mdfe
+				if (request.NumeracaoDocumentos.Mdfe != null)
+				{
+					model.NumeracaoDocumentos.Mdfe = new NumeracaoItem
+					{
+						Serie = request.NumeracaoDocumentos.Mdfe.Serie ?? string.Empty,
+						NumeroInicial = request.NumeracaoDocumentos.Mdfe.NumeroInicial
+					};
+				}
+				
 			}
 
 			// 2. CertificadoDigital
@@ -258,6 +283,7 @@ namespace Service
 			{
 				model.Emitente = new Emitente
 				{
+					Rntrc = request.Emitente.Rntrc,
 					Cnpj = request.Emitente.Cnpj,
 					Cpf = request.Emitente.Cpf,
 					InscricaoEstadual = request.Emitente.InscricaoEstadual,

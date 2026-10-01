@@ -17,6 +17,8 @@ COPY ["NFe/NFe.Danfe.QuestPdf/NFe.Danfe.QuestPdf.csproj", "NFe/NFe.Danfe.QuestPd
 COPY ["NFe/DFe.Classes/DFe.Classes.csproj", "NFe/DFe.Classes/"]
 COPY ["NFe/DFe.Utils/DFe.Utils.csproj", "NFe/DFe.Utils/"]
 COPY ["NFe/NFe.Danfe.Base/NFe.Danfe.Base.csproj", "NFe/NFe.Danfe.Base/"]
+COPY ["MDFe/MDFe.Classes/MDFe.Classes.csproj", "MDFe/MDFe.Classes/"]
+COPY ["MDFe/MDFe.Utils/MDFe.Utils.csproj", "MDFe/MDFe.Utils/"]
 
 RUN dotnet restore WebApiCommercial/WebApiCommercial.csproj
 

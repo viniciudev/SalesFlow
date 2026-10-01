@@ -189,6 +189,10 @@ namespace Repository.Migrations
                     b.Property<int>("Profiles")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Rntrc")
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -288,6 +292,375 @@ namespace Repository.Migrations
                     b.HasIndex("IdClosures");
 
                     b.ToTable("tb_closuresDetail", (string)null);
+                });
+
+            modelBuilder.Entity("Model.MDFe.MdfeCondutor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Cpf")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)");
+
+                    b.Property<int?>("IdClient")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("IdMdfe")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdClient");
+
+                    b.HasIndex("IdMdfe");
+
+                    b.HasIndex("IdMdfe", "Cpf")
+                        .IsUnique()
+                        .HasDatabaseName("IX_tb_mdfeCondutor_IdMdfe_Cpf");
+
+                    b.ToTable("tb_mdfeCondutor", (string)null);
+                });
+
+            modelBuilder.Entity("Model.MDFe.MdfeDocumento", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ChaveNFe")
+                        .IsRequired()
+                        .HasMaxLength(44)
+                        .HasColumnType("character varying(44)");
+
+                    b.Property<string>("CodMunDescarga")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
+
+                    b.Property<DateTime>("DataEmissao")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("IdMdfe")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MunicipioDescarga")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<int?>("NFeEmissionId")
+                        .HasColumnType("integer");
+
+                    b.Property<long?>("Numero")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("PartnerName")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<decimal>("PesoBruto")
+                        .HasPrecision(15, 3)
+                        .HasColumnType("numeric(15,3)");
+
+                    b.Property<int?>("PurchaseId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Serie")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int>("TipoDocumento")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UfDestino")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
+                    b.Property<string>("UfOrigem")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
+                    b.Property<decimal>("ValorMercadoria")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<decimal>("ValorTotal")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdMdfe");
+
+                    b.HasIndex("NFeEmissionId");
+
+                    b.HasIndex("PurchaseId");
+
+                    b.HasIndex("IdMdfe", "ChaveNFe")
+                        .IsUnique()
+                        .HasDatabaseName("IX_tb_mdfeDocumento_IdMdfe_ChaveNFe");
+
+                    b.ToTable("tb_mdfeDocumento", (string)null);
+                });
+
+            modelBuilder.Entity("Model.MDFe.MdfeEmissao", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("CStat")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ChaveAcesso")
+                        .HasMaxLength(44)
+                        .HasColumnType("character varying(44)");
+
+                    b.Property<string>("CodMunCarregamento")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
+
+                    b.Property<string>("CodigoCIOT")
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)");
+
+                    b.Property<int?>("ContratanteId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("DataAutorizacao")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("DataCancelamento")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("DataEmissao")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("DataEncerramento")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("text");
+
+                    b.Property<int>("IdCompany")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("IdVeiculoTracao")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("IndicadorPagamento")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("InfoAdFisco")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("InfoComplementar")
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
+
+                    b.Property<string>("JustificativaCancelamento")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("Modal")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MunCarregamento")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<long>("Numero")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("PagamentoAgencia")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("PagamentoBanco")
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)");
+
+                    b.Property<string>("PagamentoChavePix")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("PagamentoCnpjIpef")
+                        .HasMaxLength(14)
+                        .HasColumnType("character varying(14)");
+
+                    b.Property<decimal>("PesoBruto")
+                        .HasPrecision(15, 3)
+                        .HasColumnType("numeric(15,3)");
+
+                    b.Property<string>("ProdutoPredominante")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Protocolo")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("ProtocoloEncerramento")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("QuantidadeNFe")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Recibo")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("ResponseJson")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("Sent")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("SequenciaEvento")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Serie")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int>("StatusMdfe")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TipoCarga")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TipoEmitente")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TipoOperacao")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TryCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UfCarregamento")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
+                    b.Property<string>("UfDescarregamento")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<decimal>("ValorTotal")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<string>("XMotivo")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("XmlCompleto")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContratanteId");
+
+                    b.HasIndex("IdCompany");
+
+                    b.HasIndex("IdVeiculoTracao");
+
+                    b.HasIndex("IdCompany", "ChaveAcesso")
+                        .IsUnique()
+                        .HasDatabaseName("IX_tb_mdfe_IdCompany_ChaveAcesso")
+                        .HasFilter("\"ChaveAcesso\" IS NOT NULL");
+
+                    b.HasIndex("IdCompany", "StatusMdfe");
+
+                    b.HasIndex("IdCompany", "Serie", "Numero")
+                        .IsUnique()
+                        .HasDatabaseName("IX_tb_mdfe_IdCompany_Serie_Numero");
+
+                    b.ToTable("tb_mdfe", (string)null);
+                });
+
+            modelBuilder.Entity("Model.MDFe.MdfePercurso", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("IdMdfe")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Ordem")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UfPercurso")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdMdfe");
+
+                    b.ToTable("tb_mdfePercurso", (string)null);
+                });
+
+            modelBuilder.Entity("Model.MDFe.MdfeVeiculo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("IdMdfe")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("IdVehicle")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdMdfe");
+
+                    b.HasIndex("IdVehicle");
+
+                    b.HasIndex("IdMdfe", "IdVehicle")
+                        .IsUnique()
+                        .HasDatabaseName("IX_tb_mdfeVeiculo_IdMdfe_IdVehicle");
+
+                    b.ToTable("tb_mdfeVeiculo", (string)null);
                 });
 
             modelBuilder.Entity("Model.Moves.Box", b =>
@@ -2324,6 +2697,62 @@ namespace Repository.Migrations
                             Category = "Nota de serviço",
                             Code = 124,
                             Name = "Deletar nota de serviço"
+                        },
+                        new
+                        {
+                            Id = 125,
+                            Category = "Cadastros",
+                            Code = 125,
+                            Name = "Visualizar Veículos"
+                        },
+                        new
+                        {
+                            Id = 126,
+                            Category = "Cadastros",
+                            Code = 126,
+                            Name = "Criar Veículo"
+                        },
+                        new
+                        {
+                            Id = 127,
+                            Category = "Cadastros",
+                            Code = 127,
+                            Name = "Editar Veículo"
+                        },
+                        new
+                        {
+                            Id = 128,
+                            Category = "Cadastros",
+                            Code = 128,
+                            Name = "Desativar Veículo"
+                        },
+                        new
+                        {
+                            Id = 129,
+                            Category = "Fiscal",
+                            Code = 129,
+                            Name = "Visualizar MDF-e"
+                        },
+                        new
+                        {
+                            Id = 130,
+                            Category = "Fiscal",
+                            Code = 130,
+                            Name = "Emitir MDF-e"
+                        },
+                        new
+                        {
+                            Id = 131,
+                            Category = "Fiscal",
+                            Code = 131,
+                            Name = "Editar MDF-e"
+                        },
+                        new
+                        {
+                            Id = 132,
+                            Category = "Fiscal",
+                            Code = 132,
+                            Name = "Excluir MDF-e"
                         });
                 });
 
@@ -2738,6 +3167,125 @@ namespace Repository.Migrations
                     b.ToTable("tb_userPermission", (string)null);
                 });
 
+            modelBuilder.Entity("Model.Registrations.Vehicle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BodyType")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CapacityKg")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("CapacityM3")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<int?>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("IdCompany")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("InternalCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LicensePlate")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.Property<string>("LicensingState")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
+                    b.Property<int>("OwnershipType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Renavam")
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)");
+
+                    b.Property<int>("Tare")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ThirdPartyCategory")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("VehicleType")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("WheelType")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("IdCompany");
+
+                    b.HasIndex("IdCompany", "LicensePlate")
+                        .IsUnique()
+                        .HasDatabaseName("IX_tb_vehicle_IdCompany_LicensePlate")
+                        .HasFilter("\"IsActive\"");
+
+                    b.ToTable("tb_vehicle", (string)null);
+                });
+
+            modelBuilder.Entity("Model.Registrations.VehicleUsageHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("IdCompany")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("IdVehicle")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SourceId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UsedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdVehicle");
+
+                    b.HasIndex("IdCompany", "Source");
+
+                    b.ToTable("tb_vehicleUsageHistory", (string)null);
+                });
+
             modelBuilder.Entity("Model.User", b =>
                 {
                     b.Property<int>("Id")
@@ -2847,6 +3395,104 @@ namespace Repository.Migrations
                         .IsRequired();
 
                     b.Navigation("Closures");
+                });
+
+            modelBuilder.Entity("Model.MDFe.MdfeCondutor", b =>
+                {
+                    b.HasOne("Model.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("IdClient")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Model.MDFe.MdfeEmissao", "Mdfe")
+                        .WithMany("Condutores")
+                        .HasForeignKey("IdMdfe")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Mdfe");
+                });
+
+            modelBuilder.Entity("Model.MDFe.MdfeDocumento", b =>
+                {
+                    b.HasOne("Model.MDFe.MdfeEmissao", "Mdfe")
+                        .WithMany("Documentos")
+                        .HasForeignKey("IdMdfe")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Model.Registrations.NFeEmission", "NFeEmission")
+                        .WithMany()
+                        .HasForeignKey("NFeEmissionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Model.Moves.Purchase", "Purchase")
+                        .WithMany()
+                        .HasForeignKey("PurchaseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Mdfe");
+
+                    b.Navigation("NFeEmission");
+
+                    b.Navigation("Purchase");
+                });
+
+            modelBuilder.Entity("Model.MDFe.MdfeEmissao", b =>
+                {
+                    b.HasOne("Model.Client", "Contratante")
+                        .WithMany()
+                        .HasForeignKey("ContratanteId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Model.Registrations.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("IdCompany")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Model.Registrations.Vehicle", "VeiculoTracao")
+                        .WithMany()
+                        .HasForeignKey("IdVeiculoTracao")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Company");
+
+                    b.Navigation("Contratante");
+
+                    b.Navigation("VeiculoTracao");
+                });
+
+            modelBuilder.Entity("Model.MDFe.MdfePercurso", b =>
+                {
+                    b.HasOne("Model.MDFe.MdfeEmissao", "Mdfe")
+                        .WithMany("Percurso")
+                        .HasForeignKey("IdMdfe")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Mdfe");
+                });
+
+            modelBuilder.Entity("Model.MDFe.MdfeVeiculo", b =>
+                {
+                    b.HasOne("Model.MDFe.MdfeEmissao", "Mdfe")
+                        .WithMany("Veiculos")
+                        .HasForeignKey("IdMdfe")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Model.Registrations.Vehicle", "Vehicle")
+                        .WithMany()
+                        .HasForeignKey("IdVehicle")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Mdfe");
+
+                    b.Navigation("Vehicle");
                 });
 
             modelBuilder.Entity("Model.Moves.Box", b =>
@@ -3437,6 +4083,11 @@ namespace Repository.Migrations
                                 .HasColumnType("character varying(250)")
                                 .HasColumnName("Emitente_RazaoSocial");
 
+                            b1.Property<string>("Rntrc")
+                                .HasMaxLength(8)
+                                .HasColumnType("character varying(8)")
+                                .HasColumnName("Emitente_Rntrc");
+
                             b1.HasKey("FiscalConfigurationId");
 
                             b1.ToTable("tb_fiscalConfiguration");
@@ -3584,6 +4235,28 @@ namespace Repository.Migrations
                                         .HasForeignKey("NumeracaoDocumentosFiscalConfigurationId");
                                 });
 
+                            b1.OwnsOne("Model.Registrations.NumeracaoItem", "Mdfe", b2 =>
+                                {
+                                    b2.Property<int>("NumeracaoDocumentosFiscalConfigurationId")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<long>("NumeroInicial")
+                                        .HasColumnType("bigint")
+                                        .HasColumnName("Mdfe_NumeroInicial");
+
+                                    b2.Property<string>("Serie")
+                                        .HasMaxLength(50)
+                                        .HasColumnType("character varying(50)")
+                                        .HasColumnName("Mdfe_Serie");
+
+                                    b2.HasKey("NumeracaoDocumentosFiscalConfigurationId");
+
+                                    b2.ToTable("tb_fiscalConfiguration");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("NumeracaoDocumentosFiscalConfigurationId");
+                                });
+
                             b1.OwnsOne("Model.Registrations.NumeracaoItem", "Nfce", b2 =>
                                 {
                                     b2.Property<int>("NumeracaoDocumentosFiscalConfigurationId")
@@ -3629,6 +4302,9 @@ namespace Repository.Migrations
                                 });
 
                             b1.Navigation("Dps")
+                                .IsRequired();
+
+                            b1.Navigation("Mdfe")
                                 .IsRequired();
 
                             b1.Navigation("Nfce")
@@ -4208,6 +4884,35 @@ namespace Repository.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Model.Registrations.Vehicle", b =>
+                {
+                    b.HasOne("Model.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Model.Registrations.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("IdCompany")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("Model.Registrations.VehicleUsageHistory", b =>
+                {
+                    b.HasOne("Model.Registrations.Vehicle", "Vehicle")
+                        .WithMany("UsageHistory")
+                        .HasForeignKey("IdVehicle")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Vehicle");
+                });
+
             modelBuilder.Entity("Model.User", b =>
                 {
                     b.HasOne("Model.Registrations.Company", "Company")
@@ -4238,6 +4943,17 @@ namespace Repository.Migrations
             modelBuilder.Entity("Model.Closure.Closures", b =>
                 {
                     b.Navigation("ClosuresDetails");
+                });
+
+            modelBuilder.Entity("Model.MDFe.MdfeEmissao", b =>
+                {
+                    b.Navigation("Condutores");
+
+                    b.Navigation("Documentos");
+
+                    b.Navigation("Percurso");
+
+                    b.Navigation("Veiculos");
                 });
 
             modelBuilder.Entity("Model.Moves.Box", b =>
@@ -4431,6 +5147,11 @@ namespace Repository.Migrations
                     b.Navigation("Products");
 
                     b.Navigation("RegrasFiscais");
+                });
+
+            modelBuilder.Entity("Model.Registrations.Vehicle", b =>
+                {
+                    b.Navigation("UsageHistory");
                 });
 
             modelBuilder.Entity("Model.User", b =>

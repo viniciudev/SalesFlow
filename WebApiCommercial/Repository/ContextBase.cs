@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Model;
 using Model.Closure;
+using Model.MDFe;
 using Model.Moves;
 using Model.Registrations;
 using System;
@@ -27,6 +28,8 @@ namespace Repository
         public virtual DbSet<SituacaoTributaria> SituacaoTributaria { get; set; }
         public virtual DbSet<RegraFiscal> RegraFiscal { get; set; }
         public virtual DbSet<PurchaseItem> PurchaseItem { get; set; }
+        public virtual DbSet<Vehicle> Vehicle { get; set; }
+        public virtual DbSet<VehicleUsageHistory> VehicleUsageHistory { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -119,6 +122,13 @@ namespace Repository
             ConfiguraServiceOrderItem(modelBuilder);
             ConfiguraServiceInvoice(modelBuilder);
             ConfiguraServiceInvoiceItem(modelBuilder);
+            ConfiguraVehicle(modelBuilder);
+            ConfiguraVehicleUsageHistory(modelBuilder);
+            ConfiguraMdfe(modelBuilder);
+            ConfiguraMdfeDocumento(modelBuilder);
+            ConfiguraMdfePercurso(modelBuilder);
+            ConfiguraMdfeVeiculo(modelBuilder);
+            ConfiguraMdfeCondutor(modelBuilder);
             var cascadeFKs = modelBuilder.Model.GetEntityTypes()
                 .SelectMany(t => t.GetForeignKeys())
                 .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
@@ -317,6 +327,14 @@ namespace Repository
                 client.Property(c => c.Email).HasMaxLength(100);
                 client.Property(c => c.Bairro).HasMaxLength(100);
 
+                // RNTRC (ANTT) — usado pela RV10 do cadastro de veículos.
+                //
+                // 8 é o tamanho do CONTRATO, não uma escolha: o tipo TRNTRC dos
+                // XSDs do MDF-e (mdfeModalRodoviario_v3.00.xsd) é
+                // `<xs:pattern value="[0-9]{8}"/>`. Um valor maior que isso
+                // passaria pelo banco e só seria recusado pela SEFAZ na emissão.
+                client.Property(c => c.Rntrc).HasMaxLength(8);
+
                 // Enum [Flags] persistido como integer (bitmask).
                 client.Property(c => c.Profiles).HasConversion<int>();
 
@@ -371,6 +389,359 @@ namespace Repository
                     .OnDelete(DeleteBehavior.Restrict);
             });
         }
+
+        /// <summary>
+        /// Cadastro de veículos (MDF-e). Segue a mesma estrutura de
+        /// <see cref="ConfiguraClient"/>.
+        /// </summary>
+        private void ConfiguraVehicle(ModelBuilder builder)
+        {
+            builder.Entity<Vehicle>(vehicle =>
+            {
+                vehicle.ToTable("tb_vehicle");
+                vehicle.HasKey(v => v.Id);
+                vehicle.Property(v => v.Id).ValueGeneratedOnAdd();
+
+                vehicle.Property(v => v.InternalCode).HasMaxLength(30);
+                vehicle.Property(v => v.LicensePlate).HasMaxLength(8).IsRequired();
+                vehicle.Property(v => v.Renavam).HasMaxLength(11);
+                vehicle.Property(v => v.LicensingState).HasMaxLength(2).IsRequired();
+
+                // Capacidade em M³ com precisão explícita: sem ela o Postgres
+                // usa numeric sem escala fixa e o valor pode voltar com mais
+                // casas decimais do que o MOC aceita (999.99).
+                vehicle.Property(v => v.CapacityM3).HasPrecision(15, 2);
+
+                // Datas SEM HasColumnType explícito, de propósito.
+                //
+                // O modelo de design time mapeia DateTime para "timestamp with
+                // time zone", que é o tipo de 44 das 47 colunas de data do banco
+                // — declarar aqui não mudaria o SQL gerado, só criaria a falsa
+                // impressão de que é preciso. (As 3 exceções são as datas de CNH
+                // em tb_driver_license, de outro módulo; ver
+                // ConfiguraDriverLicense.)
+                //
+                // Cuidado ao investigar os AlterColumn de data que o scaffold
+                // emite para OUTRAS tabelas: a causa é o snapshot
+                // (ContextBaseModelSnapshot) ter ficado para trás, gravando
+                // "timestamp without time zone" em colunas que no banco são
+                // timestamptz. NÃO é o switch EnableLegacyTimestampBehavior do
+                // Startup: o design time usa DesignTimeContextFactory
+                // (IDesignTimeDbContextFactory) e nunca executa o Startup —
+                // verificado por medição. Ver a migration AddVehicleMdfe.
+
+                // Índice da FK declarado explicitamente para que o EF não o
+                // remova ao detectar o índice composto abaixo (mesma razão do
+                // ConfiguraClient).
+                vehicle.HasIndex(v => v.IdCompany);
+                vehicle.HasIndex(v => v.ClientId);
+
+                // RV02 — placa única entre veículos ATIVOS da mesma empresa.
+                //
+                // O filtro é o que faz a exclusão lógica (RV11) liberar a placa:
+                // sem ele, um veículo desativado continuaria bloqueando o
+                // recadastro da mesma placa. Mesma técnica já usada em
+                // tb_client, com a sintaxe de filtro do POSTGRES (aspas duplas
+                // escapadas) — não a de SQL Server.
+                vehicle.HasIndex(v => new { v.IdCompany, v.LicensePlate })
+                    .IsUnique()
+                    .HasFilter("\"IsActive\"")
+                    .HasDatabaseName("IX_tb_vehicle_IdCompany_LicensePlate");
+
+                // WithMany() sem parâmetro: Company não tem coleção de veículos,
+                // e criá-la mexeria em um cadastro fora do escopo desta OS.
+                vehicle.HasOne(v => v.Company)
+                    .WithMany()
+                    .HasForeignKey(v => v.IdCompany)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // RV09/RV10 — proprietário terceiro (parceiro/transportador).
+                vehicle.HasOne(v => v.Client)
+                    .WithMany()
+                    .HasForeignKey(v => v.ClientId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        /// <summary>
+        /// RV14 — histórico de associação do veículo a MDF-e/OS. Tabela criada
+        /// agora, populada quando a emissão existir.
+        /// </summary>
+        private void ConfiguraVehicleUsageHistory(ModelBuilder builder)
+        {
+            builder.Entity<VehicleUsageHistory>(history =>
+            {
+                history.ToTable("tb_vehicleUsageHistory");
+                history.HasKey(h => h.Id);
+                history.Property(h => h.Id).ValueGeneratedOnAdd();
+                history.Property(h => h.Reference).HasMaxLength(200);
+
+                history.HasIndex(h => h.IdVehicle);
+                history.HasIndex(h => new { h.IdCompany, h.Source });
+
+                history.HasOne(h => h.Vehicle)
+                    .WithMany(v => v.UsageHistory)
+                    .HasForeignKey(h => h.IdVehicle)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        /// <summary>
+        /// MDF-e (modelo 58) — cabeçalho do manifesto. Ver <c>MdfeEmissao</c>.
+        /// </summary>
+        private void ConfiguraMdfe(ModelBuilder builder)
+        {
+            builder.Entity<MdfeEmissao>(mdfe =>
+            {
+                mdfe.ToTable("tb_mdfe");
+                mdfe.HasKey(m => m.Id);
+                mdfe.Property(m => m.Id).ValueGeneratedOnAdd();
+
+                mdfe.Property(m => m.Serie).HasMaxLength(3).IsRequired();
+                mdfe.Property(m => m.ChaveAcesso).HasMaxLength(44);
+                mdfe.Property(m => m.Protocolo).HasMaxLength(20);
+                mdfe.Property(m => m.UfCarregamento).HasMaxLength(2).IsRequired();
+                mdfe.Property(m => m.UfDescarregamento).HasMaxLength(2).IsRequired();
+                mdfe.Property(m => m.CodigoCIOT).HasMaxLength(12);
+
+                // Aba "Carga/Produtos". Os limites são os do XSD, não escolha
+                // nossa: xMunCarrega é 2..60 e xProd é 1..120, então truncar em
+                // silêncio aqui viraria rejeição de schema lá na frente.
+                mdfe.Property(m => m.CodMunCarregamento).HasMaxLength(7).IsRequired();
+                mdfe.Property(m => m.MunCarregamento).HasMaxLength(60).IsRequired();
+                mdfe.Property(m => m.ProdutoPredominante).HasMaxLength(120).IsRequired();
+
+                // Aba "Informações Adicionais" (infAdFisco 2000 / infCpl 5000).
+                mdfe.Property(m => m.InfoAdFisco).HasMaxLength(2000);
+                mdfe.Property(m => m.InfoComplementar).HasMaxLength(5000);
+
+                // Aba "Dados de Pagamento" (infPag.infBanc). Os limites são os do
+                // XSD: codBanco 3..5, codAgencia 1..10, PIX 2..60. As três formas
+                // são mutuamente exclusivas no leiaute (xs:choice) e nenhuma é
+                // obrigatória — a exclusividade é conferida no MdfeBuilder, porque
+                // não é expressável em constraint de coluna.
+                mdfe.Property(m => m.PagamentoBanco).HasMaxLength(5);
+                mdfe.Property(m => m.PagamentoAgencia).HasMaxLength(10);
+                mdfe.Property(m => m.PagamentoCnpjIpef).HasMaxLength(14);
+                mdfe.Property(m => m.PagamentoChavePix).HasMaxLength(60);
+
+                // Dinheiro e peso com precisão explícita, pelo mesmo motivo do
+                // CapacityM3 em ConfiguraVehicle: sem ela o Postgres usa numeric
+                // sem escala fixa e o valor volta com mais casas do que o MOC
+                // aceita. O peso do MDF-e é v3_3 (3 casas) no XSD.
+                mdfe.Property(m => m.ValorTotal).HasPrecision(15, 2);
+                mdfe.Property(m => m.PesoBruto).HasPrecision(15, 3);
+
+                // Colunas text: um XML de manifesto passa de 8 KB com facilidade
+                // (um grupo por município de descarga), e a resposta da SEFAZ
+                // também não cabe em varchar curto.
+                mdfe.Property(m => m.XmlCompleto).HasColumnType("text");
+                mdfe.Property(m => m.ResponseJson).HasColumnType("text");
+                mdfe.Property(m => m.ErrorMessage).HasColumnType("text");
+
+                // Retorno da transmissão e eventos. Os limites de xMotivo e da
+                // justificativa são os do leiaute (255); Recibo e
+                // ProtocoloEncerramento acompanham o Protocolo (20), que já
+                // existia.
+                mdfe.Property(m => m.XMotivo).HasMaxLength(255);
+                mdfe.Property(m => m.Recibo).HasMaxLength(20);
+                mdfe.Property(m => m.ProtocoloEncerramento).HasMaxLength(20);
+                mdfe.Property(m => m.JustificativaCancelamento).HasMaxLength(255);
+
+                // Datas SEM HasColumnType explícito, como em ConfiguraVehicle —
+                // o modelo de design time já mapeia para timestamptz, que é o
+                // tipo predominante no banco.
+
+                mdfe.HasIndex(m => m.IdCompany);
+                mdfe.HasIndex(m => new { m.IdCompany, m.StatusMdfe });
+                mdfe.HasIndex(m => m.IdVeiculoTracao);
+                mdfe.HasIndex(m => m.ContratanteId);
+
+                // Série + número únicos por empresa (RM09). O número é reservado
+                // em transação com advisory lock no MdfeRepository, então este
+                // índice não é o mecanismo — é a rede de segurança: se um dia
+                // alguém criar manifesto por outro caminho, o banco recusa o
+                // número repetido em vez de deixar dois documentos fiscais com a
+                // mesma identidade.
+                mdfe.HasIndex(m => new { m.IdCompany, m.Serie, m.Numero })
+                    .IsUnique()
+                    .HasDatabaseName("IX_tb_mdfe_IdCompany_Serie_Numero");
+
+                // Chave de acesso única por empresa, mas SÓ quando preenchida: o
+                // rascunho ainda não tem chave, e um índice único sem o filtro
+                // bloquearia o segundo rascunho (todos teriam NULL, que em
+                // Postgres não colide — o filtro deixa a intenção explícita em
+                // vez de depender disso).
+                mdfe.HasIndex(m => new { m.IdCompany, m.ChaveAcesso })
+                    .IsUnique()
+                    .HasFilter("\"ChaveAcesso\" IS NOT NULL")
+                    .HasDatabaseName("IX_tb_mdfe_IdCompany_ChaveAcesso");
+
+                mdfe.HasOne(m => m.Company)
+                    .WithMany()
+                    .HasForeignKey(m => m.IdCompany)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // Comentário sobre a FK de tração: a relação é WithMany() sem
+                // parâmetro porque Vehicle não tem coleção de manifestos — criá-la
+                // mexeria no cadastro de veículo, fora do escopo. O histórico
+                // (VehicleUsageHistory) é quem registra o uso.
+                mdfe.HasOne(m => m.VeiculoTracao)
+                    .WithMany()
+                    .HasForeignKey(m => m.IdVeiculoTracao)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                mdfe.HasOne(m => m.Contratante)
+                    .WithMany()
+                    .HasForeignKey(m => m.ContratanteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        /// <summary>
+        /// NF-e manifestadas. As duas origens (venda própria e compra de
+        /// terceiro) são FKs anuláveis distintas — ver <c>MdfeDocumento</c>.
+        /// </summary>
+        private void ConfiguraMdfeDocumento(ModelBuilder builder)
+        {
+            builder.Entity<MdfeDocumento>(doc =>
+            {
+                doc.ToTable("tb_mdfeDocumento");
+                doc.HasKey(d => d.Id);
+                doc.Property(d => d.Id).ValueGeneratedOnAdd();
+
+                doc.Property(d => d.ChaveNFe).HasMaxLength(44).IsRequired();
+                doc.Property(d => d.Serie).HasMaxLength(3);
+                doc.Property(d => d.PartnerName).HasMaxLength(60);
+                doc.Property(d => d.UfOrigem).HasMaxLength(2);
+                doc.Property(d => d.UfDestino).HasMaxLength(2);
+                doc.Property(d => d.CodMunDescarga).HasMaxLength(7).IsRequired();
+                doc.Property(d => d.MunicipioDescarga).HasMaxLength(60).IsRequired();
+
+                doc.Property(d => d.ValorTotal).HasPrecision(15, 2);
+                doc.Property(d => d.ValorMercadoria).HasPrecision(15, 2);
+                doc.Property(d => d.PesoBruto).HasPrecision(15, 3);
+
+                doc.HasIndex(d => d.IdMdfe);
+                doc.HasIndex(d => d.NFeEmissionId);
+                doc.HasIndex(d => d.PurchaseId);
+
+                // RM10 — impede a MESMA chave de entrar duas vezes no mesmo
+                // manifesto. Índice único por (manifesto, chave): a checagem de
+                // "chave já usada em OUTRO manifesto" é feita no serviço, porque
+                // depende do status do outro manifesto (cancelado libera) e isso
+                // não cabe num índice.
+                doc.HasIndex(d => new { d.IdMdfe, d.ChaveNFe })
+                    .IsUnique()
+                    .HasDatabaseName("IX_tb_mdfeDocumento_IdMdfe_ChaveNFe");
+
+                doc.HasOne(d => d.Mdfe)
+                    .WithMany(m => m.Documentos)
+                    .HasForeignKey(d => d.IdMdfe)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                doc.HasOne(d => d.NFeEmission)
+                    .WithMany()
+                    .HasForeignKey(d => d.NFeEmissionId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                doc.HasOne(d => d.Purchase)
+                    .WithMany()
+                    .HasForeignKey(d => d.PurchaseId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        /// <summary>UFs de percurso do manifesto (<c>infPercurso</c>) — RM13.</summary>
+        private void ConfiguraMdfePercurso(ModelBuilder builder)
+        {
+            builder.Entity<MdfePercurso>(percurso =>
+            {
+                percurso.ToTable("tb_mdfePercurso");
+                percurso.HasKey(p => p.Id);
+                percurso.Property(p => p.Id).ValueGeneratedOnAdd();
+
+                percurso.Property(p => p.UfPercurso).HasMaxLength(2).IsRequired();
+
+                percurso.HasIndex(p => p.IdMdfe);
+
+                percurso.HasOne(p => p.Mdfe)
+                    .WithMany(m => m.Percurso)
+                    .HasForeignKey(p => p.IdMdfe)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        /// <summary>
+        /// Veículos escalados: 1 tração + 0..5 reboques. Placa, tara, rodado e
+        /// carroceria NÃO são copiados — vêm do cadastro ao montar o XML.
+        /// </summary>
+        private void ConfiguraMdfeVeiculo(ModelBuilder builder)
+        {
+            builder.Entity<MdfeVeiculo>(veiculo =>
+            {
+                veiculo.ToTable("tb_mdfeVeiculo");
+                veiculo.HasKey(v => v.Id);
+                veiculo.Property(v => v.Id).ValueGeneratedOnAdd();
+
+                veiculo.HasIndex(v => v.IdMdfe);
+                veiculo.HasIndex(v => v.IdVehicle);
+
+                // Um mesmo veículo não entra duas vezes na mesma escala. O limite
+                // de "1 tração e no máximo 5 reboques" é validado no serviço
+                // (RM05): é contagem por papel, e não caberia num índice.
+                veiculo.HasIndex(v => new { v.IdMdfe, v.IdVehicle })
+                    .IsUnique()
+                    .HasDatabaseName("IX_tb_mdfeVeiculo_IdMdfe_IdVehicle");
+
+                veiculo.HasOne(v => v.Mdfe)
+                    .WithMany(m => m.Veiculos)
+                    .HasForeignKey(v => v.IdMdfe)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                veiculo.HasOne(v => v.Vehicle)
+                    .WithMany()
+                    .HasForeignKey(v => v.IdVehicle)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        /// <summary>
+        /// Condutores do manifesto. Nome e CPF são snapshot (o que foi declarado
+        /// à fiscalização), então ficam gravados mesmo quando há IdClient.
+        /// </summary>
+        private void ConfiguraMdfeCondutor(ModelBuilder builder)
+        {
+            builder.Entity<MdfeCondutor>(condutor =>
+            {
+                condutor.ToTable("tb_mdfeCondutor");
+                condutor.HasKey(c => c.Id);
+                condutor.Property(c => c.Id).ValueGeneratedOnAdd();
+
+                condutor.Property(c => c.Nome).HasMaxLength(60).IsRequired();
+                condutor.Property(c => c.Cpf).HasMaxLength(11).IsRequired();
+
+                condutor.HasIndex(c => c.IdMdfe);
+                condutor.HasIndex(c => c.IdClient);
+
+                // Mesmo CPF não pode aparecer duas vezes no mesmo manifesto —
+                // é o documento que identifica o condutor na fiscalização.
+                condutor.HasIndex(c => new { c.IdMdfe, c.Cpf })
+                    .IsUnique()
+                    .HasDatabaseName("IX_tb_mdfeCondutor_IdMdfe_Cpf");
+
+                condutor.HasOne(c => c.Mdfe)
+                    .WithMany(m => m.Condutores)
+                    .HasForeignKey(c => c.IdMdfe)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                condutor.HasOne(c => c.Client)
+                    .WithMany()
+                    .HasForeignKey(c => c.IdClient)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
         private void ConfiguraCompany(ModelBuilder builder)
         {
             builder.Entity<Company>(user =>
@@ -901,6 +1272,13 @@ namespace Repository
                         dps.Property(p => p.Serie).HasColumnName("Dps_Serie").HasMaxLength(50);
                         dps.Property(p => p.NumeroInicial).HasColumnName("Dps_NumeroInicial");
                     });
+
+                    // Série e número do MDF-e (modelo 58) — RM09.
+                    nb.OwnsOne(n => n.Mdfe, mdfe =>
+                    {
+                        mdfe.Property(p => p.Serie).HasColumnName("Mdfe_Serie").HasMaxLength(50);
+                        mdfe.Property(p => p.NumeroInicial).HasColumnName("Mdfe_NumeroInicial");
+                    });
                 });
 
                 // CertificadoDigital (owned)
@@ -924,6 +1302,11 @@ namespace Repository
                     em.Property(p => p.Cpf).HasColumnName("Emitente_Cpf").HasMaxLength(20);
                     em.Property(p => p.InscricaoEstadual).HasColumnName("Emitente_InscricaoEstadual").HasMaxLength(100);
                     em.Property(p => p.InscricaoMunicipal).HasColumnName("Emitente_InscricaoMunicipal").HasMaxLength(30);
+                    // RNTRC do emitente (RM08). 8 dígitos é o tipo TRNTRC dos XSDs
+                    // do MDF-e ([0-9]{8}), o mesmo limite da coluna em tb_client —
+                    // deixar maior permitiria gravar um RNTRC que só seria recusado
+                    // na SEFAZ.
+                    em.Property(p => p.Rntrc).HasColumnName("Emitente_Rntrc").HasMaxLength(8);
                     em.Property(p => p.RazaoSocial).HasColumnName("Emitente_RazaoSocial").HasMaxLength(250);
                     em.Property(p => p.Fantasia).HasColumnName("Emitente_Fantasia").HasMaxLength(250);
                     em.Property(p => p.Logo).HasColumnName("Emitente_Logo").HasColumnType("bytea");

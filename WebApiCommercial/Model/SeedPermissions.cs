@@ -468,6 +468,57 @@ namespace Model
                     Name = "Deletar nota de serviço",
                     Category = "Nota de serviço"
                 },
+                // Veículos (MDF-e)
+                new Permission {
+                    Id = (int)PermissionEnum.CADASTRO_VEICULO_VIEW,
+                    Code = PermissionEnum.CADASTRO_VEICULO_VIEW,
+                    Name = "Visualizar Veículos",
+                    Category = "Cadastros"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.CADASTRO_VEICULO_CREATE,
+                    Code = PermissionEnum.CADASTRO_VEICULO_CREATE,
+                    Name = "Criar Veículo",
+                    Category = "Cadastros"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.CADASTRO_VEICULO_EDIT,
+                    Code = PermissionEnum.CADASTRO_VEICULO_EDIT,
+                    Name = "Editar Veículo",
+                    Category = "Cadastros"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.CADASTRO_VEICULO_DELETE,
+                    Code = PermissionEnum.CADASTRO_VEICULO_DELETE,
+                    Name = "Desativar Veículo",
+                    Category = "Cadastros"
+                },
+                // MDF-e. Categoria "Fiscal" porque é documento fiscal, e não
+                // cadastro — a tela vive em Fiscal, não em Cadastros.
+                new Permission {
+                    Id = (int)PermissionEnum.FISCAL_MDFE_VIEW,
+                    Code = PermissionEnum.FISCAL_MDFE_VIEW,
+                    Name = "Visualizar MDF-e",
+                    Category = "Fiscal"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.FISCAL_MDFE_CREATE,
+                    Code = PermissionEnum.FISCAL_MDFE_CREATE,
+                    Name = "Emitir MDF-e",
+                    Category = "Fiscal"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.FISCAL_MDFE_EDIT,
+                    Code = PermissionEnum.FISCAL_MDFE_EDIT,
+                    Name = "Editar MDF-e",
+                    Category = "Fiscal"
+                },
+                new Permission {
+                    Id = (int)PermissionEnum.FISCAL_MDFE_DELETE,
+                    Code = PermissionEnum.FISCAL_MDFE_DELETE,
+                    Name = "Excluir MDF-e",
+                    Category = "Fiscal"
+                },
             };
         }
     }

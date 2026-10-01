@@ -54,7 +54,18 @@ public class ConventionPermissionMiddleware
         {  "SituacaoTributaria", "SITUACAO_TRIBUTARIA"   },
 		
         {"ServiceOrders", "SERVICO_ORDEM"},
-        {"ServiceInvoices","SERVICO_NFSE"}
+        {"ServiceInvoices","SERVICO_NFSE"},
+
+        // === MDF-e ===
+        // Sem esta linha o default-deny bloqueia TODA rota do controller com
+        // 403 — e o 403 é indistinguível de uma negação legítima, então o
+        // sintoma parece permissão faltando no usuário, não mapa faltando aqui.
+        { "Vehicle", "CADASTRO_VEICULO" },
+
+        // O manifesto tem permissão PRÓPRIA (FISCAL_MDFE, 129–132) e não
+        // reusa NOTA_FISCAL: emitir manifesto é outra função, e quem emite
+        // NF-e não necessariamente manifesta carga.
+        { "Mdfe", "FISCAL_MDFE" }
     };
 
     // 🔥 Controllers que NÃO exigem permissão (públicos)
@@ -326,6 +337,14 @@ public class ConventionPermissionMiddleware
             PermissionEnum.SERVICO_NFSE_EDIT => "Editar service",
             PermissionEnum.SERVICO_NFSE_VIEW => "Visualizar service",
             PermissionEnum.SERVICO_NFSE_DELETE  => "Deletar service",
+            PermissionEnum.CADASTRO_VEICULO_VIEW => "Visualizar veículos",
+            PermissionEnum.CADASTRO_VEICULO_CREATE => "Criar veículo",
+            PermissionEnum.CADASTRO_VEICULO_EDIT => "Editar veículo",
+            PermissionEnum.CADASTRO_VEICULO_DELETE => "Desativar veículo",
+            PermissionEnum.FISCAL_MDFE_VIEW => "Visualizar MDF-e",
+            PermissionEnum.FISCAL_MDFE_CREATE => "Emitir MDF-e",
+            PermissionEnum.FISCAL_MDFE_EDIT => "Editar MDF-e",
+            PermissionEnum.FISCAL_MDFE_DELETE => "Excluir MDF-e",
             _ => permission.ToString().Replace("_", " ")
         };
     }
