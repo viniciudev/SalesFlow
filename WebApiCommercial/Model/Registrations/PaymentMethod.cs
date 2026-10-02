@@ -11,7 +11,7 @@ namespace Model.Registrations
 		public string Name { get; set; }
 		public int IdCompany { get; set; }
 		public Company Company { get; set; }
-
+		public TipoFormaPagamento PaymentType { get; set; }
 		public bool AllowInstallments { get; set; } = false; // Permite parcelamento?
 		public bool IsImmediateSettlement { get; set; } = true; // 
 		
@@ -19,7 +19,7 @@ namespace Model.Registrations
 				
 	}
 
-	 public enum FormaPagamento
+	 public enum TipoFormaPagamento
     {
         /// <summary>
         /// 01 - Dinheiro
@@ -43,84 +43,59 @@ namespace Model.Registrations
         
 
         /// <summary>
-        /// 10 - Vale Alimentação
+        /// 5 - Vale Alimentação
         /// </summary>
-        fpValeAlimentacao = 10,
+        fpValeAlimentacao = 5,
 
         /// <summary>
-        /// 11 - Vale Refeição
+        /// 6 - Vale Refeição
         /// </summary>
-        fpValeRefeicao = 11,
+        fpValeRefeicao = 6,
 
         /// <summary>
-        /// 12  -Vale Presente
+        /// 7  -Vale Presente
         /// </summary>
-        fpValePresente = 12,
+        fpValePresente = 7,
 
         /// <summary>
-        /// 13 - Vale Combustível
+        /// 8 - Vale Combustível
         /// </summary>
-        fpValeCombustivel = 13,
+        fpValeCombustivel = 8,
 
        
 
         /// <summary>
-        /// 15 - Boleto Bancário
+        /// 9 - Boleto Bancário
         /// </summary>
-        fpBoletoBancario = 15,
+        fpBoletoBancario = 9,
 
         /// <summary>
-        /// 16 - Depósito Bancário
+        /// 10 - Depósito Bancário
         /// </summary>
-        fpDepositoBancario = 16,
+        fpDepositoBancario = 10,
 
         /// <summary>
-        /// 17 - Pagamento Instantâneo (PIX) dinâmico
+        /// 11 - Pagamento Instantâneo (PIX) dinâmico
         /// </summary>
-        fpPagamentoInstantaneoPIXDinamico = 17,
+        fpPagamentoInstantaneoPIXDinamico = 11,
 
         /// <summary>
-        /// 18 - Transferência bancária, Carteira Digital
+        /// 12 - Transferência bancária, Carteira Digital
         /// </summary>
-        fpTransferenciabancaria = 18,
+        fpTransferenciabancaria = 12,
 
         /// <summary>
-        /// 19 - Programa de fidelidade, Cashback, Crédito Virtual
+        /// 13 - Programa de fidelidade, Cashback, Crédito Virtual
         /// </summary>
-         fpProgramadefidelidade = 19,
+         fpProgramadefidelidade = 13,
 
         /// <summary>
-        /// 20 - Pagamento Instantâneo (PIX) estático
+        /// 14 - Pagamento Instantâneo (PIX) estático
         /// </summary>
-       
-        fpPagamentoInstantaneoPIXEstatico = 20,
-
-        /// <summary>
-        /// 21 - Crédito em loja
-        /// </summary>
-        fpCreditoEmLoja = 21,
-
-     
-
-        /// <summary>
-        /// 90 - Sem pagamento
-        /// </summary>
-        [Description("Sem pagamento")]
-        [XmlEnum("90")]
-        fpSemPagamento = 90,
-
-        /// <summary>
-        /// 91 - Pagamento posterior
-        /// </summary>
-        [Description("Pagamento posterior")]
-        [XmlEnum("91")]
-        fpPagamentoPosterior = 91,
-
+        fpPagamentoInstantaneoPIXEstatico = 14,
         /// <summary>
         /// 99 - Outros
         /// </summary>
-        [Description("Outros")]
-        [XmlEnum("99")]
         fpOutro = 99
     }
 }
