@@ -18,9 +18,11 @@
          de NF-e usa "Times New Roman" por nome e depende da fonte existir no
          sistema; em container Linux isso não está garantido. Aqui a fonte viaja
          com o assembly. -->
-    <EmbeddedResource Include="Fontes\Arial.ttf">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
+    <!-- Só embutida: sem CopyToOutputDirectory. NFe.Danfe.QuestPdf embute o
+         mesmo Fontes\Arial.ttf e, com as duas cópias no publish, o caminho
+         relativo colidia (NETSDK1152). RegistrarFonteEmbutida lê o recurso do
+         manifest stream, nunca do disco. -->
+    <EmbeddedResource Include="Fontes\Arial.ttf" />
   </ItemGroup>
 
   <ItemGroup>

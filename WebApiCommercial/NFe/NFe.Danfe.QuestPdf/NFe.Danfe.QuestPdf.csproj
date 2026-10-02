@@ -11,9 +11,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Fontes\Arial.ttf">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
+    <!-- Embutida no assembly, e SÓ embutida: sem CopyToOutputDirectory.
+         O publish é único para toda a solução e MDFe.Damdfe.QuestPdf embute o
+         mesmo Fontes\Arial.ttf; as duas cópias caíam no mesmo caminho relativo
+         e quebravam o publish com NETSDK1152. Nada lê o .ttf do disco — a
+         fonte viaja dentro do assembly. -->
+    <EmbeddedResource Include="Fontes\Arial.ttf" />
   </ItemGroup>
 
   <ItemGroup>

@@ -13,12 +13,24 @@ COPY ["NFe/NFe.Classes/NFe.Classes.csproj", "NFe/NFe.Classes/"]
 COPY ["NFe/NFe.Utils/NFe.Utils.csproj", "NFe/NFe.Utils/"]
 COPY ["NFe/NFe.Servicos/NFe.Servicos.csproj", "NFe/NFe.Servicos/"]
 COPY ["NFe/NFe.Wsdl.Standard/NFe.Wsdl.Standard.csproj", "NFe/NFe.Wsdl.Standard/"]
+COPY ["NFe/NFe.Wsdl/NFe.Wsdl.csproj", "NFe/NFe.Wsdl/"]
 COPY ["NFe/NFe.Danfe.QuestPdf/NFe.Danfe.QuestPdf.csproj", "NFe/NFe.Danfe.QuestPdf/"]
+COPY ["NFe/NFe.Danfe.OpenFast/NFe.Danfe.OpenFast.csproj", "NFe/NFe.Danfe.OpenFast/"]
 COPY ["NFe/DFe.Classes/DFe.Classes.csproj", "NFe/DFe.Classes/"]
 COPY ["NFe/DFe.Utils/DFe.Utils.csproj", "NFe/DFe.Utils/"]
+COPY ["NFe/DFe.Wsdl/DFe.Wsdl.csproj", "NFe/DFe.Wsdl/"]
 COPY ["NFe/NFe.Danfe.Base/NFe.Danfe.Base.csproj", "NFe/NFe.Danfe.Base/"]
 COPY ["MDFe/MDFe.Classes/MDFe.Classes.csproj", "MDFe/MDFe.Classes/"]
 COPY ["MDFe/MDFe.Utils/MDFe.Utils.csproj", "MDFe/MDFe.Utils/"]
+COPY ["MDFe/MDFe.Damdfe.QuestPdf/MDFe.Damdfe.QuestPdf.csproj", "MDFe/MDFe.Damdfe.QuestPdf/"]
+COPY ["MDFe/MDFe.Servicos/MDFe.Servicos.csproj", "MDFe/MDFe.Servicos/"]
+COPY ["MDFe/MDFe.Wsdl/MDFe.Wsdl.csproj", "MDFe/MDFe.Wsdl/"]
+
+# Esta lista tem de espelhar o fecho transitivo de ProjectReference de
+# WebApiCommercial.csproj — são 21 projetos. O restore IGNORA em silêncio um
+# ProjectReference cujo .csproj não está aqui ("Ignorando o projeto ... porque
+# ele não foi encontrado"), sem falhar: o cache da camada é que fica furado e
+# o publish baixa os pacotes de novo.
 
 RUN dotnet restore WebApiCommercial/WebApiCommercial.csproj
 
