@@ -943,10 +943,10 @@ namespace Service
 			if (nomeUpper.Contains("CHEQUE"))
 				return FormaPagamento.fpCheque;
 
-			if (nomeUpper.Contains("CR�DITO") || nomeUpper.Contains("CREDITO"))
+			if (nomeUpper.Contains("CRÉDITO") || nomeUpper.Contains("CREDITO"))
 				return FormaPagamento.fpCartaoCredito;
 
-			if (nomeUpper.Contains("D�BITO") || nomeUpper.Contains("DEBITO"))
+			if (nomeUpper.Contains("DÉBITO") || nomeUpper.Contains("DEBITO"))
 				return FormaPagamento.fpCartaoDebito;
 			if (nomeUpper.Contains("BOLETO") || nomeUpper.Contains("DUPLICATA"))
 				return FormaPagamento.fpBoletoBancario;

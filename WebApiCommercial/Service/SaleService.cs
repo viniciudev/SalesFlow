@@ -294,7 +294,7 @@ namespace Service
                         throw new Exception($"A parcela ID {dto.Id} não pertence à venda {saleId} e não pode ser alterada.");
 
                     receivedIds.Add(dto.Id);
-                    await UpdateExistingFinancialAsync(existing, dto, sale.BankAccountId);
+                    await UpdateExistingFinancialAsync(existing, dto, sale.BankAccountId,sale.IdClient);
                 }
                 else
                 {
@@ -337,7 +337,9 @@ namespace Service
             }
         }
 
-        private async Task UpdateExistingFinancialAsync(Financial existing, SaleFinancialDto dto, int? saleBankAccountId)
+        private async Task UpdateExistingFinancialAsync(Financial existing, SaleFinancialDto dto,
+            int? saleBankAccountId,
+            int? saleIdClient)
         {
             var fpm = existing.FinancialPaymentMethods.FirstOrDefault();
 
@@ -354,6 +356,7 @@ namespace Service
             }
 
             // Atualiza campos editáveis (parcelas pendentes)
+            existing.IdClient = saleIdClient;
             existing.Value = dto.Value;
             existing.DueDate = dto.DueDate;
             if (!string.IsNullOrWhiteSpace(dto.Description))
